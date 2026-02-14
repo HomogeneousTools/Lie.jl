@@ -408,31 +408,82 @@ end
 
 # ─── Dimension of simple module (Weyl dimension formula) ────────────────────
 
-"""
-    dim_of_simple_module(::Type{DT}, hw::WeightLatticeElem{DT,R}) -> Int
+# Cache for the Weyl dimension denominator ∏_{α>0} ⟨ρ, α⟩ and d-scaled roots.
+const _weyl_dim_cache = Dict{Any,Any}()
+const _weyl_dim_cache_lock = ReentrantLock()
 
-Compute the dimension of the irreducible representation with highest weight `hw`
-using the Weyl dimension formula:
+"""
+    _weyl_dim_data(::Type{DT}) -> (denominator::BigInt, dα_list::Vector{SVector{R,Int}})
+
+Return the cached denominator `∏_{α>0} ⟨ρ, α⟩` and the list of
+symmetrizer-scaled positive root vectors `d .* α` for Dynkin type `DT`.
+
+The inner product `⟨w, α⟩ = ∑ᵢ wᵢ dᵢ αᵢ` equals `w ⋅ (d .* α)`,
+so we precompute `d .* α` once and reuse it.
+"""
+function _weyl_dim_data(::Type{DT}) where {DT<:DynkinType}
+    cached = get(_weyl_dim_cache, DT, nothing)
+    cached !== nothing && return cached::Tuple{BigInt, Vector{SVector{rank(DT),Int}}}
+
+    R   = rank(DT)
+    RS  = RootSystem(DT)
+    ρ   = weyl_vector(DT)
+    d   = cartan_symmetrizer(DT)
+    pos = RS.positive_roots_list                         # Vector{SVector{R,Int}}
+
+    # Precompute d-scaled roots: dα[k] = d .* α_k
+    dα_list = [d .* α for α in pos]
+
+    # Denominator: ∏_{α>0} ⟨ρ, α⟩ = ∏_k ∑_i ρ_i * dα_k[i]
+    denom = BigInt(1)
+    for dα in dα_list
+        ip = zero(Int)
+        for i in 1:R
+            ip += ρ.vec[i] * dα[i]
+        end
+        denom *= ip
+    end
+
+    result = (denom, dα_list)
+    lock(_weyl_dim_cache_lock) do
+        _weyl_dim_cache[DT] = result
+    end
+    return result
+end
+
+"""
+    dim_of_simple_module(::Type{DT}, hw::WeightLatticeElem{DT,R}) -> BigInt
+
+Dimension of the irreducible representation with highest weight `hw`,
+computed via the Weyl dimension formula:
 
 ``\\dim V(λ) = \\prod_{α > 0} \\frac{⟨λ + ρ, α⟩}{⟨ρ, α⟩}``
+
+The denominator `∏ ⟨ρ, α⟩` is cached per Dynkin type (it depends only on the
+root system). The numerator `∏ ⟨λ + ρ, α⟩` is computed as a `BigInt` product
+of `Int`-valued inner products. No `Rational` arithmetic is needed since the
+final result is guaranteed to be an integer by the Weyl dimension formula.
 """
 function dim_of_simple_module(::Type{DT}, hw::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R}
     @assert is_dominant(hw) "Highest weight must be dominant"
-    RS = RootSystem(DT)
-    ρ = weyl_vector(DT)
-    hw_plus_ρ = hw + ρ
 
-    num = 1 // 1
-    den = 1 // 1
+    denom, dα_list = _weyl_dim_data(DT)
+    ρ   = weyl_vector(DT)
+    λ_ρ = hw + ρ
 
-    for α in positive_roots(RS)
-        num *= dot(hw_plus_ρ, α)
-        den *= dot(ρ, α)
+    # Numerator: ∏_{α>0} ⟨λ+ρ, α⟩, computed in-place with GMP mul_si!
+    numer = BigInt(1)
+    for dα in dα_list
+        ip = zero(Int)
+        for i in 1:R
+            ip += λ_ρ.vec[i] * dα[i]
+        end
+        Base.GMP.MPZ.mul_si!(numer, numer, ip)
     end
 
-    d = num // den
-    @assert denominator(d) == 1 "Weyl dimension formula gave non-integer result"
-    return Int(numerator(d))
+    result, rem = divrem(numer, denom)
+    @assert iszero(rem) "Weyl dimension formula gave non-integer result"
+    return result
 end
 
 function dim_of_simple_module(hw::WeightLatticeElem{DT,R}) where {DT,R}

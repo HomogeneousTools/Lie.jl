@@ -305,6 +305,19 @@ using StaticArrays
 
         # D₄: dim V(ω₁) = 8 (standard rep of SO(8))
         @test dim_of_simple_module(fundamental_weight(TypeD{4}, 1)) == 8
+
+        # E₈: all fundamental representations
+        @testset "E₈ fundamental representations" begin
+            expected_dims = [3875, 147250, 6696000, 6899079264,
+                             146325270, 2450240, 30380, 248]
+            for (i, expected) in enumerate(expected_dims)
+                @test dim_of_simple_module(fundamental_weight(TypeE{8}, i)) == expected
+            end
+        end
+
+        # E₈: high-dimensional representation 3ω₃ + 5ω₈
+        @test dim_of_simple_module(WeightLatticeElem(TypeE{8}, [0, 0, 3, 0, 0, 0, 0, 5])) ==
+              big"18190674254761844256000000"
     end
 
     # ═══════════════════════════════════════════════════════════════════════

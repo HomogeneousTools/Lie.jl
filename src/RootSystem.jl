@@ -114,13 +114,24 @@ struct RootSystem{DT<:DynkinType,R}
     positive_roots_list::Vector{SVector{R,Int}}
     positive_coroots_list::Vector{SVector{R,Int}}
     refl::Matrix{UInt}   # refl[s, i] = index of sₛ(positive_root_i) in positive roots, or 0
+end
 
-    function RootSystem(::Type{DT}) where {DT<:DynkinType}
-        R = rank(DT)
-        C = cartan_matrix(DT)
-        pos_roots, pos_coroots, refl = _compute_positive_roots_and_reflections(C, R)
-        return new{DT,R}(pos_roots, pos_coroots, refl)
+# Module-level cache: one RootSystem per Dynkin type, computed on first access.
+const _root_system_cache = Dict{Any,Any}()
+const _root_system_cache_lock = ReentrantLock()
+
+function RootSystem(::Type{DT}) where {DT<:DynkinType}
+    cached = get(_root_system_cache, DT, nothing)
+    cached !== nothing && return cached::RootSystem{DT,rank(DT)}
+
+    R = rank(DT)
+    C = cartan_matrix(DT)
+    pos_roots, pos_coroots, refl = _compute_positive_roots_and_reflections(C, R)
+    rs = RootSystem{DT,R}(pos_roots, pos_coroots, refl)
+    lock(_root_system_cache_lock) do
+        _root_system_cache[DT] = rs
     end
+    return rs
 end
 
 RootSystem(dt::DynkinType) = RootSystem(typeof(dt))
