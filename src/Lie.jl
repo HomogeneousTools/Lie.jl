@@ -1,4 +1,4 @@
-module RepresentationTheory
+module Lie
 
 using StaticArrays
 using LinearAlgebra: dot as _dot, I as _I
@@ -17,5 +17,8 @@ include("WeightLattice.jl")
 
 # ─── Weyl groups ────────────────────────────────────────────────────────────
 include("WeylGroup.jl")
+
+# ─── Characters and representation ring ─────────────────────────────────────
+include("Characters.jl")
 
 end # module

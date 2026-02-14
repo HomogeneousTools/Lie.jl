@@ -1,8 +1,8 @@
 using Test
-using RepresentationTheory
+using Lie
 using StaticArrays
 
-@testset "RepresentationTheory.jl" begin
+@testset "Lie.jl" begin
 
     # ═══════════════════════════════════════════════════════════════════════
     #  Dynkin types

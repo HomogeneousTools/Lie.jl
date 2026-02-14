@@ -2,7 +2,7 @@
 
 julia_version = "1.12.4"
 manifest_format = "2.0"
-project_hash = "11947c7e49afa8b881f982d7fef8723819ea4c0f"
+project_hash = "cbce17449c0114ef00078c8d5e4d5011eda088ba"
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
@@ -55,7 +55,7 @@ uuid = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 version = "1.11.0"
 
 [[deps.RepresentationTheory]]
-deps = ["StaticArrays"]
+deps = ["LinearAlgebra", "StaticArrays"]
 path = "."
 uuid = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 version = "0.1.0"
