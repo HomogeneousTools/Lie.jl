@@ -3,7 +3,7 @@
 #
 #  Roots are stored as SVector{R,Int} in the basis of simple roots.
 #  All roots for a given Dynkin type are computed at compile time via
-#  @generated functions.
+#  @generated functions, yielding a unique singleton per Dynkin type.
 # ═══════════════════════════════════════════════════════════════════════════════
 
 export RootSystem, RootSpaceElem
@@ -99,39 +99,59 @@ end
 # ═══════════════════════════════════════════════════════════════════════════════
 
 """
-    RootSystem{DT,R}
+    RootSystem{DT,R,N}
 
-A root system for the Dynkin type `DT` of rank `R`.
-Stores precomputed positive roots, coroots, and the reflection table.
+A root system for the Dynkin type `DT` of rank `R` with `N` positive roots.
+All data is computed at compile time via a `@generated` constructor, so
+there is exactly one `RootSystem` per Dynkin type — a compile-time singleton.
 
 Fields:
-- `positive_roots_list`: vector of positive roots (as `SVector{R,Int}`)
-- `positive_coroots_list`: vector of positive coroots
-- `refl`: reflection table, `refl[s, i]` = index of `s_s(α_i)` among positive roots,
-          or 0 if the result is negative.
+- `positive_roots_list`: `NTuple{N, SVector{R,Int}}` of positive roots
+- `positive_coroots_list`: `NTuple{N, SVector{R,Int}}` of positive coroots
+- `refl`: `SMatrix{R,N,UInt}` reflection table — `refl[s, i]` = index of
+          `s_s(α_i)` among positive roots, or 0 if the result is negative.
 """
-struct RootSystem{DT<:DynkinType,R}
-    positive_roots_list::Vector{SVector{R,Int}}
-    positive_coroots_list::Vector{SVector{R,Int}}
-    refl::Matrix{UInt}   # refl[s, i] = index of sₛ(positive_root_i) in positive roots, or 0
+struct RootSystem{DT<:DynkinType,R,N}
+    positive_roots_list::NTuple{N, SVector{R,Int}}
+    positive_coroots_list::NTuple{N, SVector{R,Int}}
+    refl::SMatrix{R,N,UInt}
 end
 
-# Module-level cache: one RootSystem per Dynkin type, computed on first access.
-const _root_system_cache = Dict{Any,Any}()
-const _root_system_cache_lock = ReentrantLock()
+"""
+    RootSystem(::Type{DT}) -> RootSystem{DT,R,N}
+
+Return the root system for Dynkin type `DT`.  Root data (positive roots,
+coroots, reflection table) is computed at compile time via `@generated`.
+A single instance is cached per Dynkin type.
+"""
+const _root_system_cache = Dict{Type, Any}()
 
 function RootSystem(::Type{DT}) where {DT<:DynkinType}
-    cached = get(_root_system_cache, DT, nothing)
-    cached !== nothing && return cached::RootSystem{DT,rank(DT)}
+    return get!(_root_system_cache, DT) do
+        _make_root_system(DT)
+    end::RootSystem{DT, rank(DT), n_positive_roots(DT)}
+end
 
+@generated function _make_root_system(::Type{DT}) where {DT<:DynkinType}
     R = rank(DT)
-    C = cartan_matrix(DT)
-    pos_roots, pos_coroots, refl = _compute_positive_roots_and_reflections(C, R)
-    rs = RootSystem{DT,R}(pos_roots, pos_coroots, refl)
-    lock(_root_system_cache_lock) do
-        _root_system_cache[DT] = rs
+    C_data = _cartan_matrix_data(DT)
+    C = SMatrix{R,R,Int,R*R}(Tuple(C_data))
+    pos_roots, pos_coroots, refl_mat = _compute_positive_roots_and_reflections(C, R)
+    N = length(pos_roots)
+
+    # Flatten data into tuples for embedding in the generated expression
+    roots_tuple = Tuple(Tuple(v) for v in pos_roots)
+    coroots_tuple = Tuple(Tuple(v) for v in pos_coroots)
+    # refl_mat is Matrix{UInt} of size (R, N) — flatten column-major
+    refl_entries = Tuple(UInt(refl_mat[i, j]) for j in 1:N for i in 1:R)
+
+    return quote
+        RootSystem{$DT,$R,$N}(
+            $(roots_tuple),
+            $(coroots_tuple),
+            SMatrix{$R,$N,UInt,$(R*N)}($refl_entries),
+        )
     end
-    return rs
 end
 
 RootSystem(dt::DynkinType) = RootSystem(typeof(dt))
