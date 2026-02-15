@@ -59,6 +59,8 @@ Base.:(==)(a::WeightLatticeElem{DT,R}, b::WeightLatticeElem{DT,R}) where {DT,R} 
 Base.hash(a::WeightLatticeElem, h::UInt) = hash(a.vec, h)
 Base.zero(::Type{WeightLatticeElem{DT,R}}) where {DT,R} =
   WeightLatticeElem{DT,R}(zero(SVector{R,Int}))
+Base.zero(::WeightLatticeElem{DT,R}) where {DT,R} =
+  WeightLatticeElem{DT,R}(zero(SVector{R,Int}))
 Base.iszero(a::WeightLatticeElem) = iszero(a.vec)
 
 function Base.show(io::IO, w::WeightLatticeElem{DT,R}) where {DT,R}
