@@ -281,10 +281,61 @@ for (DT, c1, c2, label) in tensor_cases
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  7. Exterior and symmetric powers
+#  7. Littlewood–Richardson vs Brauer–Klimyk (Type A tensor products)
 # ═══════════════════════════════════════════════════════════════════════════════
 
-header("7. Exterior and symmetric powers")
+header("7. Littlewood–Richardson vs Brauer–Klimyk (Type A)")
+
+function bench_lr(::Type{TypeA{N}}, c1, c2) where {N}
+  λ = WeightLatticeElem(TypeA{N}, SVector{N,Int}(Tuple(c1)))
+  μ = WeightLatticeElem(TypeA{N}, SVector{N,Int}(Tuple(c2)))
+  return lr_tensor_product(λ, μ)
+end
+
+function bench_bk(::Type{DT}, c1, c2) where {DT}
+  R = rank(DT)
+  λ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(c1)))
+  μ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(c2)))
+  if Lie.degree(λ) > Lie.degree(μ)
+    Lie.brauer_klimyk(Lie.freudenthal_formula(μ), λ)
+  else
+    Lie.brauer_klimyk(Lie.freudenthal_formula(λ), μ)
+  end
+end
+
+lr_bk_cases = [
+  (TypeA{3}, [1, 0, 0], [1, 0, 0], "V(ω₁)⊗V(ω₁)"),
+  (TypeA{3}, [0, 1, 0], [0, 1, 0], "V(ω₂)⊗V(ω₂)"),
+  (TypeA{3}, [2, 0, 0], [2, 0, 0], "V(2ω₁)⊗V(2ω₁)"),
+  (TypeA{5}, [1, 0, 0, 0, 0], [1, 0, 0, 0, 0], "V(ω₁)⊗V(ω₁)"),
+  (TypeA{5}, [0, 1, 0, 0, 0], [0, 1, 0, 0, 0], "V(ω₂)⊗V(ω₂)"),
+  (TypeA{5}, [2, 0, 0, 0, 0], [2, 0, 0, 0, 0], "V(2ω₁)⊗V(2ω₁)"),
+  (TypeA{7}, [1, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0], "V(ω₁)⊗V(ω₁)"),
+  (TypeA{7}, [0, 1, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0], "V(ω₂)⊗V(ω₂)"),
+  (TypeA{9}, [1, 0, 0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0, 0], "V(ω₁)⊗V(ω₁)"),
+]
+
+for (DT, c1, c2, label) in lr_bk_cases
+  bench_lr(DT, c1, c2)
+  bench_bk(DT, c1, c2)
+
+  b_lr = @benchmark bench_lr($DT, $c1, $c2) evals = 1 samples = 200
+  b_bk = @benchmark bench_bk($DT, $c1, $c2) evals = 1 samples = 200
+
+  t_lr = minimum(b_lr).time / 1e3
+  t_bk = minimum(b_bk).time / 1e3
+  speedup = t_bk / t_lr
+
+  report("$(sprint(show,DT())): LR  $label", b_lr; category="lr_vs_bk")
+  report("$(sprint(show,DT())): BK  $label", b_bk; category="lr_vs_bk",
+    extra=@sprintf("speedup: %.1f×", speedup))
+end
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  8. Exterior and symmetric powers
+# ═══════════════════════════════════════════════════════════════════════════════
+
+header("8. Exterior and symmetric powers")
 
 function bench_exterior(::Type{DT}, coords, k) where {DT}
   R = rank(DT)
@@ -306,12 +357,20 @@ ext_cases = [
   (TypeA{4}, [1, 0, 0, 0], 2, "⋀²V(ω₁)"),
   (TypeA{4}, [1, 0, 0, 0], 3, "⋀³V(ω₁)"),
   (TypeA{4}, [1, 0, 0, 0], 4, "⋀⁴V(ω₁)"),
+  (TypeA{7}, [1, 0, 0, 0, 0, 0, 0], 4, "⋀⁴V(ω₁)"),
+  (TypeA{7}, [1, 0, 0, 0, 0, 0, 0], 6, "⋀⁶V(ω₁)"),
+  (TypeA{4}, [1, 1, 0, 0], 3, "⋀³V(ω₁+ω₂)"),
+  (TypeA{4}, [1, 1, 0, 0], 4, "⋀⁴V(ω₁+ω₂)"),
   (TypeB{3}, [1, 0, 0], 2, "⋀²V(ω₁)"),
   (TypeB{3}, [0, 0, 1], 2, "⋀²V(ω₃)"),
+  (TypeB{3}, [0, 0, 1], 4, "⋀⁴V(ω₃)"),
+  (TypeB{4}, [1, 0, 0, 0], 4, "⋀⁴V(ω₁)"),
   (TypeC{3}, [1, 0, 0], 2, "⋀²V(ω₁)"),
   (TypeD{4}, [1, 0, 0, 0], 2, "⋀²V(ω₁)"),
+  (TypeD{4}, [1, 0, 0, 0], 4, "⋀⁴V(ω₁)"),
   (TypeG2, [1, 0], 2, "⋀²V(ω₁)"),
   (TypeG2, [1, 0], 3, "⋀³V(ω₁)"),
+  (TypeG2, [1, 0], 4, "⋀⁴V(ω₁)"),
   (TypeE{6}, [1, 0, 0, 0, 0, 0], 2, "⋀²V(ω₁)"),
   (TypeE{8}, [0, 0, 0, 0, 0, 0, 0, 1], 2, "⋀²V(ω₈)"),
 ]
@@ -329,10 +388,16 @@ sym_cases = [
   (TypeA{3}, [1, 0, 0], 4, "Sym⁴V(ω₁)"),
   (TypeA{3}, [1, 0, 0], 5, "Sym⁵V(ω₁)"),
   (TypeA{4}, [1, 0, 0, 0], 3, "Sym³V(ω₁)"),
+  (TypeA{4}, [1, 0, 0, 0], 5, "Sym⁵V(ω₁)"),
+  (TypeA{3}, [1, 1, 0], 3, "Sym³V(ω₁+ω₂)"),
+  (TypeA{3}, [2, 0, 0], 4, "Sym⁴V(2ω₁)"),
   (TypeB{2}, [1, 0], 3, "Sym³V(ω₁)"),
   (TypeB{3}, [1, 0, 0], 2, "Sym²V(ω₁)"),
+  (TypeB{3}, [0, 0, 1], 3, "Sym³V(ω₃)"),
+  (TypeC{3}, [1, 0, 0], 3, "Sym³V(ω₁)"),
   (TypeG2, [1, 0], 2, "Sym²V(ω₁)"),
   (TypeG2, [1, 0], 3, "Sym³V(ω₁)"),
+  (TypeG2, [1, 0], 4, "Sym⁴V(ω₁)"),
 ]
 
 for (DT, coords, k, label) in sym_cases
@@ -344,10 +409,10 @@ for (DT, coords, k, label) in sym_cases
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  8. Borel–Weil–Bott
+#  9. Borel–Weil–Bott
 # ═══════════════════════════════════════════════════════════════════════════════
 
-header("8. Borel–Weil–Bott theorem")
+header("9. Borel–Weil–Bott theorem")
 
 function bench_bwb(::Type{DT}, coords) where {DT}
   R = rank(DT)
