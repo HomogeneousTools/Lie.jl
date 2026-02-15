@@ -147,6 +147,17 @@ end
     cartan_matrix(::Type{ProductDynkinType{Ts}})
 
 Block-diagonal Cartan matrix for a product of simple types.
+
+# Examples
+```jldoctest
+julia> using Lie, StaticArrays
+
+julia> cartan_matrix(TypeA{2}) == SMatrix{2,2}(2, -1, -1, 2)
+true
+
+julia> cartan_matrix(TypeG2) == SMatrix{2,2}(2, -1, -3, 2)
+true
+```
 """
 @generated function cartan_matrix(::Type{ProductDynkinType{Ts}}) where {Ts}
     types = Ts.parameters
@@ -208,6 +219,20 @@ function _cartan_matrix_data(::Type{TypeG2})
     return [2 -3; -1 2]
 end
 
+function _cartan_matrix_data(::Type{ProductDynkinType{Ts}}) where {Ts}
+    types = Ts.parameters
+    R = sum(rank(T) for T in types)
+    C = zeros(Int, R, R)
+    offset = 0
+    for T in types
+        r = rank(T)
+        C_block = _cartan_matrix_data(T)
+        C[offset+1:offset+r, offset+1:offset+r] .= C_block
+        offset += r
+    end
+    return C
+end
+
 # Instance dispatch
 cartan_matrix(dt::DynkinType) = cartan_matrix(typeof(dt))
 
@@ -219,6 +244,17 @@ cartan_matrix(dt::DynkinType) = cartan_matrix(typeof(dt))
 
 Return the symmetrizer `d` such that `diag(d) * C` is symmetric, where `C` is
 the Cartan matrix of `DT`. Entries are positive integers with gcd 1.
+
+# Examples
+```jldoctest
+julia> using Lie, StaticArrays
+
+julia> cartan_symmetrizer(TypeB{3}) == SVector(2, 2, 1)
+true
+
+julia> cartan_symmetrizer(TypeG2) == SVector(1, 3)
+true
+```
 """
 @generated function cartan_symmetrizer(::Type{DT}) where {DT<:SimpleDynkinType}
     d = _cartan_symmetrizer_data(DT)
@@ -266,6 +302,15 @@ function _cartan_symmetrizer_data(::Type{DT}) where {DT<:SimpleDynkinType}
     g = gcd(d_int...)
     d_int .= d_int .÷ g
     return d_int
+end
+
+function _cartan_symmetrizer_data(::Type{ProductDynkinType{Ts}}) where {Ts}
+    types = Ts.parameters
+    d = Int[]
+    for T in types
+        append!(d, _cartan_symmetrizer_data(T))
+    end
+    return d
 end
 
 cartan_symmetrizer(dt::DynkinType) = cartan_symmetrizer(typeof(dt))
