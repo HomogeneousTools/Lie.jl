@@ -4,8 +4,9 @@
 
 export DynkinType, SimpleDynkinType, ProductDynkinType
 export TypeA, TypeB, TypeC, TypeD, TypeE, TypeF4, TypeG2
-export rank, n_positive_roots, is_valid_dynkin_type
+export rank, n_positive_roots
 export n_components, component_type, component_ranks, component_offsets
+export dynkin_diagram
 
 """
     DynkinType
@@ -271,3 +272,138 @@ end
 
 Base.show(io::IO, dt::SimpleDynkinType) = print(io, _type_name(typeof(dt)))
 Base.show(io::IO, dt::ProductDynkinType) = print(io, _type_name(typeof(dt)))
+
+# ─── Dynkin diagrams ─────────────────────────────────────────────────────────
+
+"""
+    dynkin_diagram(::Type{DT}) -> String
+    dynkin_diagram(dt::DynkinType) -> String
+
+Return a text rendering of the Dynkin diagram for the given type,
+following Bourbaki conventions.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> println(dynkin_diagram(TypeA{4}))
+○───○───○───○
+1   2   3   4
+
+julia> println(dynkin_diagram(TypeB{3}))
+○───○═>═○
+1   2   3
+
+julia> println(dynkin_diagram(TypeG2))
+○≡≡≡○
+1   2
+```
+"""
+function dynkin_diagram(::Type{TypeA{N}}) where {N}
+  nodes = join(fill("○", N), "───")
+  labels = join([lpad(string(i), 1) for i in 1:N], "   ")
+  return nodes * "\n" * labels
+end
+
+function dynkin_diagram(::Type{TypeB{N}}) where {N}
+  # B_n: ○───○───…───○=>=○  (double bond with arrow to last)
+  if N == 2
+    nodes = "○═>═○"
+  else
+    nodes = join(fill("○", N - 1), "───") * "═>═○"
+  end
+  labels = join([lpad(string(i), 1) for i in 1:N], "   ")
+  return nodes * "\n" * labels
+end
+
+function dynkin_diagram(::Type{TypeC{N}}) where {N}
+  # C_n: ○───○───…───○=<=○  (double bond with arrow from last)
+  if N == 2
+    nodes = "○═<═○"
+  else
+    nodes = join(fill("○", N - 1), "───") * "═<═○"
+  end
+  labels = join([lpad(string(i), 1) for i in 1:N], "   ")
+  return nodes * "\n" * labels
+end
+
+function dynkin_diagram(::Type{TypeD{N}}) where {N}
+  # D_n: linear chain 1..N-2, then fork to N-1 and N at node N-2
+  #         ○ N
+  #        /
+  # ○───○───…───○
+  # 1   2      N-1
+  # Actually Bourbaki D_n: nodes 1..N-2 linear, node N-1 and N branch from N-2
+  chain_len = N - 2
+  if chain_len >= 1
+    chain = join(fill("○", chain_len), "───")
+    chain_labels = join([lpad(string(i), 1) for i in 1:(chain_len)], "   ")
+  else
+    chain = ""
+    chain_labels = ""
+  end
+  # Branch node
+  indent = max(0, 4 * (chain_len - 1) + 4)
+  top_line = " "^indent * "○ $N"
+  branch_line = " "^indent * "/"  # changed from fork_line
+  if chain_len >= 1
+    bottom_line = chain * "───○───○"
+    bottom_labels = chain_labels * "   $(N-1)   $N" # wait, rethink
+  else
+    bottom_line = "○───○"
+    bottom_labels = "$(N-1)   $N"
+  end
+  # Actually let me reconsider the layout for D_n
+  # Standard: 1 ─ 2 ─ ... ─ (N-2) ─ (N-1)
+  #                               \─ N
+  # or as Bourbaki:
+  #          ○ N
+  #         /
+  # ○──○──...──○──○
+  # 1  2     N-2 N-1
+  prefix = " "^(4 * (N - 2)) * "○ $N"
+  fork = " "^(4 * (N - 2) - 1) * "/"
+  if N - 1 >= 2
+    main = join(fill("○", N - 1), "───")
+    main_labels = join([lpad(string(i), 1) for i in 1:(N - 1)], "   ")
+  else
+    main = "○"
+    main_labels = "$(N-1)"
+  end
+  return prefix * "\n" * fork * "\n" * main * "\n" * main_labels
+end
+
+function dynkin_diagram(::Type{TypeE{N}}) where {N}
+  # E_n (n=6,7,8): linear chain 1,3,4,5,...,n with node 2 branching from node 4
+  # Bourbaki:
+  #         ○ 2
+  #         |
+  # ○───○───○───○───○  (for E6: nodes 1,3,4,5,6)
+  # 1   3   4   5   6
+  n_main = N - 1  # nodes on main chain: 1, 3, 4, 5, ..., N
+  main = join(fill("○", n_main), "───")
+  main_labels_arr = [1; collect(3:N)]
+  main_labels = join([lpad(string(i), 1) for i in main_labels_arr], "   ")
+  # Node 2 branches from the 3rd position (node 4, which is at index 3 in main chain)
+  indent = 8  # position of node 4 = 2 nodes * 4 chars each
+  top = " "^indent * "○ 2"
+  branch = " "^indent * "|"
+  return top * "\n" * branch * "\n" * main * "\n" * main_labels
+end
+
+function dynkin_diagram(::Type{TypeF4})
+  return "○───○═>═○───○\n1   2   3   4"
+end
+
+function dynkin_diagram(::Type{TypeG2})
+  return "○≡≡≡○\n1   2"
+end
+
+function dynkin_diagram(::Type{ProductDynkinType{Ts}}) where {Ts}
+  diagrams = [dynkin_diagram(T) for T in Ts.parameters]
+  labels = [_type_name(T) for T in Ts.parameters]
+  parts = [labels[i] * ":\n" * diagrams[i] for i in eachindex(diagrams)]
+  return join(parts, "\n\n")
+end
+
+dynkin_diagram(dt::DynkinType) = dynkin_diagram(typeof(dt))
