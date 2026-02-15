@@ -10,7 +10,7 @@ export WeylGroup, WeylGroupElem
 export weyl_group, root_system, gens, gen, longest_element
 export word, weyl_order
 export weyl_orbit, dominant_weights
-export dim_of_simple_module
+export degree, weyl_dimension
 export is_singular, borel_weil_bott
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -30,6 +30,14 @@ end
     weyl_group(::Type{DT}) -> WeylGroup{DT}
 
 Construct the Weyl group for the given Dynkin type.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> W = weyl_group(TypeA{2})
+Weyl group of type A2
+```
 """
 function weyl_group(::Type{DT}) where {DT<:DynkinType}
     RS = RootSystem(DT)
@@ -162,7 +170,7 @@ Returns `(insert::Bool, position::Int, letter::UInt8)`:
 - if `insert=true`: insert `letter` at `position`
 - if `insert=false`: delete the element at `position`
 """
-function _explain_rmul(x::WeylGroupElem, s::UInt8, refl::Matrix{UInt}, rk::Int)
+function _explain_rmul(x::WeylGroupElem, s::UInt8, refl::AbstractMatrix{UInt}, rk::Int)
     insert_index = length(x.word) + 1
     insert_letter = s
 
@@ -267,13 +275,30 @@ end
 
 # ─── Longest element ────────────────────────────────────────────────────────
 
+const _longest_element_cache = Dict{Type, Any}()
+
 """
     longest_element(W::WeylGroup{DT,R}) -> WeylGroupElem{DT,R}
 
 Compute the longest element w₀ of the Weyl group.
 Uses the iterative algorithm: repeatedly find a simple reflection that increases length.
+The result is cached per Dynkin type.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> W = weyl_group(TypeA{2});
+
+julia> w₀ = longest_element(W);
+
+julia> length(w₀)
+3
+```
 """
 function longest_element(W::WeylGroup{DT,R}) where {DT,R}
+    haskey(_longest_element_cache, DT) && return _longest_element_cache[DT]::WeylGroupElem{DT,R}
+
     RS = W.root_system
     np = n_positive_roots(RS)
 
@@ -299,6 +324,7 @@ function longest_element(W::WeylGroup{DT,R}) where {DT,R}
         found || break
     end
 
+    _longest_element_cache[DT] = w0
     return w0
 end
 
@@ -308,6 +334,17 @@ end
     weyl_order(::Type{DT}) -> BigInt
 
 Return the order of the Weyl group of type `DT`.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> weyl_order(TypeA{3})
+24
+
+julia> weyl_order(TypeE{8})
+696729600
+```
 """
 weyl_order(::Type{TypeA{N}}) where {N} = factorial(BigInt(N + 1))
 weyl_order(::Type{TypeB{N}}) where {N} = factorial(BigInt(N)) * BigInt(2)^N
@@ -331,6 +368,14 @@ weyl_order(dt::DynkinType) = weyl_order(typeof(dt))
     weyl_orbit(::Type{DT}, w::WeightLatticeElem{DT,R}) -> Vector{WeightLatticeElem{DT,R}}
 
 Compute the full Weyl orbit of the weight `w`.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> length(weyl_orbit(TypeA{2}, fundamental_weight(TypeA{2}, 1)))
+3
+```
 """
 function weyl_orbit(::Type{DT}, w::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R}
     C = cartan_matrix(DT)
@@ -404,72 +449,83 @@ end
 
 # ─── Dimension of simple module (Weyl dimension formula) ────────────────────
 
-# Cache for the Weyl dimension denominator ∏_{α>0} ⟨ρ, α⟩ and d-scaled roots.
-const _weyl_dim_cache = Dict{Any,Any}()
-const _weyl_dim_cache_lock = ReentrantLock()
-
 """
-    _weyl_dim_data(::Type{DT}) -> (denominator::BigInt, dα_list::Vector{SVector{R,Int}})
+    _weyl_denominator(::Type{DT}) -> BigInt
 
-Return the cached denominator `∏_{α>0} ⟨ρ, α⟩` and the list of
-symmetrizer-scaled positive root vectors `d .* α` for Dynkin type `DT`.
-
-The inner product `⟨w, α⟩ = ∑ᵢ wᵢ dᵢ αᵢ` equals `w ⋅ (d .* α)`,
-so we precompute `d .* α` once and reuse it.
+Compute the Weyl dimension denominator `∏_{α>0} ⟨ρ, α⟩` at compile time.
+The inner product uses the Cartan symmetrizer: `⟨ρ, α⟩ = ∑ᵢ dᵢ αᵢ` since
+`ρ` has all-ones coordinates in the fundamental weight basis.
 """
-function _weyl_dim_data(::Type{DT}) where {DT<:DynkinType}
-    cached = get(_weyl_dim_cache, DT, nothing)
-    cached !== nothing && return cached::Tuple{BigInt, Vector{SVector{rank(DT),Int}}}
-
-    R   = rank(DT)
-    RS  = RootSystem(DT)
-    ρ   = weyl_vector(DT)
-    d   = cartan_symmetrizer(DT)
-    pos = RS.positive_roots_list                         # Vector{SVector{R,Int}}
-
-    # Precompute d-scaled roots: dα[k] = d .* α_k
-    dα_list = [d .* α for α in pos]
-
-    # Denominator: ∏_{α>0} ⟨ρ, α⟩ = ∏_k ∑_i ρ_i * dα_k[i]
+@generated function _weyl_denominator(::Type{DT}) where {DT<:DynkinType}
+    R = rank(DT)
+    d = _cartan_symmetrizer_data(DT)
+    C = _cartan_matrix_data(DT)
+    C_sm = SMatrix{R,R,Int,R*R}(Tuple(C))
+    pos_roots, _, _ = _compute_positive_roots_and_reflections(C_sm, R)
     denom = BigInt(1)
-    for dα in dα_list
-        ip = zero(Int)
-        for i in 1:R
-            ip += ρ.vec[i] * dα[i]
-        end
+    for α in pos_roots
+        ip = sum(d[i] * α[i] for i in 1:R)
         denom *= ip
     end
-
-    result = (denom, dα_list)
-    lock(_weyl_dim_cache_lock) do
-        _weyl_dim_cache[DT] = result
-    end
-    return result
+    return :($denom)
 end
 
 """
-    dim_of_simple_module(::Type{DT}, hw::WeightLatticeElem{DT,R}) -> BigInt
+    _weyl_dim_scaled_roots(::Type{DT}) -> NTuple{N, SVector{R,Int}}
+
+Return the symmetrizer-scaled positive root vectors `d .* α` for Dynkin type `DT`,
+precomputed at compile time. The inner product `⟨w, α⟩ = ∑ᵢ wᵢ dᵢ αᵢ = w ⋅ (d.*α)`.
+"""
+@generated function _weyl_dim_scaled_roots(::Type{DT}) where {DT<:DynkinType}
+    R = rank(DT)
+    d = _cartan_symmetrizer_data(DT)
+    C = _cartan_matrix_data(DT)
+    C_sm = SMatrix{R,R,Int,R*R}(Tuple(C))
+    pos_roots, _, _ = _compute_positive_roots_and_reflections(C_sm, R)
+    N = length(pos_roots)
+
+    # d-scaled roots as tuple of tuples
+    scaled = Tuple(Tuple(d[i] * α[i] for i in 1:R) for α in pos_roots)
+    return :(NTuple{$N, SVector{$R,Int}}($scaled))
+end
+
+"""
+    degree(::Type{DT}, hw::WeightLatticeElem{DT,R}) -> BigInt
+    degree(hw::WeightLatticeElem{DT,R}) -> BigInt
 
 Dimension of the irreducible representation with highest weight `hw`,
 computed via the Weyl dimension formula:
 
 ``\\dim V(λ) = \\prod_{α > 0} \\frac{⟨λ + ρ, α⟩}{⟨ρ, α⟩}``
 
-The denominator `∏ ⟨ρ, α⟩` is cached per Dynkin type (it depends only on the
-root system). The numerator `∏ ⟨λ + ρ, α⟩` is computed as a `BigInt` product
-of `Int`-valued inner products. No `Rational` arithmetic is needed since the
-final result is guaranteed to be an integer by the Weyl dimension formula.
+The denominator `∏ ⟨ρ, α⟩` and the symmetrizer-scaled root vectors are
+precomputed at compile time. The numerator `∏ ⟨λ+ρ, α⟩` is computed as
+a `BigInt` product of `Int`-valued inner products via in-place GMP arithmetic.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> degree(fundamental_weight(TypeA{3}, 1))
+4
+
+julia> degree(fundamental_weight(TypeB{3}, 3))
+8
+
+julia> degree(fundamental_weight(TypeE{8}, 8))
+248
+```
 """
-function dim_of_simple_module(::Type{DT}, hw::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R}
+function degree(::Type{DT}, hw::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R}
     @assert is_dominant(hw) "Highest weight must be dominant"
 
-    denom, dα_list = _weyl_dim_data(DT)
-    ρ   = weyl_vector(DT)
-    λ_ρ = hw + ρ
+    denom  = _weyl_denominator(DT)
+    dα_all = _weyl_dim_scaled_roots(DT)
+    λ_ρ    = hw + weyl_vector(DT)
 
     # Numerator: ∏_{α>0} ⟨λ+ρ, α⟩, computed in-place with GMP mul_si!
     numer = BigInt(1)
-    for dα in dα_list
+    for dα in dα_all
         ip = zero(Int)
         for i in 1:R
             ip += λ_ρ.vec[i] * dα[i]
@@ -482,9 +538,17 @@ function dim_of_simple_module(::Type{DT}, hw::WeightLatticeElem{DT,R}) where {DT
     return result
 end
 
-function dim_of_simple_module(hw::WeightLatticeElem{DT,R}) where {DT,R}
-    return dim_of_simple_module(DT, hw)
+function degree(hw::WeightLatticeElem{DT,R}) where {DT,R}
+    return degree(DT, hw)
 end
+
+"""
+    weyl_dimension(args...) -> BigInt
+
+Synonym for [`degree`](@ref). Computes the dimension of the irreducible
+representation via the Weyl dimension formula.
+"""
+weyl_dimension(args...) = degree(args...)
 
 # ─── Singularity ─────────────────────────────────────────────────────────────
 
@@ -521,15 +585,17 @@ all cohomology vanishes and we return `nothing`. Otherwise, return
 and all other cohomology groups vanish.
 
 # Examples
-```julia
+```jldoctest
+julia> using Lie
+
 julia> borel_weil_bott(fundamental_weight(TypeA{2}, 1))
 (0, ω1)
 
 julia> borel_weil_bott(WeightLatticeElem(TypeA{2}, [-2, 1]))
 (1, 0)
 
-julia> borel_weil_bott(-weyl_vector(TypeA{2}))
-# nothing (singular case)
+julia> borel_weil_bott(-weyl_vector(TypeA{2})) === nothing
+true
 ```
 """
 function borel_weil_bott(λ::WeightLatticeElem{DT,R}) where {DT,R}
@@ -538,10 +604,9 @@ function borel_weil_bott(λ::WeightLatticeElem{DT,R}) where {DT,R}
 
     # Move μ to the dominant chamber; the number of reflections is the degree
     μ_dom, word = conjugate_dominant_weight_with_elem(μ)
-    d = length(word)
 
     # If μ_dom is the zero weight, λ + ρ is singular → no cohomology
     iszero(μ_dom) && return nothing
 
-    return (d, μ_dom - ρ)
+    return (length(word), μ_dom - ρ)
 end
