@@ -13,7 +13,7 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 
 export WeylCharacter
-export freudenthal_formula
+export freudenthal_formula, weight_multiplicity
 export tensor_product, dual
 export adams_operator, symmetric_power, exterior_power
 export Sym, ⋀
@@ -511,6 +511,30 @@ function freudenthal_formula(λ::WeightLatticeElem{DT,R}) where {DT,R}
   return multiplicities
 end
 
+"""
+    weight_multiplicity(λ::WeightLatticeElem{DT,R}, μ::WeightLatticeElem{DT,R}) -> Int
+
+Return the multiplicity of weight `μ` in the irreducible representation
+``\\mathrm{V}(λ)``.  This is a convenience wrapper around
+[`freudenthal_formula`](@ref).
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> ω₁ = fundamental_weight(TypeA{2}, 1); ω₂ = fundamental_weight(TypeA{2}, 2);
+
+julia> weight_multiplicity(ω₁ + ω₂, zero(ω₁))   # zero weight of adjoint
+2
+```
+"""
+function weight_multiplicity(
+  λ::WeightLatticeElem{DT,R}, μ::WeightLatticeElem{DT,R}
+) where {DT,R}
+  mults = freudenthal_formula(λ)
+  return get(mults, μ.vec, 0)
+end
+
 # ═══════════════════════════════════════════════════════════════════════════════
 #  dot-reduce — Weyl group orbit reduction with sign
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -616,6 +640,267 @@ function brauer_klimyk(
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════
+#  Littlewood–Richardson rule — tensor products in Type A
+# ═══════════════════════════════════════════════════════════════════════════════
+
+"""
+    _weight_to_partition(λ::WeightLatticeElem{TypeA{N},N}) -> Vector{Int}
+
+Convert a dominant weight in fundamental weight coordinates to a partition
+with ``N+1`` parts (for ``\\mathrm{GL}_{N+1}``).
+
+For ``\\mathrm{A}_N``, the dominant weight ``λ = (λ_1, …, λ_N)`` in the
+fundamental weight basis corresponds to the partition
+``μ = (μ_1 ≥ μ_2 ≥ ⋯ ≥ μ_N ≥ 0)`` where ``μ_i = λ_i + λ_{i+1} + ⋯ + λ_N``
+(partial sums from right to left), with ``μ_{N+1} = 0``.
+"""
+function _weight_to_partition(λ::WeightLatticeElem{TypeA{N},N}) where {N}
+  p = Vector{Int}(undef, N + 1)
+  p[N + 1] = 0
+  s = 0
+  for i in N:-1:1
+    s += λ.vec[i]
+    p[i] = s
+  end
+  return p
+end
+
+"""
+    _partition_to_weight(::Type{TypeA{N}}, p::Vector{Int}) -> WeightLatticeElem{TypeA{N},N}
+
+Convert a partition back to a dominant weight in the fundamental weight basis
+for ``\\mathrm{SL}_{N+1}``. First reduces the partition by subtracting the
+minimum part (to pass from ``\\mathrm{GL}`` to ``\\mathrm{SL}``), then computes
+successive differences: ``λ_i = μ_i - μ_{i+1}``.
+"""
+function _partition_to_weight(::Type{TypeA{N}}, p::Vector{Int}) where {N}
+  # Reduce: subtract the minimum part (SL quotient)
+  m = length(p) >= N + 1 ? p[N + 1] : 0
+  v = SVector{N,Int}(
+    ntuple(N) do i
+      pi = i <= length(p) ? p[i] - m : 0
+      pi_next = i + 1 <= length(p) ? p[i + 1] - m : 0
+      pi - pi_next
+    end,
+  )
+  return WeightLatticeElem{TypeA{N},N}(v)
+end
+
+"""
+    _lr_coefficients(α::Vector{Int}, β::Vector{Int}, n::Int) -> Dict{Vector{Int}, Int}
+
+Compute all Littlewood–Richardson coefficients ``c^ν_{αβ}`` for partitions
+`α` and `β`, where partitions have at most `n` parts.
+
+Returns a dictionary mapping each partition `ν` (as `Vector{Int}`) to the
+LR coefficient ``c^ν_{αβ}``.
+
+The algorithm fills the skew shape ``ν / α`` with content `β` row by row,
+enforcing:
+1. **Semistandard**: entries weakly increase along rows, strictly increase
+   down columns.
+2. **Ballot (lattice word) condition**: reading the filling right-to-left,
+   top-to-bottom, at every prefix the count of `j` ≥ count of `j+1`.
+
+We enumerate valid fillings recursively row by row, which implicitly
+determines the partition `ν`.
+"""
+function _lr_coefficients(α::Vector{Int}, β::Vector{Int}, n::Int)
+  α = copy(α)
+  β = copy(β)
+
+  # Trim trailing zeros from β
+  while length(β) > 0 && β[end] == 0
+    pop!(β)
+  end
+
+  total = sum(β; init=0)
+  nβ = length(β)
+
+  # Pad α to length n
+  while length(α) < n
+    push!(α, 0)
+  end
+
+  if total == 0 || nβ == 0
+    return Dict{Vector{Int},Int}(copy(α) => 1)
+  end
+
+  result = Dict{Vector{Int},Int}()
+
+  # We enumerate valid fillings of the skew shape ν/α row by row, choosing
+  # labels column-by-column (left to right, weakly increasing). The partition ν
+  # is determined implicitly by where each row stops.
+  #
+  # Ballot condition optimization: within a row, labels are weakly increasing
+  # (left→right), so the reading word (right→left) is weakly decreasing. This
+  # means all (j+1)-labels from a row are read before any j-labels. The ballot
+  # condition can therefore be checked at row boundaries only:
+  #   counts_prev[j] ≥ counts_prev[j+1] + row_count[j+1]  for each j
+  # where counts_prev[j] is the total count of label j from previous rows,
+  # and row_count[j+1] is the number of (j+1)-labels in the current row.
+
+  function enumerate_rows!(
+    result::Dict{Vector{Int},Int},
+    row::Int,
+    counts::Vector{Int},      # counts[j] = total uses of label j in rows 1..row-1
+    prev_labels::Vector{Int}, # prev_labels[c] = label at column c in row-1 (0 if none)
+    ν_so_far::Vector{Int},    # ν[1..row-1]
+    total_remaining::Int,
+  )
+    if total_remaining == 0
+      ν = copy(ν_so_far)
+      for i in row:n
+        push!(ν, α[i])
+      end
+      result[ν] = get(result, ν, 0) + 1
+      return nothing
+    end
+
+    if row > n
+      return nothing
+    end
+
+    # Upper bound on ν[row]: at most α[row] + remaining cells, and ≤ ν[row-1]
+    max_ν_row = α[row] + total_remaining
+    if row > 1
+      max_ν_row = min(max_ν_row, ν_so_far[row - 1])
+    end
+
+    function fill_row!(
+      col::Int,             # current column to fill (1-indexed)
+      min_label::Int,       # weakly increasing: min label at this column
+      row_counts::Vector{Int},  # row_counts[j] = #j's placed in this row so far
+      remaining::Int,
+    )
+      # Option 1: stop the row here (ν_row = col - 1)
+      ν_row = col - 1
+      if ν_row >= α[row] && (row == 1 || ν_row <= ν_so_far[row - 1])
+        # Ballot condition: counts[j] ≥ counts[j+1] + row_counts[j+1]
+        ballot_ok = true
+        for j in 1:(nβ - 1)
+          if counts[j] < counts[j + 1] + row_counts[j + 1]
+            ballot_ok = false
+            break
+          end
+        end
+
+        if ballot_ok
+          push!(ν_so_far, ν_row)
+
+          for j in 1:nβ
+            counts[j] += row_counts[j]
+          end
+          old_len = length(prev_labels)
+          while length(prev_labels) < ν_row
+            push!(prev_labels, 0)
+          end
+
+          enumerate_rows!(result, row + 1, counts, prev_labels, ν_so_far, remaining)
+
+          # Restore state
+          for j in 1:nβ
+            counts[j] -= row_counts[j]
+          end
+          while length(prev_labels) > old_len
+            pop!(prev_labels)
+          end
+          pop!(ν_so_far)
+        end
+      end
+
+      (remaining == 0 || col > max_ν_row) && return nothing
+
+      # Column-strict: label must exceed the label above
+      col_min = col <= length(prev_labels) ? prev_labels[col] + 1 : 1
+      effective_min = max(min_label, col_min)
+
+      for j in effective_min:nβ
+        row_counts[j] + counts[j] >= β[j] && continue
+
+        row_counts[j] += 1
+        old_prev = col <= length(prev_labels) ? prev_labels[col] : 0
+        if col <= length(prev_labels)
+          prev_labels[col] = j
+        else
+          while length(prev_labels) < col
+            push!(prev_labels, 0)
+          end
+          prev_labels[col] = j
+        end
+
+        fill_row!(col + 1, j, row_counts, remaining - 1)
+
+        prev_labels[col] = old_prev
+        row_counts[j] -= 1
+      end
+    end
+
+    row_counts = zeros(Int, nβ)
+    fill_row!(α[row] + 1, 1, row_counts, total_remaining)
+  end
+
+  counts = zeros(Int, nβ)
+  prev_labels = Int[]
+  ν_so_far = Int[]
+  enumerate_rows!(result, 1, counts, prev_labels, ν_so_far, total)
+
+  return result
+end
+
+"""
+    lr_tensor_product(λ::WeightLatticeElem{TypeA{N},N}, μ::WeightLatticeElem{TypeA{N},N}) -> WeylCharacter{TypeA{N},N}
+
+Decompose ``\\mathrm{V}(λ) \\otimes \\mathrm{V}(μ)`` into irreducibles using
+the Littlewood–Richardson rule. This is specific to type ``\\mathrm{A}`` and
+is typically much faster than the general Brauer–Klimyk algorithm.
+
+The algorithm converts highest weights to partitions, enumerates LR skew
+tableaux of shape ``ν / α`` with content ``β`` (where ``α`` and ``β`` are the
+partitions for ``λ`` and ``μ``), and reads off the multiplicities
+``c^ν_{αβ}``.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> ω₁ = fundamental_weight(TypeA{2}, 1); ω₂ = fundamental_weight(TypeA{2}, 2);
+
+julia> lr_tensor_product(ω₁, ω₁)
+A2(2, 0) + A2(0, 1)
+
+julia> lr_tensor_product(ω₁, ω₂)
+A2(1, 1) + A2(0, 0)
+
+julia> lr_tensor_product(ω₁ + ω₂, ω₁)  # 8 ⊗ 3 in A₂
+A2(2, 1) + A2(1, 0) + A2(0, 2)
+```
+"""
+function lr_tensor_product(
+  λ::WeightLatticeElem{TypeA{N},N}, μ::WeightLatticeElem{TypeA{N},N}
+) where {N}
+  @assert is_dominant(λ) "First weight must be dominant"
+  @assert is_dominant(μ) "Second weight must be dominant"
+
+  α = _weight_to_partition(λ)
+  β = _weight_to_partition(μ)
+
+  # Use N+1 parts for GL(N+1) → SL(N+1) reduction
+  coeffs = _lr_coefficients(α, β, N + 1)
+
+  result = Dict{WeightLatticeElem{TypeA{N},N},Int}()
+  for (ν, c) in coeffs
+    w = _partition_to_weight(TypeA{N}, ν)
+    result[w] = get(result, w, 0) + c
+  end
+
+  filter!(p -> !iszero(p.second), result)
+  return WeylCharacter{TypeA{N},N}(result)
+end
+
+export lr_tensor_product
+
+# ═══════════════════════════════════════════════════════════════════════════════
 #  Tensor product — irreducible ⊗ irreducible
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -661,6 +946,30 @@ function tensor_product(λ::WeightLatticeElem{DT,R}, μ::WeightLatticeElem{DT,R}
   else
     result = brauer_klimyk(freudenthal_formula(λ), μ)
   end
+
+  _tensor_cache[key] = result
+  return result
+end
+
+"""
+    tensor_product(λ::WeightLatticeElem{TypeA{N},N}, μ::WeightLatticeElem{TypeA{N},N}) -> WeylCharacter{TypeA{N},N}
+
+Specialization for type ``\\mathrm{A}``: uses the Littlewood–Richardson rule
+instead of Brauer–Klimyk, which is typically much faster.
+"""
+function tensor_product(
+  λ::WeightLatticeElem{TypeA{N},N}, μ::WeightLatticeElem{TypeA{N},N}
+) where {N}
+  @assert is_dominant(λ) "First weight must be dominant"
+  @assert is_dominant(μ) "Second weight must be dominant"
+
+  key = (TypeA{N}, λ, μ)
+  haskey(_tensor_cache, key) && return _tensor_cache[key]::WeylCharacter{TypeA{N},N}
+
+  key_rev = (TypeA{N}, μ, λ)
+  haskey(_tensor_cache, key_rev) && return _tensor_cache[key_rev]::WeylCharacter{TypeA{N},N}
+
+  result = lr_tensor_product(λ, μ)
 
   _tensor_cache[key] = result
   return result
@@ -744,9 +1053,14 @@ const _exterior_power_cache = Dict{Tuple{Type,Any,Int},Any}()
     symmetric_power(λ::WeightLatticeElem{DT,R}, k::Int) -> WeylCharacter{DT,R}
 
 Compute the `k`-th symmetric power ``\\mathrm{Sym}^k \\mathrm{V}(λ)`` of the irreducible
-representation with highest weight `λ`, using the Newton–Girard formula:
+representation with highest weight `λ`, using the Newton–Girard recurrence:
 
 ``k \\cdot \\mathrm{Sym}^k(\\mathrm{V}) = \\sum_{r=1}^{k} ψ^r(\\mathrm{V}) \\cdot \\mathrm{Sym}^{k-r}(\\mathrm{V})``
+
+This is the representation-ring analogue of the classical identity
+``k \\, h_k = \\sum_{r=1}^{k} p_r \\, h_{k-r}`` relating the complete
+homogeneous symmetric polynomials ``h_k`` to the power-sum polynomials ``p_r``.
+Here the Adams operator ``ψ^r`` plays the role of ``p_r``.
 
 Results are memoized for efficiency in recursive calls.
 
@@ -770,38 +1084,52 @@ function symmetric_power(λ::WeightLatticeElem{DT,R}, k::Int) where {DT,R}
   haskey(_symmetric_power_cache, cache_key) &&
     return _symmetric_power_cache[cache_key]::WeylCharacter{DT,R}
 
+  result = _symmetric_power_newton_girard(λ, k)
+
+  _symmetric_power_cache[cache_key] = result
+  return result
+end
+
+# Generic Newton–Girard: uses Brauer–Klimyk for each Adams ⊗ power term
+function _symmetric_power_newton_girard(λ::WeightLatticeElem{DT,R}, k::Int) where {DT,R}
   result = WeylCharacter(DT)
+  # Cache Freudenthal result: all Adams operators for V(λ) use the same weights
+  mults = freudenthal_formula(λ)
 
   for r in 1:k
-    adams = adams_operator(λ, r)
+    adams = Dict{SVector{R,Int},Int}(r * μ => m for (μ, m) in mults)
     prev = symmetric_power(λ, k - r)
 
-    # result += ψʳ(V) ⊗ Symᵏ⁻ʳ(V)
-    # Brauer–Klimyk each term in prev against adams
     for (μ, m) in prev.terms
       bk = brauer_klimyk(adams, μ)
       addmul!(result, bk, m)
     end
   end
 
-  # Divide by k (Newton–Girard normalization)
+  _newton_girard_divide!(result, k)
+  return result
+end
+
+function _newton_girard_divide!(result::WeylCharacter, k::Int)
   for λv in keys(result.terms)
     q, r = divrem(result.terms[λv], k)
     @assert iszero(r) "Newton–Girard: non-integer coefficient after division by k=$k"
     result.terms[λv] = q
   end
-
-  _symmetric_power_cache[cache_key] = result
-  return result
 end
 
 """
     exterior_power(λ::WeightLatticeElem{DT,R}, k::Int) -> WeylCharacter{DT,R}
 
 Compute the `k`-th exterior power ``\\bigwedge^k \\mathrm{V}(λ)`` of the irreducible
-representation with highest weight `λ`, using the Newton–Girard formula:
+representation with highest weight `λ`, using the Newton–Girard recurrence:
 
 ``k \\cdot \\bigwedge\\nolimits^k(\\mathrm{V}) = \\sum_{r=1}^{k} (-1)^{r-1} ψ^r(\\mathrm{V}) \\cdot \\bigwedge\\nolimits^{k-r}(\\mathrm{V})``
+
+This is the representation-ring analogue of the classical identity
+``k \\, e_k = \\sum_{r=1}^{k} (-1)^{r-1} p_r \\, e_{k-r}`` relating the
+elementary symmetric polynomials ``e_k`` to the power-sum polynomials ``p_r``.
+Here the Adams operator ``ψ^r`` plays the role of ``p_r``.
 
 Results are memoized for efficiency in recursive calls.
 
@@ -826,29 +1154,30 @@ function exterior_power(λ::WeightLatticeElem{DT,R}, k::Int) where {DT,R}
   haskey(_exterior_power_cache, cache_key) &&
     return _exterior_power_cache[cache_key]::WeylCharacter{DT,R}
 
+  result = _exterior_power_newton_girard(λ, k)
+
+  _exterior_power_cache[cache_key] = result
+  return result
+end
+
+# Generic Newton–Girard: uses Brauer–Klimyk for each Adams ⊗ power term
+function _exterior_power_newton_girard(λ::WeightLatticeElem{DT,R}, k::Int) where {DT,R}
   result = WeylCharacter(DT)
+  # Cache Freudenthal result: all Adams operators for V(λ) use the same weights
+  mults = freudenthal_formula(λ)
 
   for r in 1:k
-    adams = adams_operator(λ, r)
+    adams = Dict{SVector{R,Int},Int}(r * μ => m for (μ, m) in mults)
     prev = exterior_power(λ, k - r)
 
-    # result += (-1)^{r-1} * ψʳ(V) ⊗ ⋀^{k-r}(V)
     sign = iseven(r) ? -1 : 1
-
     for (μ, m) in prev.terms
       bk = brauer_klimyk(adams, μ)
       addmul!(result, bk, sign * m)
     end
   end
 
-  # Divide by k (Newton–Girard normalization)
-  for λv in keys(result.terms)
-    q, r = divrem(result.terms[λv], k)
-    @assert iszero(r) "Newton–Girard: non-integer coefficient after division by k=$k"
-    result.terms[λv] = q
-  end
-
-  _exterior_power_cache[cache_key] = result
+  _newton_girard_divide!(result, k)
   return result
 end
 
@@ -899,6 +1228,8 @@ true
 Given a dictionary of weight multiplicities (as from Freudenthal), decompose
 the representation into a formal sum of irreducibles.
 
+Supports both effective (non-negative) and virtual (mixed sign) characters.
+
 Uses the "peeling" algorithm: find the highest dominant weight, subtract
 the Freudenthal multiplicities of that irreducible, repeat.
 """
@@ -914,7 +1245,7 @@ function character_from_weights(
     # Find the highest weight: maximize ⟨λ, ρ⟩ = ∑ dᵢ λᵢ
     best = argmax(λ -> sum(d[i] * λ[i] for i in 1:R), keys(mults))
 
-    @assert all(>=(0), best) "Multiplicity dictionary is not Weyl group invariant"
+    @assert all(>=(0), best) "Highest remaining weight is not dominant — input is not Weyl-group invariant"
 
     coeff = mults[best]
     best_wt = WeightLatticeElem{DT,R}(best)
