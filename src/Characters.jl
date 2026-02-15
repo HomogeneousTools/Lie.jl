@@ -379,6 +379,16 @@ julia> mults[SVector(1, 0)]
 
 julia> sum(values(mults))  # = dim V(ω₁) = 3
 3
+
+julia> ω₂ = fundamental_weight(TypeA{2}, 2);
+
+julia> mults = freudenthal_formula(ω₁ + ω₂);  # adjoint of A₂
+
+julia> length(mults)  # 7 distinct weights
+7
+
+julia> sum(values(mults))  # dim = 8
+8
 ```
 """
 function freudenthal_formula(λ::WeightLatticeElem{DT,R}) where {DT,R}
@@ -628,6 +638,9 @@ julia> ω₁ = fundamental_weight(TypeA{2}, 1); ω₂ = fundamental_weight(TypeA
 
 julia> tensor_product(ω₁, ω₁)
 A2(2, 0) + A2(0, 1)
+
+julia> ω₁ = fundamental_weight(TypeA{3}, 1); tensor_product(ω₁, ω₁)
+A3(2, 0, 0) + A3(0, 1, 0)
 ```
 """
 function tensor_product(λ::WeightLatticeElem{DT,R}, μ::WeightLatticeElem{DT,R}) where {DT,R}
@@ -670,6 +683,12 @@ julia> ω₁ = fundamental_weight(TypeA{2}, 1); ω₂ = fundamental_weight(TypeA
 
 julia> dual(ω₁) == ω₂
 true
+
+julia> [dual(fundamental_weight(TypeA{3}, i)) for i in 1:3]
+3-element Vector{WeightLatticeElem{TypeA{3}, 3}}:
+ ω3
+ ω2
+ ω1
 ```
 """
 function dual(λ::WeightLatticeElem{DT,R}) where {DT,R}
@@ -730,6 +749,16 @@ representation with highest weight `λ`, using the Newton–Girard formula:
 ``k \\cdot \\mathrm{Sym}^k(\\mathrm{V}) = \\sum_{r=1}^{k} ψ^r(\\mathrm{V}) \\cdot \\mathrm{Sym}^{k-r}(\\mathrm{V})``
 
 Results are memoized for efficiency in recursive calls.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> spin = fundamental_weight(TypeB{3}, 3);  # B₃ spin rep, dim 8
+
+julia> Sym(6, spin)
+B3(0, 0, 6) + B3(0, 0, 4) + B3(0, 0, 2) + B3(0, 0, 0)
+```
 """
 function symmetric_power(λ::WeightLatticeElem{DT,R}, k::Int) where {DT,R}
   @assert is_dominant(λ) "Weight must be dominant"
@@ -775,6 +804,16 @@ representation with highest weight `λ`, using the Newton–Girard formula:
 ``k \\cdot \\bigwedge\\nolimits^k(\\mathrm{V}) = \\sum_{r=1}^{k} (-1)^{r-1} ψ^r(\\mathrm{V}) \\cdot \\bigwedge\\nolimits^{k-r}(\\mathrm{V})``
 
 Results are memoized for efficiency in recursive calls.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> spin = fundamental_weight(TypeB{3}, 3);  # B₃ spin rep, dim 8
+
+julia> ⋀(6, spin)
+B3(1, 0, 0) + B3(0, 1, 0)
+```
 """
 function exterior_power(λ::WeightLatticeElem{DT,R}, k::Int) where {DT,R}
   @assert is_dominant(λ) "Weight must be dominant"

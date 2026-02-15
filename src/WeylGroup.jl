@@ -515,6 +515,12 @@ julia> degree(fundamental_weight(TypeB{3}, 3))
 
 julia> degree(fundamental_weight(TypeE{8}, 8))
 248
+
+julia> [degree(fundamental_weight(TypeB{3}, i)) for i in 1:3]
+3-element Vector{BigInt}:
+  7
+ 21
+  8
 ```
 """
 function degree(::Type{DT}, hw::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R}
