@@ -23,7 +23,7 @@ export is_singular, borel_weil_bott
 The Weyl group of a root system of Dynkin type `DT` with rank `R`.
 """
 struct WeylGroup{DT<:DynkinType,R}
-    root_system::RootSystem{DT,R}
+  root_system::RootSystem{DT,R}
 end
 
 """
@@ -40,8 +40,8 @@ Weyl group of type A2
 ```
 """
 function weyl_group(::Type{DT}) where {DT<:DynkinType}
-    RS = RootSystem(DT)
-    return WeylGroup{DT,rank(DT)}(RS)
+  RS = RootSystem(DT)
+  return WeylGroup{DT,rank(DT)}(RS)
 end
 
 weyl_group(dt::DynkinType) = weyl_group(typeof(dt))
@@ -49,7 +49,7 @@ weyl_group(dt::DynkinType) = weyl_group(typeof(dt))
 root_system(W::WeylGroup) = W.root_system
 
 function Base.show(io::IO, W::WeylGroup{DT,R}) where {DT,R}
-    print(io, "Weyl group of type $(_type_name(DT))")
+  print(io, "Weyl group of type $(_type_name(DT))")
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -63,8 +63,8 @@ An element of the Weyl group, stored as a reduced word (vector of simple
 reflection indices).
 """
 struct WeylGroupElem{DT<:DynkinType,R}
-    parent::WeylGroup{DT,R}
-    word::Vector{UInt8}  # reduced word in simple reflections
+  parent::WeylGroup{DT,R}
+  word::Vector{UInt8}  # reduced word in simple reflections
 end
 
 Base.parent(x::WeylGroupElem) = x.parent
@@ -84,15 +84,15 @@ Return the length (number of simple reflections) of `x`.
 Base.length(x::WeylGroupElem) = length(x.word)
 
 Base.:(==)(x::WeylGroupElem{DT,R}, y::WeylGroupElem{DT,R}) where {DT,R} =
-    x.word == y.word
+  x.word == y.word
 Base.hash(x::WeylGroupElem, h::UInt) = hash(x.word, h)
 
 function Base.show(io::IO, x::WeylGroupElem)
-    if isempty(x.word)
-        print(io, "id")
-    else
-        print(io, join(["s$(i)" for i in x.word], " * "))
-    end
+  if isempty(x.word)
+    print(io, "id")
+  else
+    print(io, join(["s$(i)" for i in x.word], " * "))
+  end
 end
 
 # ─── Construction ────────────────────────────────────────────────────────────
@@ -104,15 +104,15 @@ Construct a Weyl group element from a word in simple reflections.
 If `normalize=true`, reduces the word to short-lex normal form.
 """
 function (W::WeylGroup{DT,R})(word_in::Vector{<:Integer}; normalize::Bool=true) where {DT,R}
-    if !normalize
-        return WeylGroupElem{DT,R}(W, UInt8.(word_in))
-    end
-    # Build up element one generator at a time using rmul!
-    x = WeylGroupElem{DT,R}(W, UInt8[])
-    for s in word_in
-        rmul!(x, UInt8(s))
-    end
-    return x
+  if !normalize
+    return WeylGroupElem{DT,R}(W, UInt8.(word_in))
+  end
+  # Build up element one generator at a time using rmul!
+  x = WeylGroupElem{DT,R}(W, UInt8[])
+  for s in word_in
+    rmul!(x, UInt8(s))
+  end
+  return x
 end
 
 """
@@ -128,8 +128,8 @@ Base.one(W::WeylGroup{DT,R}) where {DT,R} = WeylGroupElem{DT,R}(W, UInt8[])
 Return the `i`-th simple reflection.
 """
 function gen(W::WeylGroup{DT,R}, i::Integer) where {DT,R}
-    @assert 1 <= i <= R
-    return WeylGroupElem{DT,R}(W, UInt8[i])
+  @assert 1 <= i <= R
+  return WeylGroupElem{DT,R}(W, UInt8[i])
 end
 
 """
@@ -150,17 +150,17 @@ the reduced word in short-lex normal form.
 Uses the reflection table from the root system.
 """
 function rmul!(x::WeylGroupElem{DT,R}, s::UInt8) where {DT,R}
-    W = parent(x)
-    RS = W.root_system
-    refl = RS.refl
+  W = parent(x)
+  RS = W.root_system
+  refl = RS.refl
 
-    b, pos, letter = _explain_rmul(x, s, refl, R)
-    if b
-        insert!(x.word, pos, letter)
-    else
-        deleteat!(x.word, pos)
-    end
-    return x
+  b, pos, letter = _explain_rmul(x, s, refl, R)
+  if b
+    insert!(x.word, pos, letter)
+  else
+    deleteat!(x.word, pos)
+  end
+  return x
 end
 
 """
@@ -171,69 +171,69 @@ Returns `(insert::Bool, position::Int, letter::UInt8)`:
 - if `insert=false`: delete the element at `position`
 """
 function _explain_rmul(x::WeylGroupElem, s::UInt8, refl::AbstractMatrix{UInt}, rk::Int)
-    insert_index = length(x.word) + 1
-    insert_letter = s
+  insert_index = length(x.word) + 1
+  insert_letter = s
 
-    root = UInt(s)  # track which root s maps to
-    for k in length(x.word):-1:1
-        if x.word[k] == root
-            # Found: xs_k = x with letter at k removed
-            return false, k, x.word[k]
-        end
-
-        # Apply reflection s_{word[k]} to root
-        root = refl[Int(x.word[k]), Int(root)]
-
-        if iszero(root)
-            # root is no longer a minimal root, meaning we found the best insertion point
-            return true, insert_index, insert_letter
-        end
-
-        # Check if we have a better insertion point.
-        # Since word[k] is a simple root, if root < word[k] it must also be simple.
-        if root < x.word[k]
-            insert_index = k
-            insert_letter = UInt8(root)
-        end
+  root = UInt(s)  # track which root s maps to
+  for k in length(x.word):-1:1
+    if x.word[k] == root
+      # Found: xs_k = x with letter at k removed
+      return false, k, x.word[k]
     end
 
-    return true, insert_index, insert_letter
+    # Apply reflection s_{word[k]} to root
+    root = refl[Int(x.word[k]), Int(root)]
+
+    if iszero(root)
+      # root is no longer a minimal root, meaning we found the best insertion point
+      return true, insert_index, insert_letter
+    end
+
+    # Check if we have a better insertion point.
+    # Since word[k] is a simple root, if root < word[k] it must also be simple.
+    if root < x.word[k]
+      insert_index = k
+      insert_letter = UInt8(root)
+    end
+  end
+
+  return true, insert_index, insert_letter
 end
 
 # ─── Group operations ───────────────────────────────────────────────────────
 
 function Base.:*(x::WeylGroupElem{DT,R}, y::WeylGroupElem{DT,R}) where {DT,R}
-    @assert parent(x) === parent(y)
-    result = WeylGroupElem{DT,R}(parent(x), copy(x.word))
-    for s in y.word
-        rmul!(result, s)
-    end
-    return result
+  @assert parent(x) === parent(y)
+  result = WeylGroupElem{DT,R}(parent(x), copy(x.word))
+  for s in y.word
+    rmul!(result, s)
+  end
+  return result
 end
 
 function Base.inv(x::WeylGroupElem{DT,R}) where {DT,R}
-    W = parent(x)
-    y = one(W)
-    for s in Iterators.reverse(x.word)
-        rmul!(y, s)
-    end
-    return y
+  W = parent(x)
+  y = one(W)
+  for s in Iterators.reverse(x.word)
+    rmul!(y, s)
+  end
+  return y
 end
 
 Base.isone(x::WeylGroupElem) = isempty(x.word)
 
 function Base.:^(x::WeylGroupElem, n::Int)
-    W = parent(x)
-    if n == 0
-        return one(W)
-    elseif n < 0
-        return inv(x)^(-n)
-    end
-    result = one(W)
-    for _ in 1:n
-        result = result * x
-    end
-    return result
+  W = parent(x)
+  if n == 0
+    return one(W)
+  elseif n < 0
+    return inv(x)^(-n)
+  end
+  result = one(W)
+  for _ in 1:n
+    result = result * x
+  end
+  return result
 end
 
 # ─── Action on roots ────────────────────────────────────────────────────────
@@ -244,14 +244,14 @@ end
 Right action of a Weyl group element on a root space element.
 """
 function Base.:*(r::RootSpaceElem{DT,R}, x::WeylGroupElem{DT,R}) where {DT,R}
-    C = cartan_matrix(DT)
-    v = MVector{R,Int}(r.vec)
-    for s in x.word
-        # s_s(v) = v - ⟨αₛ∨, v⟩ αₛ  where ⟨αₛ∨, v⟩ = ∑ⱼ C[s,j] vⱼ
-        pairing = sum(C[s, j] * v[j] for j in 1:R)
-        v[s] -= pairing
-    end
-    return RootSpaceElem{DT,R}(SVector{R,Int}(v))
+  C = cartan_matrix(DT)
+  v = MVector{R,Int}(r.vec)
+  for s in x.word
+    # s_s(v) = v - ⟨αₛ∨, v⟩ αₛ  where ⟨αₛ∨, v⟩ = ∑ⱼ C[s,j] vⱼ
+    pairing = sum(C[s, j] * v[j] for j in 1:R)
+    v[s] -= pairing
+  end
+  return RootSpaceElem{DT,R}(SVector{R,Int}(v))
 end
 
 # ─── Action on weights ──────────────────────────────────────────────────────
@@ -262,20 +262,20 @@ end
 Right action of a Weyl group element on a weight.
 """
 function Base.:*(w::WeightLatticeElem{DT,R}, x::WeylGroupElem{DT,R}) where {DT,R}
-    C = cartan_matrix(DT)
-    v = MVector{R,Int}(w.vec)
-    for s in x.word
-        pairing = v[s]  # ⟨αₛ∨, λ⟩ = λₛ in fundamental weight coords
-        for j in 1:R
-            v[j] -= pairing * C[j, s]
-        end
+  C = cartan_matrix(DT)
+  v = MVector{R,Int}(w.vec)
+  for s in x.word
+    pairing = v[s]  # ⟨αₛ∨, λ⟩ = λₛ in fundamental weight coords
+    for j in 1:R
+      v[j] -= pairing * C[j, s]
     end
-    return WeightLatticeElem{DT,R}(SVector{R,Int}(v))
+  end
+  return WeightLatticeElem{DT,R}(SVector{R,Int}(v))
 end
 
 # ─── Longest element ────────────────────────────────────────────────────────
 
-const _longest_element_cache = Dict{Type, Any}()
+const _longest_element_cache = Dict{Type,Any}()
 
 """
     longest_element(W::WeylGroup{DT,R}) -> WeylGroupElem{DT,R}
@@ -297,35 +297,36 @@ julia> length(w₀)
 ```
 """
 function longest_element(W::WeylGroup{DT,R}) where {DT,R}
-    haskey(_longest_element_cache, DT) && return _longest_element_cache[DT]::WeylGroupElem{DT,R}
+  haskey(_longest_element_cache, DT) &&
+    return _longest_element_cache[DT]::WeylGroupElem{DT,R}
 
-    RS = W.root_system
-    np = n_positive_roots(RS)
+  RS = W.root_system
+  np = n_positive_roots(RS)
 
-    w0 = one(W)
-    # ρ in weight coords (all 1s)
-    wt = MVector{R,Int}(ntuple(j -> 1, R))
-    C = cartan_matrix(DT)
+  w0 = one(W)
+  # ρ in weight coords (all 1s)
+  wt = MVector{R,Int}(ntuple(j -> 1, R))
+  C = cartan_matrix(DT)
 
-    while true
-        found = false
-        for s in 1:R
-            if wt[s] > 0
-                # Apply s-th reflection
-                rmul!(w0, UInt8(s))
-                pairing = wt[s]
-                for j in 1:R
-                    wt[j] -= pairing * C[j, s]
-                end
-                found = true
-                break
-            end
+  while true
+    found = false
+    for s in 1:R
+      if wt[s] > 0
+        # Apply s-th reflection
+        rmul!(w0, UInt8(s))
+        pairing = wt[s]
+        for j in 1:R
+          wt[j] -= pairing * C[j, s]
         end
-        found || break
+        found = true
+        break
+      end
     end
+    found || break
+  end
 
-    _longest_element_cache[DT] = w0
-    return w0
+  _longest_element_cache[DT] = w0
+  return w0
 end
 
 # ─── Weyl group order ───────────────────────────────────────────────────────
@@ -357,7 +358,7 @@ weyl_order(::Type{TypeF4}) = BigInt(1152)
 weyl_order(::Type{TypeG2}) = BigInt(12)
 
 function weyl_order(::Type{ProductDynkinType{Ts}}) where {Ts}
-    return prod(weyl_order(T) for T in Ts.parameters)
+  return prod(weyl_order(T) for T in Ts.parameters)
 end
 
 weyl_order(dt::DynkinType) = weyl_order(typeof(dt))
@@ -378,33 +379,33 @@ julia> length(weyl_orbit(TypeA{2}, fundamental_weight(TypeA{2}, 1)))
 ```
 """
 function weyl_orbit(::Type{DT}, w::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R}
-    C = cartan_matrix(DT)
-    orbit = Set{SVector{R,Int}}()
-    push!(orbit, w.vec)
-    queue = [w.vec]
+  C = cartan_matrix(DT)
+  orbit = Set{SVector{R,Int}}()
+  push!(orbit, w.vec)
+  queue = [w.vec]
 
-    while !isempty(queue)
-        v = popfirst!(queue)
-        for s in 1:R
-            # Reflect by s-th simple reflection
-            pairing = v[s]
-            new_v = MVector{R,Int}(v)
-            for j in 1:R
-                new_v[j] -= pairing * C[j, s]
-            end
-            sv = SVector{R,Int}(new_v)
-            if sv ∉ orbit
-                push!(orbit, sv)
-                push!(queue, sv)
-            end
-        end
+  while !isempty(queue)
+    v = popfirst!(queue)
+    for s in 1:R
+      # Reflect by s-th simple reflection
+      pairing = v[s]
+      new_v = MVector{R,Int}(v)
+      for j in 1:R
+        new_v[j] -= pairing * C[j, s]
+      end
+      sv = SVector{R,Int}(new_v)
+      if sv ∉ orbit
+        push!(orbit, sv)
+        push!(queue, sv)
+      end
     end
+  end
 
-    return [WeightLatticeElem{DT,R}(v) for v in orbit]
+  return [WeightLatticeElem{DT,R}(v) for v in orbit]
 end
 
 function weyl_orbit(w::WeightLatticeElem{DT,R}) where {DT,R}
-    return weyl_orbit(DT, w)
+  return weyl_orbit(DT, w)
 end
 
 # ─── Dominant weights ────────────────────────────────────────────────────────
@@ -416,35 +417,35 @@ Compute the dominant weights occurring in the irreducible representation
 with highest weight `hw`, sorted by decreasing height.
 """
 function dominant_weights(::Type{DT}, hw::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R}
-    @assert is_dominant(hw) "Highest weight must be dominant"
-    RS = RootSystem(DT)
+  @assert is_dominant(hw) "Highest weight must be dominant"
+  RS = RootSystem(DT)
 
-    pos_roots_w = [WeightLatticeElem(pr) for pr in positive_roots(RS)]
+  pos_roots_w = [WeightLatticeElem(pr) for pr in positive_roots(RS)]
 
-    result = Set{SVector{R,Int}}([hw.vec])
-    todo = [hw]
+  result = Set{SVector{R,Int}}([hw.vec])
+  todo = [hw]
 
-    while !isempty(todo)
-        new_todo = WeightLatticeElem{DT,R}[]
-        for w in todo
-            for α_w in pos_roots_w
-                w_sub = w - α_w
-                if is_dominant(w_sub) && w_sub.vec ∉ result
-                    push!(result, w_sub.vec)
-                    push!(new_todo, w_sub)
-                end
-            end
+  while !isempty(todo)
+    new_todo = WeightLatticeElem{DT,R}[]
+    for w in todo
+      for α_w in pos_roots_w
+        w_sub = w - α_w
+        if is_dominant(w_sub) && w_sub.vec ∉ result
+          push!(result, w_sub.vec)
+          push!(new_todo, w_sub)
         end
-        todo = new_todo
+      end
     end
+    todo = new_todo
+  end
 
-    weights = [WeightLatticeElem{DT,R}(v) for v in result]
-    sort!(weights; by=w -> -sum(w.vec))
-    return weights
+  weights = [WeightLatticeElem{DT,R}(v) for v in result]
+  sort!(weights; by=w -> -sum(w.vec))
+  return weights
 end
 
 function dominant_weights(hw::WeightLatticeElem{DT,R}) where {DT,R}
-    return dominant_weights(DT, hw)
+  return dominant_weights(DT, hw)
 end
 
 # ─── Dimension of simple module (Weyl dimension formula) ────────────────────
@@ -457,17 +458,17 @@ The inner product uses the Cartan symmetrizer: `⟨ρ, α⟩ = ∑ᵢ dᵢ αᵢ
 `ρ` has all-ones coordinates in the fundamental weight basis.
 """
 @generated function _weyl_denominator(::Type{DT}) where {DT<:DynkinType}
-    R = rank(DT)
-    d = _cartan_symmetrizer_data(DT)
-    C = _cartan_matrix_data(DT)
-    C_sm = SMatrix{R,R,Int,R*R}(Tuple(C))
-    pos_roots, _, _ = _compute_positive_roots_and_reflections(C_sm, R)
-    denom = BigInt(1)
-    for α in pos_roots
-        ip = sum(d[i] * α[i] for i in 1:R)
-        denom *= ip
-    end
-    return :($denom)
+  R = rank(DT)
+  d = _cartan_symmetrizer_data(DT)
+  C = _cartan_matrix_data(DT)
+  C_sm = SMatrix{R,R,Int,R * R}(Tuple(C))
+  pos_roots, _, _ = _compute_positive_roots_and_reflections(C_sm, R)
+  denom = BigInt(1)
+  for α in pos_roots
+    ip = sum(d[i] * α[i] for i in 1:R)
+    denom *= ip
+  end
+  return :($denom)
 end
 
 """
@@ -477,16 +478,16 @@ Return the symmetrizer-scaled positive root vectors `d .* α` for Dynkin type `D
 precomputed at compile time. The inner product `⟨w, α⟩ = ∑ᵢ wᵢ dᵢ αᵢ = w ⋅ (d.*α)`.
 """
 @generated function _weyl_dim_scaled_roots(::Type{DT}) where {DT<:DynkinType}
-    R = rank(DT)
-    d = _cartan_symmetrizer_data(DT)
-    C = _cartan_matrix_data(DT)
-    C_sm = SMatrix{R,R,Int,R*R}(Tuple(C))
-    pos_roots, _, _ = _compute_positive_roots_and_reflections(C_sm, R)
-    N = length(pos_roots)
+  R = rank(DT)
+  d = _cartan_symmetrizer_data(DT)
+  C = _cartan_matrix_data(DT)
+  C_sm = SMatrix{R,R,Int,R * R}(Tuple(C))
+  pos_roots, _, _ = _compute_positive_roots_and_reflections(C_sm, R)
+  N = length(pos_roots)
 
-    # d-scaled roots as tuple of tuples
-    scaled = Tuple(Tuple(d[i] * α[i] for i in 1:R) for α in pos_roots)
-    return :(NTuple{$N, SVector{$R,Int}}($scaled))
+  # d-scaled roots as tuple of tuples
+  scaled = Tuple(Tuple(d[i] * α[i] for i in 1:R) for α in pos_roots)
+  return :(NTuple{$N,SVector{$R,Int}}($scaled))
 end
 
 """
@@ -496,7 +497,7 @@ end
 Dimension of the irreducible representation with highest weight `hw`,
 computed via the Weyl dimension formula:
 
-``\\dim V(λ) = \\prod_{α > 0} \\frac{⟨λ + ρ, α⟩}{⟨ρ, α⟩}``
+``\\dim \\mathrm{V}(λ) = \\prod_{α > 0} \\frac{⟨λ + ρ, α⟩}{⟨ρ, α⟩}``
 
 The denominator `∏ ⟨ρ, α⟩` and the symmetrizer-scaled root vectors are
 precomputed at compile time. The numerator `∏ ⟨λ+ρ, α⟩` is computed as
@@ -517,29 +518,29 @@ julia> degree(fundamental_weight(TypeE{8}, 8))
 ```
 """
 function degree(::Type{DT}, hw::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R}
-    @assert is_dominant(hw) "Highest weight must be dominant"
+  @assert is_dominant(hw) "Highest weight must be dominant"
 
-    denom  = _weyl_denominator(DT)
-    dα_all = _weyl_dim_scaled_roots(DT)
-    λ_ρ    = hw + weyl_vector(DT)
+  denom = _weyl_denominator(DT)
+  dα_all = _weyl_dim_scaled_roots(DT)
+  λ_ρ = hw + weyl_vector(DT)
 
-    # Numerator: ∏_{α>0} ⟨λ+ρ, α⟩, computed in-place with GMP mul_si!
-    numer = BigInt(1)
-    for dα in dα_all
-        ip = zero(Int)
-        for i in 1:R
-            ip += λ_ρ.vec[i] * dα[i]
-        end
-        Base.GMP.MPZ.mul_si!(numer, numer, ip)
+  # Numerator: ∏_{α>0} ⟨λ+ρ, α⟩, computed in-place with GMP mul_si!
+  numer = BigInt(1)
+  for dα in dα_all
+    ip = zero(Int)
+    for i in 1:R
+      ip += λ_ρ.vec[i] * dα[i]
     end
+    Base.GMP.MPZ.mul_si!(numer, numer, ip)
+  end
 
-    result, rem = divrem(numer, denom)
-    @assert iszero(rem) "Weyl dimension formula gave non-integer result"
-    return result
+  result, rem = divrem(numer, denom)
+  @assert iszero(rem) "Weyl dimension formula gave non-integer result"
+  return result
 end
 
 function degree(hw::WeightLatticeElem{DT,R}) where {DT,R}
-    return degree(DT, hw)
+  return degree(DT, hw)
 end
 
 """
@@ -564,8 +565,8 @@ weight coordinate is zero. For a general weight, we first conjugate to the
 dominant chamber.
 """
 function is_singular(w::WeightLatticeElem{DT,R}) where {DT,R}
-    dom = conjugate_dominant_weight(w)
-    return any(i -> dom.vec[i] == 0, 1:R)
+  dom = conjugate_dominant_weight(w)
+  return any(i -> dom.vec[i] == 0, 1:R)
 end
 
 # ─── Borel–Weil–Bott ────────────────────────────────────────────────────────
@@ -580,7 +581,7 @@ Compute `μ = λ + ρ` and find the unique Weyl group element `w` such that
 all cohomology vanishes and we return `nothing`. Otherwise, return
 `(d, w(μ) - ρ)` where `d = ℓ(w)` is the cohomological degree, meaning
 
-``H^d(G/B, \\mathcal{L}_λ) \\cong V_{w(μ)-ρ}^*``
+``\\mathrm{H}^d(G/B, \\mathcal{L}_λ) \\cong \\mathrm{V}_{w(μ)-ρ}^*``
 
 and all other cohomology groups vanish.
 
@@ -599,14 +600,14 @@ true
 ```
 """
 function borel_weil_bott(λ::WeightLatticeElem{DT,R}) where {DT,R}
-    ρ = weyl_vector(DT)
-    μ = λ + ρ
+  ρ = weyl_vector(DT)
+  μ = λ + ρ
 
-    # Move μ to the dominant chamber; the number of reflections is the degree
-    μ_dom, word = conjugate_dominant_weight_with_elem(μ)
+  # Move μ to the dominant chamber; the number of reflections is the degree
+  μ_dom, word = conjugate_dominant_weight_with_elem(μ)
 
-    # If μ_dom is the zero weight, λ + ρ is singular → no cohomology
-    iszero(μ_dom) && return nothing
+  # If μ_dom is the zero weight, λ + ρ is singular → no cohomology
+  iszero(μ_dom) && return nothing
 
-    return (length(word), μ_dom - ρ)
+  return (length(word), μ_dom - ρ)
 end

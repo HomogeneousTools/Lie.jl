@@ -29,11 +29,11 @@ abstract type SimpleDynkinType <: DynkinType end
 Dynkin type ``\\mathrm{A}_N`` (``\\mathrm{SL}_{N+1}``). Valid for ``N \\ge 1``.
 """
 struct TypeA{N} <: SimpleDynkinType
-    function TypeA{N}() where {N}
-        N::Int
-        N >= 1 || throw(ArgumentError("TypeA{N} requires N ≥ 1, got N=$N"))
-        new{N}()
-    end
+  function TypeA{N}() where {N}
+    N::Int
+    N >= 1 || throw(ArgumentError("TypeA{N} requires N ≥ 1, got N=$N"))
+    new{N}()
+  end
 end
 TypeA(n::Int) = TypeA{n}()
 
@@ -43,11 +43,11 @@ TypeA(n::Int) = TypeA{n}()
 Dynkin type ``\\mathrm{B}_N`` (``\\mathrm{SO}_{2N+1}``). Valid for ``N \\ge 2``.
 """
 struct TypeB{N} <: SimpleDynkinType
-    function TypeB{N}() where {N}
-        N::Int
-        N >= 2 || throw(ArgumentError("TypeB{N} requires N ≥ 2, got N=$N"))
-        new{N}()
-    end
+  function TypeB{N}() where {N}
+    N::Int
+    N >= 2 || throw(ArgumentError("TypeB{N} requires N ≥ 2, got N=$N"))
+    new{N}()
+  end
 end
 TypeB(n::Int) = TypeB{n}()
 
@@ -57,11 +57,11 @@ TypeB(n::Int) = TypeB{n}()
 Dynkin type ``\\mathrm{C}_N`` (``\\mathrm{Sp}_{2N}``). Valid for ``N \\ge 2``.
 """
 struct TypeC{N} <: SimpleDynkinType
-    function TypeC{N}() where {N}
-        N::Int
-        N >= 2 || throw(ArgumentError("TypeC{N} requires N ≥ 2, got N=$N"))
-        new{N}()
-    end
+  function TypeC{N}() where {N}
+    N::Int
+    N >= 2 || throw(ArgumentError("TypeC{N} requires N ≥ 2, got N=$N"))
+    new{N}()
+  end
 end
 TypeC(n::Int) = TypeC{n}()
 
@@ -71,11 +71,11 @@ TypeC(n::Int) = TypeC{n}()
 Dynkin type ``\\mathrm{D}_N`` (``\\mathrm{SO}_{2N}``). Valid for ``N \\ge 4``.
 """
 struct TypeD{N} <: SimpleDynkinType
-    function TypeD{N}() where {N}
-        N::Int
-        N >= 4 || throw(ArgumentError("TypeD{N} requires N ≥ 4, got N=$N"))
-        new{N}()
-    end
+  function TypeD{N}() where {N}
+    N::Int
+    N >= 4 || throw(ArgumentError("TypeD{N} requires N ≥ 4, got N=$N"))
+    new{N}()
+  end
 end
 TypeD(n::Int) = TypeD{n}()
 
@@ -87,11 +87,11 @@ TypeD(n::Int) = TypeD{n}()
 Dynkin type ``\\mathrm{E}_N`` for ``N \\in \\{6,7,8\\}``.
 """
 struct TypeE{N} <: SimpleDynkinType
-    function TypeE{N}() where {N}
-        N::Int
-        N in (6, 7, 8) || throw(ArgumentError("TypeE{N} requires N ∈ {6,7,8}, got N=$N"))
-        new{N}()
-    end
+  function TypeE{N}() where {N}
+    N::Int
+    N in (6, 7, 8) || throw(ArgumentError("TypeE{N} requires N ∈ {6,7,8}, got N=$N"))
+    new{N}()
+  end
 end
 TypeE(n::Int) = TypeE{n}()
 
@@ -123,13 +123,13 @@ ProductDynkinType{Tuple{TypeA{3}, TypeD{5}, TypeE{6}}}()   # A₃ × D₅ × E�
 ```
 """
 struct ProductDynkinType{Ts<:Tuple} <: DynkinType
-    function ProductDynkinType{Ts}() where {Ts<:Tuple}
-        # Validate all components are SimpleDynkinType
-        for T in Ts.parameters
-            T <: SimpleDynkinType || throw(ArgumentError("$T is not a SimpleDynkinType"))
-        end
-        new{Ts}()
+  function ProductDynkinType{Ts}() where {Ts<:Tuple}
+    # Validate all components are SimpleDynkinType
+    for T in Ts.parameters
+      T <: SimpleDynkinType || throw(ArgumentError("$T is not a SimpleDynkinType"))
     end
+    new{Ts}()
+  end
 end
 
 """
@@ -138,8 +138,8 @@ end
 Convenience constructor for product types from instances.
 """
 function ProductDynkinType(types::SimpleDynkinType...)
-    Ts = Tuple{typeof.(types)...}
-    return ProductDynkinType{Ts}()
+  Ts = Tuple{typeof.(types)...}
+  return ProductDynkinType{Ts}()
 end
 
 # ─── Rank ────────────────────────────────────────────────────────────────────
@@ -170,7 +170,7 @@ rank(::Type{TypeF4}) = 4
 rank(::Type{TypeG2}) = 2
 
 @generated function rank(::Type{ProductDynkinType{Ts}}) where {Ts}
-    return sum(rank(T) for T in Ts.parameters)
+  return sum(rank(T) for T in Ts.parameters)
 end
 
 # Instance versions
@@ -205,7 +205,7 @@ n_positive_roots(::Type{TypeF4}) = 24
 n_positive_roots(::Type{TypeG2}) = 6
 
 @generated function n_positive_roots(::Type{ProductDynkinType{Ts}}) where {Ts}
-    return sum(n_positive_roots(T) for T in Ts.parameters)
+  return sum(n_positive_roots(T) for T in Ts.parameters)
 end
 
 n_positive_roots(dt::DynkinType) = n_positive_roots(typeof(dt))
@@ -218,7 +218,7 @@ n_positive_roots(dt::DynkinType) = n_positive_roots(typeof(dt))
 Number of simple factors in a product type.
 """
 @generated function n_components(::Type{ProductDynkinType{Ts}}) where {Ts}
-    return length(Ts.parameters)
+  return length(Ts.parameters)
 end
 
 n_components(::Type{<:SimpleDynkinType}) = 1
@@ -229,8 +229,8 @@ n_components(dt::DynkinType) = n_components(typeof(dt))
 
 Return the i-th simple Dynkin type in a product.
 """
-@generated function component_type(::Type{ProductDynkinType{Ts}}, ::Val{I}) where {Ts, I}
-    return Ts.parameters[I]
+@generated function component_type(::Type{ProductDynkinType{Ts}}, ::Val{I}) where {Ts,I}
+  return Ts.parameters[I]
 end
 
 """
@@ -239,7 +239,7 @@ end
 Return a tuple of ranks of the components.
 """
 @generated function component_ranks(::Type{ProductDynkinType{Ts}}) where {Ts}
-    return Tuple(rank(T) for T in Ts.parameters)
+  return Tuple(rank(T) for T in Ts.parameters)
 end
 
 """
@@ -249,9 +249,9 @@ Return a tuple of starting index offsets for each component in the product type.
 The i-th component occupies indices offset[i]+1 : offset[i]+rank(component_i).
 """
 @generated function component_offsets(::Type{ProductDynkinType{Ts}}) where {Ts}
-    ranks = [rank(T) for T in Ts.parameters]
-    offsets = cumsum([0; ranks[1:end-1]])
-    return Tuple(offsets)
+  ranks = [rank(T) for T in Ts.parameters]
+  offsets = cumsum([0; ranks[1:(end - 1)]])
+  return Tuple(offsets)
 end
 
 # ─── Display ─────────────────────────────────────────────────────────────────
@@ -265,8 +265,8 @@ _type_name(::Type{TypeF4}) = "F4"
 _type_name(::Type{TypeG2}) = "G2"
 
 @generated function _type_name(::Type{ProductDynkinType{Ts}}) where {Ts}
-    names = [_type_name(T) for T in Ts.parameters]
-    return join(names, " × ")
+  names = [_type_name(T) for T in Ts.parameters]
+  return join(names, " × ")
 end
 
 Base.show(io::IO, dt::SimpleDynkinType) = print(io, _type_name(typeof(dt)))
