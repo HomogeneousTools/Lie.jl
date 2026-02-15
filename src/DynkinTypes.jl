@@ -26,7 +26,7 @@ abstract type SimpleDynkinType <: DynkinType end
 """
     TypeA{N} <: SimpleDynkinType
 
-Dynkin type ``A_N`` (``\\mathrm{SL}_{N+1}``). Valid for ``N \\ge 1``.
+Dynkin type ``\\mathrm{A}_N`` (``\\mathrm{SL}_{N+1}``). Valid for ``N \\ge 1``.
 """
 struct TypeA{N} <: SimpleDynkinType
     function TypeA{N}() where {N}
@@ -40,7 +40,7 @@ TypeA(n::Int) = TypeA{n}()
 """
     TypeB{N} <: SimpleDynkinType
 
-Dynkin type ``B_N`` (``\\mathrm{SO}_{2N+1}``). Valid for ``N \\ge 2``.
+Dynkin type ``\\mathrm{B}_N`` (``\\mathrm{SO}_{2N+1}``). Valid for ``N \\ge 2``.
 """
 struct TypeB{N} <: SimpleDynkinType
     function TypeB{N}() where {N}
@@ -54,7 +54,7 @@ TypeB(n::Int) = TypeB{n}()
 """
     TypeC{N} <: SimpleDynkinType
 
-Dynkin type ``C_N`` (``\\mathrm{Sp}_{2N}``). Valid for ``N \\ge 2``.
+Dynkin type ``\\mathrm{C}_N`` (``\\mathrm{Sp}_{2N}``). Valid for ``N \\ge 2``.
 """
 struct TypeC{N} <: SimpleDynkinType
     function TypeC{N}() where {N}
@@ -68,7 +68,7 @@ TypeC(n::Int) = TypeC{n}()
 """
     TypeD{N} <: SimpleDynkinType
 
-Dynkin type ``D_N`` (``\\mathrm{SO}_{2N}``). Valid for ``N \\ge 4``.
+Dynkin type ``\\mathrm{D}_N`` (``\\mathrm{SO}_{2N}``). Valid for ``N \\ge 4``.
 """
 struct TypeD{N} <: SimpleDynkinType
     function TypeD{N}() where {N}
@@ -84,7 +84,7 @@ TypeD(n::Int) = TypeD{n}()
 """
     TypeE{N} <: SimpleDynkinType
 
-Dynkin type ``E_N`` for ``N \\in \\{6,7,8\\}``.
+Dynkin type ``\\mathrm{E}_N`` for ``N \\in \\{6,7,8\\}``.
 """
 struct TypeE{N} <: SimpleDynkinType
     function TypeE{N}() where {N}
@@ -98,14 +98,14 @@ TypeE(n::Int) = TypeE{n}()
 """
     TypeF4 <: SimpleDynkinType
 
-Dynkin type ``F_4``.
+Dynkin type ``\\mathrm{F}_4``.
 """
 struct TypeF4 <: SimpleDynkinType end
 
 """
     TypeG2 <: SimpleDynkinType
 
-Dynkin type ``G_2``.
+Dynkin type ``\\mathrm{G}_2``.
 """
 struct TypeG2 <: SimpleDynkinType end
 
@@ -149,6 +149,17 @@ end
 
 Return the rank (dimension of the Cartan subalgebra) of the Dynkin type `DT`.
 This is a compile-time constant.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> rank(TypeA{3})
+3
+
+julia> rank(TypeE{8})
+8
+```
 """
 rank(::Type{TypeA{N}}) where {N} = N
 rank(::Type{TypeB{N}}) where {N} = N
@@ -171,6 +182,17 @@ rank(dt::DynkinType) = rank(typeof(dt))
     n_positive_roots(::Type{DT}) -> Int
 
 Number of positive roots for a simple Dynkin type.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> n_positive_roots(TypeA{3})
+6
+
+julia> n_positive_roots(TypeE{8})
+120
+```
 """
 n_positive_roots(::Type{TypeA{N}}) where {N} = N * (N + 1) ÷ 2
 n_positive_roots(::Type{TypeB{N}}) where {N} = N^2
