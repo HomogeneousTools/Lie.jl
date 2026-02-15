@@ -5,38 +5,52 @@ Weyl groups, weight lattices, and representation-theoretic operations.
 
 ## Features
 
-- **Dynkin types**: type-level classification (`TypeA{N}`, `TypeB{N}`, …, `TypeG2`, products)
-- **Cartan matrices**: compile-time `@generated` Cartan matrices, symmetrizers, bilinear forms
-- **Root systems**: positive roots, coroots, reflection tables (immutable singletons)
-- **Weight lattice**: fundamental weights, Weyl vector, dominance, conjugation
-- **Weyl groups**: reduced words, multiplication via reflection tables, orbits, dimension formula
-- **Characters**: Weyl characters (representation ring), Freudenthal formula, Brauer–Klimyk
-  tensor products, Adams operators, symmetric/exterior powers, Borel–Weil–Bott
+- **Dynkin types** — Type-level classification (`TypeA{N}`, `TypeB{N}`, …, `TypeG2`, products) with text Dynkin diagrams
+- **Cartan matrices** — Compile-time `@generated` Cartan matrices, symmetrisers, bilinear forms
+- **Root systems** — Positive roots, coroots, reflection tables (immutable singletons)
+- **Weight lattice** — Fundamental weights, Weyl vector, dominance, conjugation
+- **Weyl groups** — Reduced words, multiplication via reflection tables, orbits, dimension formula
+- **Characters** — Weyl characters (representation ring), Freudenthal formula, Brauer–Klimyk
+  tensor products, Littlewood–Richardson (Type A), Adams operators, symmetric/exterior powers,
+  Borel–Weil–Bott
+
+## Installation
+
+```julia
+using Pkg
+Pkg.add(url="https://github.com/…/Lie.jl")
+```
 
 ## Quick start
 
-```julia
-using Lie
+```jldoctest quickstart
+julia> using Lie
 
-# Fundamental weights of A₃
-ω₁ = fundamental_weight(TypeA{3}, 1)
-ω₂ = fundamental_weight(TypeA{3}, 2)
+julia> ω₁ = fundamental_weight(TypeA{3}, 1)
+ω1
 
-# Dimension of the standard representation
-degree(ω₁)   # 4
+julia> degree(ω₁)   # dimension of the standard representation
+4
 
-# Tensor product decomposition
-tensor_product(ω₁, ω₁)   # Sym² ⊕ ⋀²
+julia> tensor_product(ω₁, ω₁)   # V(ω₁) ⊗ V(ω₁) = Sym²V ⊕ ⋀²V
+A3(2, 0, 0) + A3(0, 1, 0)
 
-# Weyl orbit
-length(weyl_orbit(TypeA{3}, ω₁))   # 4
+julia> length(weyl_orbit(TypeA{3}, ω₁))
+4
 
-# Borel–Weil–Bott
-borel_weil_bott(ω₁)   # (0, ω₁)
+julia> borel_weil_bott(ω₁)
+(0, ω1)
 ```
 
-## API Reference
+## Contents
 
-```@autodocs
-Modules = [Lie]
+```@contents
+Pages = [
+    "types.md",
+    "roots.md",
+    "weights.md",
+    "weyl.md",
+    "characters.md",
+]
+Depth = 2
 ```
