@@ -1,0 +1,4 @@
+*.sw*
+benchmark/results
+docs/build
+
