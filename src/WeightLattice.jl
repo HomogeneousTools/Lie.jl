@@ -9,7 +9,6 @@
 export WeightLatticeElem
 export fundamental_weight, fundamental_weights, weyl_vector
 export is_dominant, conjugate_dominant_weight, conjugate_dominant_weight_with_elem
-export weight_to_root_coeffs, root_to_weight_coeffs
 export reflect
 
 # ═══════════════════════════════════════════════════════════════════════════════

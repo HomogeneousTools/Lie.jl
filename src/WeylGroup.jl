@@ -46,6 +46,11 @@ end
 
 weyl_group(dt::DynkinType) = weyl_group(typeof(dt))
 
+"""
+    root_system(W::WeylGroup) -> RootSystem
+
+Return the root system underlying the Weyl group `W`.
+"""
 root_system(W::WeylGroup) = W.root_system
 
 function Base.show(io::IO, W::WeylGroup{DT,R}) where {DT,R}

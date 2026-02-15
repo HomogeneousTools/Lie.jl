@@ -10,7 +10,7 @@ export RootSystem, RootSpaceElem
 export simple_roots, simple_root, positive_roots, positive_root
 export negative_roots, negative_root, roots, root
 export n_roots, n_simple_roots, highest_root
-export coroots, simple_coroots, positive_coroots
+export simple_coroots, positive_coroots
 export is_root, is_positive_root, height
 export dot, coefficients
 
@@ -42,6 +42,13 @@ function RootSpaceElem(::Type{DT}, v::AbstractVector{<:Integer}) where {DT<:Dynk
   return RootSpaceElem(DT, SVector{R,Int}(v...))
 end
 
+"""
+    coefficients(r::RootSpaceElem) -> SVector
+    coefficients(w::WeightLatticeElem) -> SVector
+
+Return the coordinate vector of a root space element (in the simple root basis)
+or of a weight lattice element (in the fundamental weight basis).
+"""
 coefficients(r::RootSpaceElem) = r.vec
 
 Base.:+(a::RootSpaceElem{DT,R}, b::RootSpaceElem{DT,R}) where {DT,R} =
@@ -266,8 +273,25 @@ end
 
 # ─── Accessors ───────────────────────────────────────────────────────────────
 
+"""
+    n_simple_roots(RS::RootSystem) -> Int
+
+Return the number of simple roots, equal to the rank of the root system.
+"""
 n_simple_roots(RS::RootSystem{DT,R}) where {DT,R} = R
+
+"""
+    n_positive_roots(RS::RootSystem) -> Int
+
+Return the number of positive roots.
+"""
 n_positive_roots(RS::RootSystem) = length(RS.positive_roots_list)
+
+"""
+    n_roots(RS::RootSystem) -> Int
+
+Return the total number of roots (positive and negative).
+"""
 n_roots(RS::RootSystem) = 2 * n_positive_roots(RS)
 
 """
