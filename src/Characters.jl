@@ -325,9 +325,17 @@ julia> V = WeylCharacter(ω₁);
 
 julia> V * V == Sym(2, ω₁) + ⋀(2, ω₁)
 true
+
+julia> V^3  # right-to-left tensor power
+A2(3, 0) + 2*A2(1, 1) + A2(0, 0)
 ```
 """
 function tensor_product(V::WeylCharacter{DT,R}, W::WeylCharacter{DT,R}) where {DT,R}
+  # Swap so the character with fewer terms is the outer loop (decomposed
+  # via Freudenthal). This mirrors SageMath's product_on_basis optimization.
+  if length(V.terms) > length(W.terms)
+    V, W = W, V
+  end
   result = WeylCharacter(DT)
   for (λ, m) in V.terms
     for (μ, n) in W.terms
