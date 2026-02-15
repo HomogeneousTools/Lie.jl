@@ -309,25 +309,21 @@ end
 
 Return the order of the Weyl group of type `DT`.
 """
-function weyl_order(::Type{DT}) where {DT<:DynkinType}
-    return _weyl_order(DT)
+weyl_order(::Type{TypeA{N}}) where {N} = factorial(BigInt(N + 1))
+weyl_order(::Type{TypeB{N}}) where {N} = factorial(BigInt(N)) * BigInt(2)^N
+weyl_order(::Type{TypeC{N}}) where {N} = factorial(BigInt(N)) * BigInt(2)^N
+weyl_order(::Type{TypeD{N}}) where {N} = factorial(BigInt(N)) * BigInt(2)^(N - 1)
+weyl_order(::Type{TypeE{6}}) = BigInt(51840)
+weyl_order(::Type{TypeE{7}}) = BigInt(2903040)
+weyl_order(::Type{TypeE{8}}) = BigInt(696729600)
+weyl_order(::Type{TypeF4}) = BigInt(1152)
+weyl_order(::Type{TypeG2}) = BigInt(12)
+
+function weyl_order(::Type{ProductDynkinType{Ts}}) where {Ts}
+    return prod(weyl_order(T) for T in Ts.parameters)
 end
 
 weyl_order(dt::DynkinType) = weyl_order(typeof(dt))
-
-_weyl_order(::Type{TypeA{N}}) where {N} = factorial(BigInt(N + 1))
-_weyl_order(::Type{TypeB{N}}) where {N} = factorial(BigInt(N)) * BigInt(2)^N
-_weyl_order(::Type{TypeC{N}}) where {N} = factorial(BigInt(N)) * BigInt(2)^N
-_weyl_order(::Type{TypeD{N}}) where {N} = factorial(BigInt(N)) * BigInt(2)^(N - 1)
-_weyl_order(::Type{TypeE{6}}) = BigInt(51840)
-_weyl_order(::Type{TypeE{7}}) = BigInt(2903040)
-_weyl_order(::Type{TypeE{8}}) = BigInt(696729600)
-_weyl_order(::Type{TypeF4}) = BigInt(1152)
-_weyl_order(::Type{TypeG2}) = BigInt(12)
-
-function _weyl_order(::Type{ProductDynkinType{Ts}}) where {Ts}
-    return prod(_weyl_order(T) for T in Ts.parameters)
-end
 
 # ─── Weyl orbit ──────────────────────────────────────────────────────────────
 
