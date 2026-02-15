@@ -194,6 +194,44 @@ end
 
 Base.:*(V::WeylCharacter, a::Integer) = a * V
 
+"""
+    ^(V::WeylCharacter, n::Integer) -> WeylCharacter
+
+Compute the `n`-th tensor power of `V`.
+
+Uses right-to-left sequential multiplication `V * (V * (V * V))` rather
+than repeated squaring, because the Brauer–Klimyk algorithm is faster
+when one factor is small (the original irreducible) and the other grows.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> ω₁ = fundamental_weight(TypeA{2}, 1);
+
+julia> V = WeylCharacter(ω₁);
+
+julia> V^2 == tensor_product(ω₁, ω₁)
+true
+
+julia> V^0 == WeylCharacter(zero(ω₁))
+true
+```
+"""
+function Base.:^(V::WeylCharacter{DT,R}, n::Integer) where {DT,R}
+  n < 0 && throw(ArgumentError("WeylCharacter power requires n ≥ 0"))
+  n == 0 && return WeylCharacter(WeightLatticeElem{DT,R}(zero(SVector{R,Int})))
+  n == 1 && return V
+  # Right-to-left sequential multiplication: V * (V * (V * ⋯))
+  # This is more efficient for Brauer–Klimyk than repeated squaring,
+  # because each intermediate product is tensored with the small factor V.
+  result = V
+  for _ in 2:n
+    result = V * result
+  end
+  return result
+end
+
 Base.:(==)(V::WeylCharacter{DT,R}, W::WeylCharacter{DT,R}) where {DT,R} =
   V.terms == W.terms
 
