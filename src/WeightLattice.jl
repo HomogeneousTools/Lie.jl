@@ -95,6 +95,17 @@ end
     fundamental_weight(::Type{DT}, i) -> WeightLatticeElem{DT}
 
 Return the `i`-th fundamental weight ωᵢ.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> fundamental_weight(TypeA{3}, 1)
+ω1
+
+julia> fundamental_weight(TypeB{2}, 2)
+ω2
+```
 """
 function fundamental_weight(::Type{DT}, i::Integer) where {DT<:DynkinType}
     R = rank(DT)
@@ -114,6 +125,14 @@ end
     weyl_vector(::Type{DT}) -> WeightLatticeElem{DT}
 
 Return the Weyl vector ρ = ω₁ + ω₂ + ⋯ + ωᵣ = ½∑_{α>0} α.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> weyl_vector(TypeA{3})
+ω1 + ω2 + ω3
+```
 """
 function weyl_vector(::Type{DT}) where {DT<:DynkinType}
     R = rank(DT)
@@ -126,6 +145,17 @@ end
     is_dominant(w::WeightLatticeElem) -> Bool
 
 A weight is dominant iff all its coordinates (pairings with simple coroots) are ≥ 0.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> is_dominant(fundamental_weight(TypeA{2}, 1))
+true
+
+julia> is_dominant(WeightLatticeElem(TypeA{2}, [-1, 1]))
+false
+```
 """
 is_dominant(w::WeightLatticeElem) = all(>=(0), w.vec)
 
@@ -224,6 +254,17 @@ end
     conjugate_dominant_weight(w::WeightLatticeElem{DT,R}) -> WeightLatticeElem{DT,R}
 
 Return the unique dominant weight in the Weyl orbit of `w`.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> conjugate_dominant_weight(WeightLatticeElem(TypeA{2}, [-1, 1]))
+ω1
+
+julia> conjugate_dominant_weight(fundamental_weight(TypeA{3}, 1))
+ω1
+```
 """
 function conjugate_dominant_weight(w::WeightLatticeElem{DT,R}) where {DT,R}
     v = MVector{R,Int}(w.vec)
