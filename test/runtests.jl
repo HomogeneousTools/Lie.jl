@@ -267,57 +267,60 @@ using StaticArrays
         # A₁: dim V(nω₁) = n+1
         for n in 1:10
             hw = WeightLatticeElem(TypeA{1}, [n])
-            @test dim_of_simple_module(hw) == n + 1
+            @test degree(hw) == n + 1
         end
 
         # A₂: dim V(ω₁) = 3 (standard rep)
-        @test dim_of_simple_module(fundamental_weight(TypeA{2}, 1)) == 3
+        @test degree(fundamental_weight(TypeA{2}, 1)) == 3
 
         # A₂: dim V(ω₂) = 3 (dual standard rep)
-        @test dim_of_simple_module(fundamental_weight(TypeA{2}, 2)) == 3
+        @test degree(fundamental_weight(TypeA{2}, 2)) == 3
 
         # A₂: dim V(ω₁ + ω₂) = 8 (adjoint rep)
-        @test dim_of_simple_module(WeightLatticeElem(TypeA{2}, [1, 1])) == 8
+        @test degree(WeightLatticeElem(TypeA{2}, [1, 1])) == 8
 
         # A₃: dim V(ω₁) = 4
-        @test dim_of_simple_module(fundamental_weight(TypeA{3}, 1)) == 4
+        @test degree(fundamental_weight(TypeA{3}, 1)) == 4
 
         # A₃: dim V(ω₂) = 6 (exterior square)
-        @test dim_of_simple_module(fundamental_weight(TypeA{3}, 2)) == 6
+        @test degree(fundamental_weight(TypeA{3}, 2)) == 6
 
         # B₂: dim V(ω₁) = 5 (standard rep of SO(5))
-        @test dim_of_simple_module(fundamental_weight(TypeB{2}, 1)) == 5
+        @test degree(fundamental_weight(TypeB{2}, 1)) == 5
 
         # B₂: dim V(ω₂) = 4 (spin rep)
-        @test dim_of_simple_module(fundamental_weight(TypeB{2}, 2)) == 4
+        @test degree(fundamental_weight(TypeB{2}, 2)) == 4
 
         # B₃: dim V(ω₁) = 7 (standard rep of SO(7))
-        @test dim_of_simple_module(fundamental_weight(TypeB{3}, 1)) == 7
+        @test degree(fundamental_weight(TypeB{3}, 1)) == 7
 
         # C₂: dim V(ω₁) = 4 (standard rep of Sp(4))
-        @test dim_of_simple_module(fundamental_weight(TypeC{2}, 1)) == 4
+        @test degree(fundamental_weight(TypeC{2}, 1)) == 4
 
         # G₂: dim V(ω₁) = 7 (standard rep)
-        @test dim_of_simple_module(fundamental_weight(TypeG2, 1)) == 7
+        @test degree(fundamental_weight(TypeG2, 1)) == 7
 
         # G₂: dim V(ω₂) = 14 (adjoint rep)
-        @test dim_of_simple_module(fundamental_weight(TypeG2, 2)) == 14
+        @test degree(fundamental_weight(TypeG2, 2)) == 14
 
         # D₄: dim V(ω₁) = 8 (standard rep of SO(8))
-        @test dim_of_simple_module(fundamental_weight(TypeD{4}, 1)) == 8
+        @test degree(fundamental_weight(TypeD{4}, 1)) == 8
 
         # E₈: all fundamental representations
         @testset "E₈ fundamental representations" begin
             expected_dims = [3875, 147250, 6696000, 6899079264,
                              146325270, 2450240, 30380, 248]
             for (i, expected) in enumerate(expected_dims)
-                @test dim_of_simple_module(fundamental_weight(TypeE{8}, i)) == expected
+                @test degree(fundamental_weight(TypeE{8}, i)) == expected
             end
         end
 
         # E₈: high-dimensional representation 3ω₃ + 5ω₈
-        @test dim_of_simple_module(WeightLatticeElem(TypeE{8}, [0, 0, 3, 0, 0, 0, 0, 5])) ==
+        @test degree(WeightLatticeElem(TypeE{8}, [0, 0, 3, 0, 0, 0, 0, 5])) ==
               big"18190674254761844256000000"
+
+        # Synonyms
+        @test weyl_dimension(fundamental_weight(TypeA{2}, 1)) == 3
     end
 
     # ═══════════════════════════════════════════════════════════════════════
@@ -512,6 +515,279 @@ using StaticArrays
 
         # Weyl group of product
         @test weyl_order(PT) == factorial(BigInt(3)) * factorial(BigInt(3)) * BigInt(2)^3
+    end
+
+    # ═══════════════════════════════════════════════════════════════════════
+    #  Characters — Freudenthal, tensor products, exterior / symmetric powers
+    # ═══════════════════════════════════════════════════════════════════════
+    @testset "Characters" begin
+
+        # ─── WeylCharacter basics ─────────────────────────────────────
+        @testset "WeylCharacter basics" begin
+            ω₁ = fundamental_weight(TypeA{2}, 1)
+            ω₂ = fundamental_weight(TypeA{2}, 2)
+            V1 = WeylCharacter(ω₁)
+            V2 = WeylCharacter(ω₂)
+
+            @test is_effective(V1)
+            @test is_irreducible(V1)
+            @test highest_weight(V1) == ω₁
+            @test !iszero(V1)
+            @test iszero(WeylCharacter(TypeA{2}))
+
+            # Arithmetic
+            @test V1 + V2 == V2 + V1
+            @test V1 - V1 == WeylCharacter(TypeA{2})
+            @test 2 * V1 == V1 + V1
+            @test is_effective(V1 + V2)
+            @test !is_irreducible(V1 + V2)
+        end
+
+        # ─── add! and addmul! ────────────────────────────────────────
+        @testset "add! and addmul!" begin
+            ω₁ = fundamental_weight(TypeA{2}, 1)
+            ω₂ = fundamental_weight(TypeA{2}, 2)
+
+            # add! is equivalent to +
+            V = WeylCharacter(ω₁)
+            W = WeylCharacter(ω₂)
+            expected = V + W
+            add!(V, W)
+            @test V == expected
+
+            # add! with self-cancellation
+            V2 = WeylCharacter(ω₁)
+            add!(V2, -WeylCharacter(ω₁))
+            @test iszero(V2)
+
+            # addmul! basic
+            V3 = WeylCharacter(TypeA{2})
+            addmul!(V3, WeylCharacter(ω₁), 5)
+            @test V3 == 5 * WeylCharacter(ω₁)
+
+            # addmul! with negative coefficient
+            V4 = WeylCharacter(ω₁) + WeylCharacter(ω₂)
+            addmul!(V4, WeylCharacter(ω₁), -1)
+            @test V4 == WeylCharacter(ω₂)
+
+            # addmul! with c=0 is identity
+            V5 = WeylCharacter(ω₁)
+            addmul!(V5, WeylCharacter(ω₂), 0)
+            @test V5 == WeylCharacter(ω₁)
+
+            # add! returns the modified object
+            V6 = WeylCharacter(ω₁)
+            @test add!(V6, WeylCharacter(ω₂)) === V6
+
+            # addmul! returns the modified object
+            V7 = WeylCharacter(ω₁)
+            @test addmul!(V7, WeylCharacter(ω₂), 2) === V7
+        end
+
+        # ─── Freudenthal formula: simply-laced ───────────────────────────
+        @testset "Freudenthal (simply-laced)" begin
+            # A₂ standard: dim 3
+            m = freudenthal_formula(fundamental_weight(TypeA{2}, 1))
+            @test sum(values(m)) == 3
+            @test all(v == 1 for v in values(m))  # all multiplicities 1
+
+            # A₂ adjoint: dim 8, with zero weight multiplicity 2
+            m_adj = freudenthal_formula(fundamental_weight(TypeA{2}, 1) + fundamental_weight(TypeA{2}, 2))
+            @test sum(values(m_adj)) == 8
+            @test m_adj[SVector(0, 0)] == 2  # zero weight has multiplicity 2
+
+            # D₄ fundamental: dim 8
+            m_d4 = freudenthal_formula(fundamental_weight(TypeD{4}, 1))
+            @test sum(values(m_d4)) == 8
+
+            # E₆ fundamental ω₁: dim 27
+            m_e6 = freudenthal_formula(fundamental_weight(TypeE{6}, 1))
+            @test sum(values(m_e6)) == 27
+
+            # E₈ fundamental ω₈: dim 248
+            m_e8 = freudenthal_formula(fundamental_weight(TypeE{8}, 8))
+            @test sum(values(m_e8)) == 248
+        end
+
+        # ─── Freudenthal formula: non-simply-laced ───────────────────────
+        @testset "Freudenthal (non-simply-laced)" begin
+            # B₂: std (dim 5), spin (dim 4)
+            @test sum(values(freudenthal_formula(fundamental_weight(TypeB{2}, 1)))) == 5
+            @test sum(values(freudenthal_formula(fundamental_weight(TypeB{2}, 2)))) == 4
+
+            # B₃: std (dim 7), spin (dim 8)
+            @test sum(values(freudenthal_formula(fundamental_weight(TypeB{3}, 1)))) == 7
+            @test sum(values(freudenthal_formula(fundamental_weight(TypeB{3}, 3)))) == 8
+
+            # C₃: std (dim 6)
+            @test sum(values(freudenthal_formula(fundamental_weight(TypeC{3}, 1)))) == 6
+
+            # G₂: 7-dim and 14-dim
+            @test sum(values(freudenthal_formula(fundamental_weight(TypeG2, 1)))) == 7
+            @test sum(values(freudenthal_formula(fundamental_weight(TypeG2, 2)))) == 14
+
+            # F₄: 52-dim and 26-dim
+            @test sum(values(freudenthal_formula(fundamental_weight(TypeF4, 1)))) == 52
+            @test sum(values(freudenthal_formula(fundamental_weight(TypeF4, 4)))) == 26
+        end
+
+        # ─── Tensor products ─────────────────────────────────────────────
+        @testset "Tensor products" begin
+            # A₂: V(ω₁) ⊗ V(ω₁) = V(2ω₁) + V(ω₂)
+            ω₁ = fundamental_weight(TypeA{2}, 1)
+            ω₂ = fundamental_weight(TypeA{2}, 2)
+            V₁ = WeylCharacter(ω₁)
+            tp = V₁ * V₁
+            @test tp == WeylCharacter(2*ω₁) + WeylCharacter(ω₂)
+
+            # A₂: V(ω₁) ⊗ V(ω₂) = V(ω₁+ω₂) + V(0)
+            tp2 = V₁ * WeylCharacter(ω₂)
+            @test tp2 == WeylCharacter(ω₁ + ω₂) + WeylCharacter(WeightLatticeElem(TypeA{2}, SVector(0,0)))
+
+            # B₂: V(ω₁) ⊗ V(ω₁) = V(2ω₁) + V(ω₂) + V(0) (dims: 25 = 14+10+1)
+            ω₁_b = fundamental_weight(TypeB{2}, 1)
+            ω₂_b = fundamental_weight(TypeB{2}, 2)
+            tp_b = WeylCharacter(ω₁_b) * WeylCharacter(ω₁_b)
+            @test tp_b == WeylCharacter(2*ω₁_b) + WeylCharacter(WeightLatticeElem(TypeB{2}, SVector(0,2))) + WeylCharacter(WeightLatticeElem(TypeB{2}, SVector(0,0)))
+
+            # Dimension check: tensor product preserves dimension
+            @test sum(degree(k) * v for (k, v) in tp.terms) == 9
+
+            # Tensor product of virtual (non-effective) characters
+            # V(ω₁) - V(ω₂) tensored with V(ω₁):
+            # = V(ω₁) ⊗ V(ω₁) - V(ω₂) ⊗ V(ω₁)
+            # = [V(2ω₁) + V(ω₂)] - [V(ω₁+ω₂) + V(0)]
+            virtual = WeylCharacter(ω₁) - WeylCharacter(ω₂)
+            @test !is_effective(virtual)
+            tp_virt = virtual * WeylCharacter(ω₁)
+            z = WeightLatticeElem(TypeA{2}, SVector(0,0))
+            expected_virt = WeylCharacter(2*ω₁) + WeylCharacter(ω₂) - WeylCharacter(ω₁ + ω₂) - WeylCharacter(z)
+            @test tp_virt == expected_virt
+        end
+
+        # ─── Dual ────────────────────────────────────────────────────────
+        @testset "Dual" begin
+            # A₂: dual(ω₁) = ω₂ (A₂ has non-trivial outer automorphism)
+            ω₁ = fundamental_weight(TypeA{2}, 1)
+            ω₂ = fundamental_weight(TypeA{2}, 2)
+            @test dual(ω₁) == ω₂
+            @test dual(ω₂) == ω₁
+
+            # B₂: dual = identity (all reps self-dual)
+            ω₁_b = fundamental_weight(TypeB{2}, 1)
+            @test dual(ω₁_b) == ω₁_b
+
+            # Dual of virtual character
+            V = WeylCharacter(ω₁)
+            @test highest_weight(dual(V)) == ω₂
+        end
+
+        # ─── Exterior powers ─────────────────────────────────────────────
+        @testset "Exterior powers" begin
+            # A₂: ⋀²V(ω₁) = V(ω₂)
+            ω₁ = fundamental_weight(TypeA{2}, 1)
+            ω₂ = fundamental_weight(TypeA{2}, 2)
+            @test ⋀(2, ω₁) == WeylCharacter(ω₂)
+            @test ⋀(3, ω₁) == WeylCharacter(WeightLatticeElem(TypeA{2}, SVector(0,0)))
+
+            # A₃: ⋀²V(ω₁) = V(ω₂), ⋀³V(ω₁) = V(ω₃)
+            ω₁_a3 = fundamental_weight(TypeA{3}, 1)
+            ω₂_a3 = fundamental_weight(TypeA{3}, 2)
+            ω₃_a3 = fundamental_weight(TypeA{3}, 3)
+            @test ⋀(2, ω₁_a3) == WeylCharacter(ω₂_a3)
+            @test ⋀(3, ω₁_a3) == WeylCharacter(ω₃_a3)
+
+            # E₈: ⋀²V(ω₁) has 4 irreducible components
+            ω₁_e8 = fundamental_weight(TypeE{8}, 1)
+            r = ⋀(2, ω₁_e8)
+            @test length(r.terms) == 4
+            @test is_effective(r)
+        end
+
+        # ─── Symmetric powers ───────────────────────────────────────────
+        @testset "Symmetric powers" begin
+            # A₂: Sym²V(ω₁) = V(2ω₁)
+            ω₁ = fundamental_weight(TypeA{2}, 1)
+            @test Sym(2, ω₁) == WeylCharacter(2 * ω₁)
+
+            # A₂: Sym³V(ω₁) = V(3ω₁)
+            @test Sym(3, ω₁) == WeylCharacter(3 * ω₁)
+
+            # Sym⁰ = trivial, Sym¹ = identity
+            z = WeightLatticeElem(TypeA{2}, SVector(0, 0))
+            @test Sym(0, ω₁) == WeylCharacter(z)
+            @test Sym(1, ω₁) == WeylCharacter(ω₁)
+        end
+
+        # ─── Adams operators ─────────────────────────────────────────────
+        @testset "Adams operators" begin
+            ω₁ = fundamental_weight(TypeA{2}, 1)
+
+            # ψ¹ = the weight multiplicities of V(ω₁)
+            ψ1 = adams_operator(ω₁, 1)
+            @test ψ1 == freudenthal_formula(ω₁)
+
+            # Newton identity: ψ²(V) as a virtual character = Sym²(V) - ⋀²(V)
+            ψ2_raw = adams_operator(ω₁, 2)
+            ψ2_char = character_from_weights(TypeA{2}, ψ2_raw)
+            @test ψ2_char == Sym(2, ω₁) - ⋀(2, ω₁)
+        end
+
+        # ─── E₈ exterior power cross-checks ─────────────────────────────
+        @testset "E₈ exterior powers" begin
+            ω = [fundamental_weight(TypeE{8}, i) for i in 1:8]
+
+            # ⋀²V(ω₁): 4 irreducibles
+            r1 = ⋀(2, ω[1])
+            @test length(r1.terms) == 4
+            @test haskey(r1.terms, WeightLatticeElem(TypeE{8}, SVector(0,0,0,0,0,0,1,0)))
+            @test haskey(r1.terms, WeightLatticeElem(TypeE{8}, SVector(1,0,0,0,0,0,0,1)))
+            @test haskey(r1.terms, WeightLatticeElem(TypeE{8}, SVector(0,0,0,0,0,0,0,1)))
+            @test haskey(r1.terms, WeightLatticeElem(TypeE{8}, SVector(0,0,1,0,0,0,0,0)))
+
+            # ⋀²V(ω₂): 13 irreducibles
+            r2 = ⋀(2, ω[2])
+            @test length(r2.terms) == 13
+
+            # ⋀⁵V(ω₈): 12 irreducibles
+            r3 = ⋀(5, ω[8])
+            @test length(r3.terms) == 12
+
+            # ⋀²V(2ω₈): 7 irreducibles
+            r4 = ⋀(2, 2*ω[8])
+            @test length(r4.terms) == 7
+        end
+
+        # ─── character_from_weights ──────────────────────────────────────
+        @testset "character_from_weights" begin
+            # Build the standard A₂ rep from explicit weights
+            m = Dict(SVector(1,0) => 1, SVector(-1,1) => 1, SVector(0,-1) => 1)
+            V = character_from_weights(TypeA{2}, m)
+            @test is_irreducible(V)
+            @test highest_weight(V) == fundamental_weight(TypeA{2}, 1)
+
+            # Adjoint A₂: 8 = V(1,1) with zero weight mult 2
+            m_adj = Dict(
+                SVector(1,1) => 1, SVector(2,-1) => 1, SVector(-1,2) => 1,
+                SVector(-2,1) => 1, SVector(1,-2) => 1, SVector(-1,-1) => 1,
+                SVector(0,0) => 2
+            )
+            V_adj = character_from_weights(TypeA{2}, m_adj)
+            @test is_irreducible(V_adj)
+            @test highest_weight(V_adj) == fundamental_weight(TypeA{2}, 1) + fundamental_weight(TypeA{2}, 2)
+        end
+
+        # ─── Dimension consistency ───────────────────────────────────────
+        @testset "Dimension consistency" begin
+            # Freudenthal dimension matches Weyl dimension formula
+            for (DT, idx) in [(TypeA{3}, 1), (TypeA{3}, 2), (TypeB{3}, 1),
+                              (TypeB{3}, 3), (TypeC{3}, 1), (TypeD{4}, 1),
+                              (TypeG2, 1), (TypeG2, 2), (TypeF4, 4)]
+                λ = fundamental_weight(DT, idx)
+                m = freudenthal_formula(λ)
+                @test sum(values(m)) == degree(λ)
+            end
+        end
     end
 
 end
