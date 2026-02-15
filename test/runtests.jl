@@ -675,6 +675,98 @@ using StaticArrays
       @test tp_virt == expected_virt
     end
 
+    # ─── Littlewood–Richardson rule ──────────────────────────────────
+    @testset "Littlewood–Richardson rule" begin
+      # Verify LR matches Brauer–Klimyk for all Type A tests
+
+      # Helper: compute tensor product via Brauer–Klimyk only
+      function bk_tensor(λ, μ)
+        if Lie.degree(λ) > Lie.degree(μ)
+          Lie.brauer_klimyk(Lie.freudenthal_formula(μ), λ)
+        else
+          Lie.brauer_klimyk(Lie.freudenthal_formula(λ), μ)
+        end
+      end
+
+      # A₁: simplest case
+      ω₁_a1 = fundamental_weight(TypeA{1}, 1)
+      @test lr_tensor_product(ω₁_a1, ω₁_a1) == bk_tensor(ω₁_a1, ω₁_a1)
+      @test lr_tensor_product(2ω₁_a1, ω₁_a1) == bk_tensor(2ω₁_a1, ω₁_a1)
+      @test lr_tensor_product(3ω₁_a1, 2ω₁_a1) == bk_tensor(3ω₁_a1, 2ω₁_a1)
+
+      # A₂: comprehensive tests
+      ω₁ = fundamental_weight(TypeA{2}, 1)
+      ω₂ = fundamental_weight(TypeA{2}, 2)
+      z = WeightLatticeElem(TypeA{2}, SVector(0, 0))
+
+      @test lr_tensor_product(ω₁, ω₁) == WeylCharacter(2ω₁) + WeylCharacter(ω₂)
+      @test lr_tensor_product(ω₁, ω₂) == WeylCharacter(ω₁ + ω₂) + WeylCharacter(z)
+      @test lr_tensor_product(ω₂, ω₂) == WeylCharacter(2ω₂) + WeylCharacter(ω₁)
+      @test lr_tensor_product(ω₁ + ω₂, ω₁) == bk_tensor(ω₁ + ω₂, ω₁)
+      @test lr_tensor_product(ω₁ + ω₂, ω₂) == bk_tensor(ω₁ + ω₂, ω₂)
+      @test lr_tensor_product(ω₁ + ω₂, ω₁ + ω₂) == bk_tensor(ω₁ + ω₂, ω₁ + ω₂)
+      @test lr_tensor_product(2ω₁, ω₁) == bk_tensor(2ω₁, ω₁)
+      @test lr_tensor_product(2ω₁, ω₂) == bk_tensor(2ω₁, ω₂)
+      @test lr_tensor_product(2ω₁, 2ω₁) == bk_tensor(2ω₁, 2ω₁)
+      @test lr_tensor_product(3ω₁, ω₂) == bk_tensor(3ω₁, ω₂)
+
+      # Edge case: tensor with trivial
+      @test lr_tensor_product(ω₁, z) == WeylCharacter(ω₁)
+      @test lr_tensor_product(z, ω₁) == WeylCharacter(ω₁)
+      @test lr_tensor_product(z, z) == WeylCharacter(z)
+
+      # A₃: tests
+      ω = [fundamental_weight(TypeA{3}, i) for i in 1:3]
+      @test lr_tensor_product(ω[1], ω[1]) == bk_tensor(ω[1], ω[1])
+      @test lr_tensor_product(ω[1], ω[2]) == bk_tensor(ω[1], ω[2])
+      @test lr_tensor_product(ω[1], ω[3]) == bk_tensor(ω[1], ω[3])
+      @test lr_tensor_product(ω[2], ω[2]) == bk_tensor(ω[2], ω[2])
+      @test lr_tensor_product(ω[2], ω[3]) == bk_tensor(ω[2], ω[3])
+      @test lr_tensor_product(ω[1] + ω[3], ω[1]) == bk_tensor(ω[1] + ω[3], ω[1])
+      @test lr_tensor_product(ω[1] + ω[3], ω[2]) == bk_tensor(ω[1] + ω[3], ω[2])
+      @test lr_tensor_product(2ω[1], ω[2]) == bk_tensor(2ω[1], ω[2])
+      @test lr_tensor_product(2ω[1], 2ω[1]) == bk_tensor(2ω[1], 2ω[1])
+
+      # A₄: tests
+      ω4 = [fundamental_weight(TypeA{4}, i) for i in 1:4]
+      @test lr_tensor_product(ω4[1], ω4[1]) == bk_tensor(ω4[1], ω4[1])
+      @test lr_tensor_product(ω4[1], ω4[4]) == bk_tensor(ω4[1], ω4[4])
+      @test lr_tensor_product(ω4[2], ω4[2]) == bk_tensor(ω4[2], ω4[2])
+      @test lr_tensor_product(ω4[2], ω4[3]) == bk_tensor(ω4[2], ω4[3])
+
+      # A₅: tests
+      ω5 = [fundamental_weight(TypeA{5}, i) for i in 1:5]
+      @test lr_tensor_product(ω5[1], ω5[1]) == bk_tensor(ω5[1], ω5[1])
+      @test lr_tensor_product(ω5[1], ω5[5]) == bk_tensor(ω5[1], ω5[5])
+      @test lr_tensor_product(ω5[2], ω5[2]) == bk_tensor(ω5[2], ω5[2])
+      @test lr_tensor_product(2ω5[1], ω5[1]) == bk_tensor(2ω5[1], ω5[1])
+      @test lr_tensor_product(2ω5[1], 2ω5[1]) == bk_tensor(2ω5[1], 2ω5[1])
+
+      # A₇: higher rank
+      ω7 = [fundamental_weight(TypeA{7}, i) for i in 1:7]
+      @test lr_tensor_product(ω7[1], ω7[1]) == bk_tensor(ω7[1], ω7[1])
+      @test lr_tensor_product(ω7[1], ω7[7]) == bk_tensor(ω7[1], ω7[7])
+      @test lr_tensor_product(ω7[2], ω7[2]) == bk_tensor(ω7[2], ω7[2])
+
+      # Dimension consistency: tensor product dimension = dim(V) * dim(W)
+      for (λ, μ) in [(ω₁, ω₁), (ω₁, ω₂), (ω₁ + ω₂, ω₁),
+        (ω[1], ω[2]), (ω4[2], ω4[3])]
+        result = lr_tensor_product(λ, μ)
+        dim_sum = sum(Lie.degree(k) * v for (k, v) in result.terms)
+        @test dim_sum == Lie.degree(λ) * Lie.degree(μ)
+      end
+
+      # Commutativity: LR(λ, μ) == LR(μ, λ)
+      @test lr_tensor_product(ω₁, ω₂) == lr_tensor_product(ω₂, ω₁)
+      @test lr_tensor_product(ω[1], ω[3]) == lr_tensor_product(ω[3], ω[1])
+      @test lr_tensor_product(2ω₁, ω₂) == lr_tensor_product(ω₂, 2ω₁)
+
+      # tensor_product dispatches to LR for TypeA
+      empty!(Lie._tensor_cache)
+      tp_dispatch = tensor_product(ω₁, ω₂)
+      @test tp_dispatch == lr_tensor_product(ω₁, ω₂)
+    end
+
     # ─── Dual ────────────────────────────────────────────────────────
     @testset "Dual" begin
       # A₂: dual(ω₁) = ω₂ (A₂ has non-trivial outer automorphism)
@@ -707,11 +799,80 @@ using StaticArrays
       @test ⋀(2, ω₁_a3) == WeylCharacter(ω₂_a3)
       @test ⋀(3, ω₁_a3) == WeylCharacter(ω₃_a3)
 
+      # A₃: ⋀⁴V(ω₁) = trivial (top exterior power of std rep)
+      z_a3 = WeightLatticeElem(TypeA{3}, SVector(0, 0, 0))
+      @test ⋀(4, ω₁_a3) == WeylCharacter(z_a3)
+
+      # A₃: ⋀ᵏV(ω₁) = 0 for k > dim = 4
+      @test ⋀(5, ω₁_a3) == WeylCharacter(TypeA{3})
+
       # E₈: ⋀²V(ω₁) has 4 irreducible components
       ω₁_e8 = fundamental_weight(TypeE{8}, 1)
       r = ⋀(2, ω₁_e8)
       @test length(r.terms) == 4
       @test is_effective(r)
+
+      # ─── Dimension identity: dim ⋀ᵏV = C(dim V, k) ─────────────
+      # A₄: V(ω₁) has dim 5, so ⋀ᵏ has dim C(5,k)
+      ω₁_a4 = fundamental_weight(TypeA{4}, 1)
+      for k in 0:5
+        r = ⋀(k, ω₁_a4)
+        @test sum(m * degree(μ) for (μ, m) in r.terms; init=0) == binomial(5, k)
+      end
+
+      # B₃: V(ω₃) is 8-dimensional spin rep
+      ω₃_b3 = fundamental_weight(TypeB{3}, 3)
+      d = degree(ω₃_b3)
+      for k in 1:3
+        r = ⋀(k, ω₃_b3)
+        @test is_effective(r)
+        @test sum(m * degree(μ) for (μ, m) in r.terms) == binomial(d, k)
+      end
+
+      # ─── Newton identity: V ⊗ V = Sym²V + ⋀²V ──────────────────
+      for λ in [
+        fundamental_weight(TypeA{3}, 1),
+        fundamental_weight(TypeA{3}, 2),
+        fundamental_weight(TypeB{3}, 1),
+        fundamental_weight(TypeC{3}, 1),
+        fundamental_weight(TypeG2, 1),
+      ]
+        @test tensor_product(λ, λ) == Sym(2, λ) + ⋀(2, λ)
+      end
+
+      # ─── Larger exterior powers across types ─────────────────────
+      # A₅: ⋀³V(ω₁) = V(ω₃)  (fundamental rep)
+      ω₁_a5 = fundamental_weight(TypeA{5}, 1)
+      ω₃_a5 = fundamental_weight(TypeA{5}, 3)
+      @test ⋀(3, ω₁_a5) == WeylCharacter(ω₃_a5)
+
+      # A₇: ⋀⁴V(ω₁) = V(ω₄)
+      ω₁_a7 = fundamental_weight(TypeA{7}, 1)
+      ω₄_a7 = fundamental_weight(TypeA{7}, 4)
+      @test ⋀(4, ω₁_a7) == WeylCharacter(ω₄_a7)
+
+      # D₄: ⋀²V(ω₁) has specific structure
+      ω₁_d4 = fundamental_weight(TypeD{4}, 1)
+      r_d4 = ⋀(2, ω₁_d4)
+      @test is_effective(r_d4)
+      @test sum(m * degree(μ) for (μ, m) in r_d4.terms) == binomial(8, 2)
+
+      # G₂: dim ⋀ᵏV(ω₁) = C(7,k) (7-dim rep)
+      ω₁_g2 = fundamental_weight(TypeG2, 1)
+      for k in 2:4
+        r = ⋀(k, ω₁_g2)
+        @test is_effective(r)
+        @test sum(m * degree(μ) for (μ, m) in r.terms) == binomial(7, k)
+      end
+
+      # ─── Non-minuscule exterior powers ───────────────────────────
+      # A₃: ⋀²V(ω₁+ω₃) — adjoint rep (15-dim)
+      ω₁_a3 = fundamental_weight(TypeA{3}, 1)
+      ω₃_a3 = fundamental_weight(TypeA{3}, 3)
+      adj = ω₁_a3 + ω₃_a3
+      r_adj = ⋀(2, adj)
+      @test is_effective(r_adj)
+      @test sum(m * degree(μ) for (μ, m) in r_adj.terms) == binomial(15, 2)
     end
 
     # ─── Symmetric powers ───────────────────────────────────────────
@@ -727,6 +888,44 @@ using StaticArrays
       z = WeightLatticeElem(TypeA{2}, SVector(0, 0))
       @test Sym(0, ω₁) == WeylCharacter(z)
       @test Sym(1, ω₁) == WeylCharacter(ω₁)
+
+      # ─── Type A: SymᵏV(ω₁) = V(kω₁) (always irreducible) ──────
+      for (DT, k_max) in [(TypeA{2}, 5), (TypeA{3}, 4), (TypeA{5}, 3)]
+        ω₁ = fundamental_weight(DT, 1)
+        for k in 2:k_max
+          @test Sym(k, ω₁) == WeylCharacter(k * ω₁)
+        end
+      end
+
+      # ─── Dimension identity: dim Symᵏ(V) = C(dim V + k - 1, k) ─
+      # A₃: dim V(ω₁) = 4, so dim Symᵏ = C(4+k-1, k)
+      ω₁_a3 = fundamental_weight(TypeA{3}, 1)
+      for k in 2:5
+        r = Sym(k, ω₁_a3)
+        @test is_effective(r)
+        @test sum(m * degree(μ) for (μ, m) in r.terms) == binomial(4 + k - 1, k)
+      end
+
+      # B₂: dim V(ω₁) = 5, dim Symᵏ = C(5+k-1, k)
+      ω₁_b2 = fundamental_weight(TypeB{2}, 1)
+      for k in 2:4
+        r = Sym(k, ω₁_b2)
+        @test is_effective(r)
+        @test sum(m * degree(μ) for (μ, m) in r.terms) == binomial(5 + k - 1, k)
+      end
+
+      # ─── Cross-type symmetric powers ────────────────────────────
+      # G₂: Sym²V(ω₁) decomposes; verify effectiveness and dimension
+      ω₁_g2 = fundamental_weight(TypeG2, 1)
+      r = Sym(2, ω₁_g2)
+      @test is_effective(r)
+      @test sum(m * degree(μ) for (μ, m) in r.terms) == binomial(7 + 1, 2)
+
+      # C₃: Sym²V(ω₁) decomposes; verify dimension
+      ω₁_c3 = fundamental_weight(TypeC{3}, 1)
+      r = Sym(2, ω₁_c3)
+      @test is_effective(r)
+      @test sum(m * degree(μ) for (μ, m) in r.terms) == binomial(6 + 1, 2)
     end
 
     # ─── Adams operators ─────────────────────────────────────────────
