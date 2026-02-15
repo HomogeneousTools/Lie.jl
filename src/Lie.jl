@@ -65,4 +65,11 @@ for _DT in (
   precompile(dot_reduce, (WeightLatticeElem{_DT,_R},))
 end
 
+# Littlewood–Richardson: precompile for TypeA
+for _N in 1:9
+  _DT = TypeA{_N}
+  _R = _N
+  precompile(lr_tensor_product, (WeightLatticeElem{_DT,_R}, WeightLatticeElem{_DT,_R}))
+end
+
 end # module
