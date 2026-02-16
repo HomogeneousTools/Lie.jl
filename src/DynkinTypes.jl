@@ -4,7 +4,7 @@
 
 export DynkinType, SimpleDynkinType, ProductDynkinType
 export TypeA, TypeB, TypeC, TypeD, TypeE, TypeF4, TypeG2
-export rank, n_positive_roots
+export rank, n_positive_roots, dimension
 export n_components, component_type, component_ranks, component_offsets
 export dynkin_diagram
 
@@ -210,6 +210,33 @@ n_positive_roots(::Type{TypeG2}) = 6
 end
 
 n_positive_roots(dt::DynkinType) = n_positive_roots(typeof(dt))
+
+"""
+    dimension(::Type{DT}) -> Int
+    dimension(dt::DynkinType) -> Int
+
+Return the dimension of the semisimple Lie group (or algebra) of type `DT`.
+
+For a semisimple Lie algebra of rank ``r`` with ``n`` positive roots,
+the dimension is ``r + 2n`` (Cartan subalgebra plus positive and negative
+root spaces).
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> dimension(TypeA{3})  # dim(SL₄) = 15
+15
+
+julia> dimension(TypeE{8})  # dim(E₈) = 248
+248
+
+julia> dimension(ProductDynkinType{Tuple{TypeA{1}, TypeA{1}}}())  # dim(SL₂ × SL₂) = 6
+6
+```
+"""
+dimension(::Type{DT}) where {DT<:DynkinType} = rank(DT) + 2 * n_positive_roots(DT)
+dimension(dt::DynkinType) = dimension(typeof(dt))
 
 # ─── Component access for product types ─────────────────────────────────────
 
