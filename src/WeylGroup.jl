@@ -574,6 +574,31 @@ function degree(hw::WeightLatticeElem{DT,R}) where {DT,R}
 end
 
 """
+    degree(::Type{DT}, v::AbstractVector{<:Integer}) -> BigInt
+
+Dimension of the irreducible representation with highest weight given by
+the integer vector `v` (in the fundamental weight basis).
+
+This is a convenience wrapper: `degree(DT, v) == degree(WeightLatticeElem(DT, v))`.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> degree(TypeA{2}, [1, 0])  # standard representation of A₂
+3
+
+julia> degree(TypeE{8}, [0, 0, 0, 0, 0, 0, 0, 1])  # adjoint of E₈
+248
+```
+"""
+function degree(::Type{DT}, v::AbstractVector{<:Integer}) where {DT<:DynkinType}
+  return degree(DT, WeightLatticeElem(DT, v))
+end
+
+degree(dt::DynkinType, v::AbstractVector{<:Integer}) = degree(typeof(dt), v)
+
+"""
     weyl_dimension(args...) -> BigInt
 
 Synonym for [`degree`](@ref). Computes the dimension of the irreducible
