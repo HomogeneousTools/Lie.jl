@@ -412,12 +412,17 @@ julia> sum(values(mults))  # dim = 8
 function freudenthal_formula(λ::WeightLatticeElem{DT,R}) where {DT,R}
   @assert is_dominant(λ) "Weight must be dominant"
 
+  # Check cache first
+  cache_key = (DT, λ)
+  haskey(_freudenthal_cache, cache_key) &&
+    return _freudenthal_cache[cache_key]::Dict{SVector{R,Int},Int}
+
   RS = RootSystem(DT)
   C = cartan_matrix(DT)
-  B = cartan_bilinear_form(DT)   # diag(d) * C — root-space bilinear form
+  B = cartan_bilinear_form(DT)
+  d = cartan_symmetrizer(DT)
 
-  # Positive roots as weight-lattice vectors: α_ω[j] = Σᵢ C[j,i] α_root[i]
-  # (i.e. α_ω = C α_root). This follows from αᵢ = Σⱼ C[j,i] ωⱼ (column i of C).
+  # Positive roots as weight-lattice vectors: α_ω = C α_root
   n_pos = n_positive_roots(RS)
   α_w = Vector{SVector{R,Int}}(undef, n_pos)
   for k in 1:n_pos
@@ -425,81 +430,77 @@ function freudenthal_formula(λ::WeightLatticeElem{DT,R}) where {DT,R}
     α_w[k] = SVector{R,Int}(ntuple(j -> sum(C[j, i] * α_root[i] for i in 1:R), R))
   end
 
-  # Simple roots in ω-coords (column s of C: αₛ = Σⱼ C[j,s] ωⱼ)
-  simple_α_w = [SVector{R,Int}(ntuple(j -> C[j, s], R)) for s in 1:R]
+  # Simple roots in ω-coords
+  simple_α_w = SVector{R,SVector{R,Int}}(
+    ntuple(s -> SVector{R,Int}(ntuple(j -> C[j, s], R)), R)
+  )
 
-  # ─── Inner products ─────────────────────────────────────────────────
-  # All inner products use (u, v) = u_α^T B v_α  where _α denotes
-  # coordinates in the simple-root basis and B = diag(d) C.
-  #
-  # Conversion: a weight μ with ω-coordinates μ_ω has α-coordinates
-  #   μ_α = C⁻¹ μ_ω  (since ωⱼ = Σᵢ (C⁻¹)[i,j] αᵢ).
-  #
-  # Mixed-coordinate inner product (μ in ω-coords, α in root-coords):
-  #   (μ, α) = (C⁻¹ μ_ω)^T B α = μ_ω^T C⁻ᵀ B α = μ_ω^T M α
-  # where M = C⁻ᵀ B.
-  #
-  # Weight-space inner product (both in ω-coords):
-  #   (μ, ν) = μ_ω^T B_ω ν_ω  where B_ω = C⁻ᵀ B C⁻¹.
+  # ─── Integer inner products ──────────────────────────────────────────
+  S, B_omega_S = omega_bilinear_form_scaled(DT)
 
-  Cinv = cartan_matrix_inverse(DT)
-  Cinv_r = SMatrix{R,R,Rational{Int}}(Cinv)
-  B_r = SMatrix{R,R,Rational{Int}}(B)
-  M = transpose(Cinv_r) * B_r             # C⁻ᵀ B
-  B_omega = M * Cinv_r                           # C⁻ᵀ B C⁻¹
-
-  # Precompute (α, α) for each positive root
-  α_dot_α = Vector{Rational{Int}}(undef, n_pos)
+  α_dot_α = Vector{Int}(undef, n_pos)
   for k in 1:n_pos
-    v = SVector{R,Rational{Int}}(RS.positive_roots_list[k])
-    α_dot_α[k] = transpose(v) * B_r * v
+    v = RS.positive_roots_list[k]
+    s = 0
+    for j in 1:R, i in 1:R
+      s += v[i] * B[i, j] * v[j]
+    end
+    α_dot_α[k] = s
   end
 
-  # Precompute M * α_root for each positive root → gives the vector
-  # such that (μ_ω, α) = μ_ω ⋅ Mα.
-  Mα = Vector{SVector{R,Rational{Int}}}(undef, n_pos)
+  dα = Vector{SVector{R,Int}}(undef, n_pos)
   for k in 1:n_pos
-    Mα[k] = M * SVector{R,Rational{Int}}(RS.positive_roots_list[k])
+    v = RS.positive_roots_list[k]
+    dα[k] = SVector{R,Int}(ntuple(i -> d[i] * v[i], R))
   end
 
-  λρ = λ + weyl_vector(DT)
-  λρ_vec = SVector{R,Rational{Int}}(λρ.vec)
-  first_term = transpose(λρ_vec) * B_omega * λρ_vec
+  ρ_vec = weyl_vector(DT).vec
+  λρ_vec = λ.vec + ρ_vec
+
+  first_term_S = 0
+  for j in 1:R, i in 1:R
+    first_term_S += λρ_vec[i] * B_omega_S[i, j] * λρ_vec[j]
+  end
 
   # Multiplicities: weight (ω-coords) → multiplicity
   multiplicities = Dict{SVector{R,Int},Int}()
+  sizehint!(multiplicities, max(256, Int(min(degree(λ), big(1_000_000)))))
 
-  # BFS layer-by-layer: start from λ, subtract simple roots to find lower weights
-  current = Dict{SVector{R,Int},Int}(λ.vec => 1)
+  # BFS layer-by-layer: start from λ, subtract simple roots
+  current_layer = SVector{R,Int}[λ.vec]
+  multiplicities[λ.vec] = 1
 
-  while !isempty(current)
-    next = Dict{SVector{R,Int},Int}()
+  while !isempty(current_layer)
+    next_vecs = SVector{R,Int}[]
 
-    for (μ_vec, m) in current
-      if m != 0
-        multiplicities[μ_vec] = m
-        for α_s in simple_α_w
-          next_vec = μ_vec - α_s
-          haskey(next, next_vec) || (next[next_vec] = 0)
+    for μ_vec in current_layer
+      for s in 1:R
+        next_vec = μ_vec - simple_α_w[s]
+        if !haskey(multiplicities, next_vec)
+          multiplicities[next_vec] = 0  # placeholder
+          push!(next_vecs, next_vec)
         end
       end
     end
 
-    for μ_vec in keys(next)
-      Σ = Rational{Int}(0)
+    current_layer = empty!(current_layer)
+
+    for μ_vec in next_vecs
+      Σ = 0
 
       for k in 1:n_pos
         ν_vec = μ_vec + α_w[k]
 
-        # (μ, α) = μ_ωᵀ Mα[k]
-        μ_dot_α = sum(Rational{Int}(μ_vec[i]) * Mα[k][i] for i in 1:R)
+        μ_dot_α = 0
+        for i in 1:R
+          μ_dot_α += μ_vec[i] * dα[k][i]
+        end
 
         j = 1
         while true
           m_ν = get(multiplicities, ν_vec, 0)
           m_ν == 0 && break
 
-          # (μ + jα, α) = (μ, α) + j (α, α)
           ip = μ_dot_α + j * α_dot_α[k]
           Σ += m_ν * ip
 
@@ -508,24 +509,29 @@ function freudenthal_formula(λ::WeightLatticeElem{DT,R}) where {DT,R}
         end
       end
 
-      if iszero(Σ)
-        next[μ_vec] = 0
-      else
-        μρ_vec = SVector{R,Rational{Int}}(μ_vec + weyl_vector(DT).vec)
-        second_term = transpose(μρ_vec) * B_omega * μρ_vec
+      if !iszero(Σ)
+        μρ_vec = μ_vec + ρ_vec
+        second_term_S = 0
+        for j in 1:R, i in 1:R
+          second_term_S += μρ_vec[i] * B_omega_S[i, j] * μρ_vec[j]
+        end
 
-        denom = first_term - second_term
-        @assert denom != 0 "Denominator in Freudenthal's formula is zero"
+        denom_S = first_term_S - second_term_S
+        @assert denom_S != 0 "Denominator in Freudenthal's formula is zero"
 
-        mult_rat = (2 * Σ) / denom
-        @assert isinteger(mult_rat) "Freudenthal formula gave non-integer multiplicity: $mult_rat for μ=$μ_vec"
-        next[μ_vec] = Int(mult_rat)
+        numerator = 2 * S * Σ
+        mult, rem = divrem(numerator, denom_S)
+        @assert iszero(rem) "Freudenthal formula gave non-integer multiplicity for μ=$μ_vec"
+        multiplicities[μ_vec] = mult
+        push!(current_layer, μ_vec)
       end
     end
-
-    current = next
   end
 
+  # Remove zero-multiplicity placeholders
+  filter!(p -> p.second != 0, multiplicities)
+
+  _freudenthal_cache[cache_key] = multiplicities
   return multiplicities
 end
 
@@ -926,6 +932,10 @@ export lr_tensor_product
 # Key: (DT, λ, μ), Value: WeylCharacter.
 const _tensor_cache = Dict{Tuple{Type,Any,Any},Any}()
 
+# Cache for Freudenthal weight multiplicities.
+# Key: (DT, λ), Value: Dict{SVector{R,Int}, Int}.
+const _freudenthal_cache = Dict{Tuple{Type,Any},Any}()
+
 """
     tensor_product(λ::WeightLatticeElem{DT,R}, μ::WeightLatticeElem{DT,R}) -> WeylCharacter{DT,R}
 
@@ -958,11 +968,14 @@ function tensor_product(λ::WeightLatticeElem{DT,R}, μ::WeightLatticeElem{DT,R}
   key_rev = (DT, μ, λ)
   haskey(_tensor_cache, key_rev) && return _tensor_cache[key_rev]::WeylCharacter{DT,R}
 
-  # Brauer–Klimyk: decompose the smaller rep via Freudenthal
-  if degree(λ) > degree(μ)
-    result = brauer_klimyk(freudenthal_formula(μ), λ)
-  else
+  # Brauer–Klimyk: decompose the smaller rep via Freudenthal, tensor with
+  # the larger one via the BK formula. Use degree() (Weyl dimension formula,
+  # O(n_pos) BigInt mults) to decide which side is smaller, avoiding
+  # computing Freudenthal for the large rep unnecessarily.
+  if degree(λ) <= degree(μ)
     result = brauer_klimyk(freudenthal_formula(λ), μ)
+  else
+    result = brauer_klimyk(freudenthal_formula(μ), λ)
   end
 
   _tensor_cache[key] = result

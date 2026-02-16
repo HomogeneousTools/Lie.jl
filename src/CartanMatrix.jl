@@ -5,6 +5,7 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 
 export cartan_matrix, cartan_symmetrizer, cartan_bilinear_form, cartan_matrix_inverse
+export omega_bilinear_form_scaled
 
 # ─── Type A ──────────────────────────────────────────────────────────────────
 # A_n: tridiagonal, 2 on diagonal, -1 on super/sub-diagonal
@@ -384,3 +385,34 @@ function _cartan_matrix_data_full(::Type{ProductDynkinType{Ts}}) where {Ts}
 end
 
 cartan_matrix_inverse(dt::DynkinType) = cartan_matrix_inverse(typeof(dt))
+
+# ─── Scaled bilinear form in ω-coordinates (compile-time) ────────────────────
+
+"""
+    omega_bilinear_form_scaled(::Type{DT}) -> Tuple{Int, SMatrix{R,R,Int}}
+
+Return `(S, B_ω_S)` where `B_ω_S = S * Cᵀ⁻¹ B C⁻¹` is the bilinear form
+in the fundamental weight basis, scaled by the smallest positive integer `S`
+that makes all entries integral.  This is a compile-time constant.
+"""
+@generated function omega_bilinear_form_scaled(::Type{DT}) where {DT<:DynkinType}
+  R = rank(DT)
+  C = Rational{Int}.(_cartan_matrix_data_full(DT))
+  Cinv = inv(C)
+  d_data = _cartan_symmetrizer_data(DT)
+  B = zeros(Rational{Int}, R, R)
+  for j in 1:R, i in 1:R
+    B[i, j] = d_data[i] * C[i, j]
+  end
+  B_omega = transpose(Cinv) * B * Cinv
+
+  S = 1
+  for j in 1:R, i in 1:R
+    S = lcm(S, denominator(B_omega[i, j]))
+  end
+  B_omega_S = Int.(B_omega * S)
+  entries = Tuple(B_omega_S[i, j] for j in 1:R for i in 1:R)
+  return :(($S, SMatrix{$R,$R,Int,$(R * R)}($entries)))
+end
+
+omega_bilinear_form_scaled(dt::DynkinType) = omega_bilinear_form_scaled(typeof(dt))
