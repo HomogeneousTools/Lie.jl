@@ -11,6 +11,7 @@ makedocs(;
     "Weight lattice" => "weights.md",
     "Weyl groups" => "weyl.md",
     "Characters and representations" => "characters.md",
+    "Implementation details" => "details.md",
   ],
   doctest=true,
   warnonly=[:missing_docs],

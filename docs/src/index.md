@@ -51,6 +51,7 @@ Pages = [
     "weights.md",
     "weyl.md",
     "characters.md",
+    "details.md",
 ]
 Depth = 2
 ```
