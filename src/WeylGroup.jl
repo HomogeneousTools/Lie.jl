@@ -419,24 +419,35 @@ end
     dominant_weights(::Type{DT}, hw::WeightLatticeElem{DT,R}) -> Vector{WeightLatticeElem{DT,R}}
 
 Compute the dominant weights occurring in the irreducible representation
-with highest weight `hw`, sorted by decreasing height.
+with highest weight `hw`, sorted by decreasing level below `hw`.
+
+The level of `μ` below `hw` is the root-lattice height of `hw - μ`,
+i.e. the sum of coefficients when `hw - μ` is written in the simple root basis.
 """
 function dominant_weights(::Type{DT}, hw::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R}
   @assert is_dominant(hw) "Highest weight must be dominant"
   RS = RootSystem(DT)
+  C = cartan_matrix(DT)
 
-  pos_roots_w = [WeightLatticeElem(pr) for pr in positive_roots(RS)]
+  # Positive roots in weight coords: column j of C = weight coords of αⱼ
+  # For root v = Σ vᵢ αᵢ: weight coord j = Σᵢ C[j,i] vᵢ = (Cv)ⱼ
+  n_pos = n_positive_roots(RS)
+  pos_roots_w = Vector{SVector{R,Int}}(undef, n_pos)
+  for k in 1:n_pos
+    α_root = RS.positive_roots_list[k]
+    pos_roots_w[k] = SVector{R,Int}(ntuple(j -> sum(C[j, i] * α_root[i] for i in 1:R), R))
+  end
 
   result = Set{SVector{R,Int}}([hw.vec])
-  todo = [hw]
+  todo = [hw.vec]
 
   while !isempty(todo)
-    new_todo = WeightLatticeElem{DT,R}[]
+    new_todo = SVector{R,Int}[]
     for w in todo
       for α_w in pos_roots_w
         w_sub = w - α_w
-        if is_dominant(w_sub) && w_sub.vec ∉ result
-          push!(result, w_sub.vec)
+        if all(>=(0), w_sub) && w_sub ∉ result
+          push!(result, w_sub)
           push!(new_todo, w_sub)
         end
       end
@@ -444,8 +455,16 @@ function dominant_weights(::Type{DT}, hw::WeightLatticeElem{DT,R}) where {DT<:Dy
     todo = new_todo
   end
 
+  # Compute level vector: transforms ω-coords to root height.
+  # Level of μ below hw = dot(level_vec, hw - μ) / det(C)
+  # For sorting we just use dot(level_vec, μ) (higher = closer to hw).
+  Cinv = cartan_matrix_inverse(DT)
+  level_vec = SVector{R,Rational{Int}}(
+    ntuple(j -> sum(Cinv[i, j] for i in 1:R), R)
+  )
+
   weights = [WeightLatticeElem{DT,R}(v) for v in result]
-  sort!(weights; by=w -> -sum(w.vec))
+  sort!(weights; by=w -> -sum(w.vec[i] * level_vec[i] for i in 1:R))
   return weights
 end
 

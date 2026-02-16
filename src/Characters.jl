@@ -417,27 +417,37 @@ function freudenthal_formula(λ::WeightLatticeElem{DT,R}) where {DT,R}
   haskey(_freudenthal_cache, cache_key) &&
     return _freudenthal_cache[cache_key]::Dict{SVector{R,Int},Int}
 
+  # ─── Phase 1: compute dominant weights below λ ─────────────────────
+  dom_weights = dominant_weights(DT, λ)
+
+  # Build dominant-weight → index map for fast lookup
+  n_dom = length(dom_weights)
+  dom_index = Dict{SVector{R,Int},Int}()
+  sizehint!(dom_index, n_dom)
+  for i in 1:n_dom
+    dom_index[dom_weights[i].vec] = i
+  end
+
+  # Dominant multiplicities array (indexed by dom_index)
+  dom_mults = zeros(Int, n_dom)
+  dom_mults[1] = 1  # m(λ) = 1
+
+  # ─── Precompute root data ──────────────────────────────────────────
   RS = RootSystem(DT)
   C = cartan_matrix(DT)
   B = cartan_bilinear_form(DT)
   d = cartan_symmetrizer(DT)
 
-  # Positive roots as weight-lattice vectors: α_ω = C α_root
   n_pos = n_positive_roots(RS)
+
+  # Positive roots in weight coords: α_ω = C · α_root
   α_w = Vector{SVector{R,Int}}(undef, n_pos)
   for k in 1:n_pos
     α_root = RS.positive_roots_list[k]
     α_w[k] = SVector{R,Int}(ntuple(j -> sum(C[j, i] * α_root[i] for i in 1:R), R))
   end
 
-  # Simple roots in ω-coords
-  simple_α_w = SVector{R,SVector{R,Int}}(
-    ntuple(s -> SVector{R,Int}(ntuple(j -> C[j, s], R)), R)
-  )
-
-  # ─── Integer inner products ──────────────────────────────────────────
-  S, B_omega_S = omega_bilinear_form_scaled(DT)
-
+  # (α, α) in root-space bilinear form
   α_dot_α = Vector{Int}(undef, n_pos)
   for k in 1:n_pos
     v = RS.positive_roots_list[k]
@@ -448,6 +458,7 @@ function freudenthal_formula(λ::WeightLatticeElem{DT,R}) where {DT,R}
     α_dot_α[k] = s
   end
 
+  # d_i * α_i for inner product (μ, α) = Σ μ_i * d_i * α_root_i
   dα = Vector{SVector{R,Int}}(undef, n_pos)
   for k in 1:n_pos
     v = RS.positive_roots_list[k]
@@ -455,81 +466,135 @@ function freudenthal_formula(λ::WeightLatticeElem{DT,R}) where {DT,R}
   end
 
   ρ_vec = weyl_vector(DT).vec
-  λρ_vec = λ.vec + ρ_vec
 
+  # ─── Precompute ‖μ+ρ‖² for each dominant weight ───────────────────
+  S, B_omega_S = omega_bilinear_form_scaled(DT)
+
+  λρ_vec = λ.vec + ρ_vec
   first_term_S = 0
   for j in 1:R, i in 1:R
     first_term_S += λρ_vec[i] * B_omega_S[i, j] * λρ_vec[j]
   end
 
-  # Multiplicities: weight (ω-coords) → multiplicity
-  multiplicities = Dict{SVector{R,Int},Int}()
-  sizehint!(multiplicities, max(256, Int(min(degree(λ), big(1_000_000)))))
+  # Workspace for conjugate_dominant_weight (reusable MVector)
+  v_work = MVector{R,Int}(undef)
 
-  # BFS layer-by-layer: start from λ, subtract simple roots
-  current_layer = SVector{R,Int}[λ.vec]
-  multiplicities[λ.vec] = 1
+  # ─── Phase 2: Freudenthal recursion over dominant weights ──────────
+  # dom_weights is sorted by decreasing height, so index 1 = λ.
+  # We process indices 2..n_dom (each weight is below λ).
+  for idx in 2:n_dom
+    μ_vec = dom_weights[idx].vec
+    Σ = 0
 
-  while !isempty(current_layer)
-    next_vecs = SVector{R,Int}[]
-
-    for μ_vec in current_layer
-      for s in 1:R
-        next_vec = μ_vec - simple_α_w[s]
-        if !haskey(multiplicities, next_vec)
-          multiplicities[next_vec] = 0  # placeholder
-          push!(next_vecs, next_vec)
+    # ── gather_roots: merge W_μ-equivalent roots ──────────────────────
+    # When μ_j == 0, the simple reflection s_j stabilises μ.
+    # Roots in the same W_μ-orbit give identical contributions.
+    # Process roots by increasing level (height) so transfers always go
+    # to higher levels and are never revisited (matching LiE's algorithm).
+    root_mults = ones(Int, n_pos)
+    has_zero = false
+    for j in 1:R
+      if μ_vec[j] == 0
+        has_zero = true
+        break
+      end
+    end
+    if has_zero
+      # Group roots by level (height = sum of root coords)
+      max_level = sum(RS.positive_roots_list[n_pos])
+      for lev in 1:max_level
+        for j in 1:R
+          μ_vec[j] == 0 || continue
+          for k in 1:n_pos
+            root_mults[k] == 0 && continue
+            sum(RS.positive_roots_list[k]) != lev && continue
+            e = -α_w[k][j]
+            if e > 0
+              target = RS.refl[j, k]
+              if target != 0
+                root_mults[target] += root_mults[k]
+                root_mults[k] = 0
+              end
+            end
+          end
         end
       end
     end
 
-    current_layer = empty!(current_layer)
+    # ── Inner Freudenthal sum ─────────────────────────────────────────
+    for k in 1:n_pos
+      root_mults[k] == 0 && continue
 
-    for μ_vec in next_vecs
-      Σ = 0
+      # (μ, α_k) = Σ μ_i * d_i * α_root_i
+      μ_dot_α = 0
+      for i in 1:R
+        μ_dot_α += μ_vec[i] * dα[k][i]
+      end
 
-      for k in 1:n_pos
-        ν_vec = μ_vec + α_w[k]
-
-        μ_dot_α = 0
+      ν_vec = μ_vec + α_w[k]
+      n = 1
+      while true
+        # Fold ν to dominant chamber
         for i in 1:R
-          μ_dot_α += μ_vec[i] * dα[k][i]
+          v_work[i] = ν_vec[i]
+        end
+        s = 1
+        while s <= R
+          if v_work[s] < 0
+            pairing = v_work[s]
+            for jj in 1:R
+              v_work[jj] -= pairing * C[jj, s]
+            end
+            s = 1
+          else
+            s += 1
+          end
+        end
+        ν_dom = SVector{R,Int}(v_work)
+
+        # Look up in dominant weight table
+        di = get(dom_index, ν_dom, 0)
+        if di == 0
+          break  # left the weight system
         end
 
-        j = 1
-        while true
-          m_ν = get(multiplicities, ν_vec, 0)
-          m_ν == 0 && break
-
-          ip = μ_dot_α + j * α_dot_α[k]
-          Σ += m_ν * ip
-
-          ν_vec = ν_vec + α_w[k]
-          j += 1
+        if dom_mults[di] != 0
+          ip = μ_dot_α + n * α_dot_α[k]
+          Σ += root_mults[k] * dom_mults[di] * ip
         end
+
+        ν_vec = ν_vec + α_w[k]
+        n += 1
+      end
+    end
+
+    if !iszero(Σ)
+      μρ_vec = μ_vec + ρ_vec
+      second_term_S = 0
+      for j in 1:R, i in 1:R
+        second_term_S += μρ_vec[i] * B_omega_S[i, j] * μρ_vec[j]
       end
 
-      if !iszero(Σ)
-        μρ_vec = μ_vec + ρ_vec
-        second_term_S = 0
-        for j in 1:R, i in 1:R
-          second_term_S += μρ_vec[i] * B_omega_S[i, j] * μρ_vec[j]
-        end
+      denom_S = first_term_S - second_term_S
+      @assert denom_S != 0 "Denominator in Freudenthal's formula is zero"
 
-        denom_S = first_term_S - second_term_S
-        @assert denom_S != 0 "Denominator in Freudenthal's formula is zero"
-
-        numerator = 2 * S * Σ
-        mult, rem = divrem(numerator, denom_S)
-        @assert iszero(rem) "Freudenthal formula gave non-integer multiplicity for μ=$μ_vec"
-        multiplicities[μ_vec] = mult
-        push!(current_layer, μ_vec)
-      end
+      numerator = 2 * S * Σ
+      mult, rem = divrem(numerator, denom_S)
+      @assert iszero(rem) "Freudenthal formula gave non-integer multiplicity for μ=$(μ_vec)"
+      dom_mults[idx] = mult
     end
   end
 
-  # Remove zero-multiplicity placeholders
-  filter!(p -> p.second != 0, multiplicities)
+  # ─── Phase 3: expand dominant multiplicities to full weight system ──
+  multiplicities = Dict{SVector{R,Int},Int}()
+  for idx in 1:n_dom
+    dom_mults[idx] == 0 && continue
+    m = dom_mults[idx]
+    orbit = weyl_orbit(DT, dom_weights[idx])
+    for w in orbit
+      multiplicities[w.vec] = m
+    end
+  end
 
   _freudenthal_cache[cache_key] = multiplicities
   return multiplicities

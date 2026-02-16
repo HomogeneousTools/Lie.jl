@@ -167,11 +167,11 @@ is_dominant(w::WeightLatticeElem) = all(>=(0), w.vec)
 
 Convert a root space element to weight coordinates.
 Since αᵢ = ∑ⱼ Cⱼᵢ ωⱼ, the weight coordinates of v = ∑ vᵢ αᵢ are:
-``w_j = ∑_i C_{ji} v_i = (Cᵀ v)_j``
+``w_j = ∑_i C_{ji} v_i = (C v)_j``
 """
 function WeightLatticeElem(r::RootSpaceElem{DT,R}) where {DT,R}
   C = cartan_matrix(DT)
-  w = C' * r.vec
+  w = C * r.vec
   return WeightLatticeElem{DT,R}(SVector{R,Int}(w))
 end
 
@@ -181,11 +181,11 @@ end
 Convert a weight to root coordinates (may be rational; this function
 rounds to Int which is valid only for weights in the root lattice).
 
-``v = C^{-T} w``
+``v = C^{-1} w``
 """
 function RootSpaceElem(w::WeightLatticeElem{DT,R}) where {DT,R}
   Cinv = cartan_matrix_inverse(DT)
-  v = Cinv' * SVector{R,Rational{Int}}(w.vec)
+  v = Cinv * SVector{R,Rational{Int}}(w.vec)
   # Check integrality
   v_int = SVector{R,Int}(round.(Int, v))
   return RootSpaceElem{DT,R}(v_int)
