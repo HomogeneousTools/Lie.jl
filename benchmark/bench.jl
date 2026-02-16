@@ -250,6 +250,7 @@ header("6. Tensor product decomposition")
 function bench_tensor(::Type{DT}, c1, c2) where {DT}
   R = rank(DT)
   empty!(Lie._tensor_cache)
+  empty!(Lie._freudenthal_cache)
   λ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(c1)))
   μ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(c2)))
   return tensor_product(λ, μ)
@@ -270,6 +271,8 @@ tensor_cases = [
   (TypeE{6}, [1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 1], "V(ω₁)⊗V(ω₆)"),
   (TypeE{6}, [1, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0], "V(ω₁)⊗V(ω₁)"),
   (TypeE{8}, [0, 0, 0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 0, 0, 0, 1], "V(ω₈)⊗V(ω₈)"),
+  (TypeE{8}, [1, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 1], "V(ω₁)⊗V(ω₈)"),
+  (TypeE{8}, [1, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0], "V(ω₁)⊗V(ω₄)"),
 ]
 
 for (DT, c1, c2, label) in tensor_cases
@@ -294,6 +297,7 @@ end
 
 function bench_bk(::Type{DT}, c1, c2) where {DT}
   R = rank(DT)
+  empty!(Lie._freudenthal_cache)
   λ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(c1)))
   μ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(c2)))
   if Lie.degree(λ) > Lie.degree(μ)
@@ -310,9 +314,12 @@ lr_bk_cases = [
   (TypeA{5}, [1, 0, 0, 0, 0], [1, 0, 0, 0, 0], "V(ω₁)⊗V(ω₁)"),
   (TypeA{5}, [0, 1, 0, 0, 0], [0, 1, 0, 0, 0], "V(ω₂)⊗V(ω₂)"),
   (TypeA{5}, [2, 0, 0, 0, 0], [2, 0, 0, 0, 0], "V(2ω₁)⊗V(2ω₁)"),
+  (TypeA{5}, [1, 1, 0, 0, 0], [1, 0, 0, 1, 0], "V(ω₁+ω₂)⊗V(ω₁+ω₄)"),
   (TypeA{7}, [1, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0], "V(ω₁)⊗V(ω₁)"),
   (TypeA{7}, [0, 1, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0], "V(ω₂)⊗V(ω₂)"),
+  (TypeA{7}, [0, 0, 1, 0, 0, 0, 0], [0, 0, 1, 0, 0, 0, 0], "V(ω₃)⊗V(ω₃)"),
   (TypeA{9}, [1, 0, 0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0, 0], "V(ω₁)⊗V(ω₁)"),
+  (TypeA{9}, [0, 1, 0, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0, 0, 0], "V(ω₂)⊗V(ω₂)"),
 ]
 
 for (DT, c1, c2, label) in lr_bk_cases
@@ -341,6 +348,7 @@ function bench_exterior(::Type{DT}, coords, k) where {DT}
   R = rank(DT)
   empty!(Lie._exterior_power_cache)
   empty!(Lie._tensor_cache)
+  empty!(Lie._freudenthal_cache)
   λ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(coords)))
   return ⋀(k, λ)
 end
@@ -349,6 +357,7 @@ function bench_symmetric(::Type{DT}, coords, k) where {DT}
   R = rank(DT)
   empty!(Lie._symmetric_power_cache)
   empty!(Lie._tensor_cache)
+  empty!(Lie._freudenthal_cache)
   λ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(coords)))
   return Sym(k, λ)
 end
@@ -373,6 +382,9 @@ ext_cases = [
   (TypeG2, [1, 0], 4, "⋀⁴V(ω₁)"),
   (TypeE{6}, [1, 0, 0, 0, 0, 0], 2, "⋀²V(ω₁)"),
   (TypeE{8}, [0, 0, 0, 0, 0, 0, 0, 1], 2, "⋀²V(ω₈)"),
+  (TypeE{8}, [0, 0, 0, 0, 0, 0, 0, 1], 3, "⋀³V(ω₈)"),
+  (TypeE{8}, [1, 0, 0, 0, 0, 0, 0, 0], 2, "⋀²V(ω₁)"),
+  (TypeE{8}, [1, 0, 0, 0, 0, 0, 0, 0], 3, "⋀³V(ω₁)"),
 ]
 
 for (DT, coords, k, label) in ext_cases
@@ -398,6 +410,8 @@ sym_cases = [
   (TypeG2, [1, 0], 2, "Sym²V(ω₁)"),
   (TypeG2, [1, 0], 3, "Sym³V(ω₁)"),
   (TypeG2, [1, 0], 4, "Sym⁴V(ω₁)"),
+  (TypeE{8}, [0, 0, 0, 0, 0, 0, 0, 1], 3, "Sym³V(ω₈)"),
+  (TypeE{8}, [0, 0, 0, 0, 0, 0, 0, 1], 4, "Sym⁴V(ω₈)"),
 ]
 
 for (DT, coords, k, label) in sym_cases
@@ -438,6 +452,50 @@ for (DT, coords, label) in bwb_cases
   d_str = result === nothing ? "singular" : "ℓ=$(result[1])"
   b = @benchmark bench_bwb($DT, $coords) evals = 1 samples = 500
   report("$(sprint(show,DT())): $label ($d_str)", b; category="bwb")
+end
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  10. Plethysm
+# ═══════════════════════════════════════════════════════════════════════════════
+
+header("10. Plethysm")
+
+function bench_plethysm(::Type{DT}, coords, partition) where {DT}
+  R = rank(DT)
+  λ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(coords)))
+  return plethysm(partition, λ)
+end
+
+plethysm_cases = [
+  # Symmetric powers via plethysm (should match symmetric_power)
+  (TypeA{3}, [1, 0, 0], [3], "S₍₃₎V(ω₁) = Sym³"),
+  (TypeA{3}, [1, 0, 0], [4], "S₍₄₎V(ω₁) = Sym⁴"),
+  (TypeA{4}, [1, 0, 0, 0], [3], "S₍₃₎V(ω₁) = Sym³"),
+  # Exterior powers via plethysm (should match exterior_power)
+  (TypeA{3}, [1, 0, 0], [1, 1, 1], "S₍₁₁₁₎V(ω₁) = ⋀³"),
+  (TypeA{4}, [1, 0, 0, 0], [1, 1, 1], "S₍₁₁₁₎V(ω₁) = ⋀³"),
+  (TypeA{4}, [1, 0, 0, 0], [1, 1, 1, 1], "S₍₁₁₁₁₎V(ω₁) = ⋀⁴"),
+  # Mixed symmetry (hook partitions)
+  (TypeA{3}, [1, 0, 0], [2, 1], "S₍₂,₁₎V(ω₁)"),
+  (TypeA{4}, [1, 0, 0, 0], [2, 1], "S₍₂,₁₎V(ω₁)"),
+  (TypeA{4}, [1, 0, 0, 0], [2, 1, 1], "S₍₂,₁,₁₎V(ω₁)"),
+  (TypeA{4}, [1, 0, 0, 0], [2, 2], "S₍₂,₂₎V(ω₁)"),
+  (TypeA{4}, [1, 0, 0, 0], [3, 1], "S₍₃,₁₎V(ω₁)"),
+  # Non-type-A
+  (TypeB{3}, [1, 0, 0], [2, 1], "S₍₂,₁₎V(ω₁)"),
+  (TypeG2, [1, 0], [2, 1], "S₍₂,₁₎V(ω₁)"),
+  (TypeG2, [1, 0], [3], "S₍₃₎V(ω₁) = Sym³"),
+  # Larger representations
+  (TypeA{3}, [1, 1, 0], [2, 1], "S₍₂,₁₎V(ω₁+ω₂)"),
+  (TypeA{3}, [2, 0, 0], [2, 1], "S₍₂,₁₎V(2ω₁)"),
+]
+
+for (DT, coords, partition, label) in plethysm_cases
+  bench_plethysm(DT, coords, partition)
+  b = @benchmark bench_plethysm($DT, $coords, $partition) evals = 1 samples = 10
+  r = bench_plethysm(DT, coords, partition)
+  report("$(sprint(show,DT())): $label → $(length(r.terms)) irreps", b;
+    category="plethysm")
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -499,9 +557,9 @@ function load_results_json(filepath::String)
   return results
 end
 
-function compare_results(current::Vector{BenchResult}, baseline_path::String)
-  baseline = load_results_json(baseline_path)
-
+function compare_results_from_data(
+  current::Vector{BenchResult}, baseline::Dict{String,Float64}, baseline_path::String
+)
   println("\n", "="^80)
   println("  Regression comparison vs: $baseline_path")
   println("="^80)
@@ -548,12 +606,20 @@ println("\n", "="^80)
 println("  All benchmarks complete. $(length(ALL_RESULTS)) benchmarks recorded.")
 println("="^80)
 
+# Load baseline BEFORE saving new results (so we don't compare against ourselves)
+baseline_path = if COMPARE
+  lp = joinpath(@__DIR__, "results", "latest.json")
+  isfile(lp) ? lp : nothing
+else
+  nothing
+end
+baseline_data = isnothing(baseline_path) ? nothing : load_results_json(baseline_path)
+
 saved_path = save_results(ALL_RESULTS)
 
 if COMPARE
-  latest = joinpath(@__DIR__, "results", "latest.json")
-  if isfile(latest) && latest != saved_path
-    compare_results(ALL_RESULTS, latest)
+  if !isnothing(baseline_data)
+    compare_results_from_data(ALL_RESULTS, baseline_data, baseline_path)
   else
     println("⚠️  No previous results to compare against.")
   end
