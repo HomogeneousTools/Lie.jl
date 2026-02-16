@@ -1484,7 +1484,7 @@ function _partitions_recurse!(
 )
   if n == 0
     push!(result, copy(prefix))
-    return
+    return nothing
   end
   for k in min(n, max_part):-1:1
     push!(prefix, k)
@@ -1594,7 +1594,7 @@ from the Maya diagram `edge`, tracking leg-length parity in `k`.
 """
 function _mn_recurse!(
   edge::Vector{Bool}, μ::Vector{Int}, m2::Int, d::Int, l::Int,
-  λ_prime::Vector{Int}, i::Int, k::Int
+  λ_prime::Vector{Int}, i::Int, k::Int,
 )
   if i > m2
     # All parts >= 2 placed; count remaining 1-hooks via hook-length formula
@@ -1785,7 +1785,9 @@ function _vdecomp(::Type{DT}, dom_char::Dict{SVector{R,Int},Int}) where {DT,R}
   result = WeylCharacter(DT)
   for (ν, m) in dom_char
     m == 0 && continue
-    bk = _brauer_klimyk_dominant(Dict(ν => m), WeightLatticeElem{DT,R}(zero(SVector{R,Int})))
+    bk = _brauer_klimyk_dominant(
+      Dict(ν => m), WeightLatticeElem{DT,R}(zero(SVector{R,Int}))
+    )
     add!(result, bk)
   end
   return result
