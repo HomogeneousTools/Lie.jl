@@ -21,6 +21,49 @@ include("WeylGroup.jl")
 # ─── Characters and representation ring ─────────────────────────────────────
 include("Characters.jl")
 
+# ─── Cache management ───────────────────────────────────────────────────────
+
+"""
+    clear_all_caches!()
+
+Clear all internal caches used by Lie.jl.
+
+This function empties the following caches:
+- Root system cache (singleton RootSystem instances per Dynkin type)
+- Longest Weyl element cache (cached per Dynkin type)
+- Freudenthal formula cache (weight multiplicity computations)
+- Tensor product cache (tensor product decompositions)
+- Symmetric power cache (symmetric power decompositions)
+- Exterior power cache (exterior power decompositions)
+
+Caches are automatically populated on demand. Clearing them can be useful for:
+- Benchmarking (to measure cold-start performance)
+- Memory management (to free memory after large computations)
+- Testing (to ensure reproducibility)
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> ω₁ = fundamental_weight(TypeA{2}, 1);
+
+julia> tensor_product(ω₁, ω₁);  # populates caches
+
+julia> clear_all_caches!()      # clears all caches
+```
+"""
+function clear_all_caches!()
+  empty!(_root_system_cache)
+  empty!(_longest_element_cache)
+  empty!(_freudenthal_cache)
+  empty!(_tensor_cache)
+  empty!(_symmetric_power_cache)
+  empty!(_exterior_power_cache)
+  return nothing
+end
+
+export clear_all_caches!
+
 # ─── Precompilation ─────────────────────────────────────────────────────────
 
 # ─── Precompilation ─────────────────────────────────────────────────────────
