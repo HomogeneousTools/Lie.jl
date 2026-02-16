@@ -131,6 +131,62 @@ function highest_weight(V::WeylCharacter{DT,R}) where {DT,R}
   return first(keys(V.terms))
 end
 
+"""
+    degree(V::WeylCharacter) -> Int or BigInt
+
+Return the dimension of an effective character (actual representation).
+
+For an effective character `V = ∑ mᵢ V(λᵢ)` where all `mᵢ ≥ 0`, the degree is:
+```
+deg(V) = ∑ mᵢ dim(V(λᵢ))
+```
+
+This is the total dimension of the representation as a direct sum of irreducibles.
+If `V` is not effective (has negative multiplicities), this function will error.
+
+Returns `Int` for small dimensions, automatically promotes to `BigInt` when needed.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> ω₁ = fundamental_weight(TypeA{2}, 1);
+
+julia> V = WeylCharacter(ω₁);
+
+julia> degree(V)  # dim of standard representation
+3
+
+julia> degree(V^2)  # dim of V ⊗ V = Sym²V ⊕ ⋀²V
+9
+
+julia> degree(symmetric_power(ω₁, 2))  # dim of Sym²V
+6
+
+julia> # E₈ adjoint has dimension 248
+       ω₈ = fundamental_weight(TypeE{8}, 8);
+
+julia> degree(WeylCharacter(ω₈))
+248
+```
+"""
+function degree(V::WeylCharacter{DT,R}) where {DT,R}
+  is_effective(V) ||
+    error("degree requires an effective character (non-negative multiplicities)")
+
+  # Sum over all irreducible components: ∑ mᵢ dim(V(λᵢ))
+  result = 0
+  for (λ, m) in V.terms
+    # degree(λ) computes dim(V(λ)) using Weyl dimension formula
+    dim_λ = degree(λ)
+    # Multiply by multiplicity and accumulate
+    # Use + to let Julia handle Int → BigInt promotion automatically
+    result = result + m * dim_λ
+  end
+
+  return result
+end
+
 # ─── Iteration & collection ─────────────────────────────────────────────────
 
 Base.iterate(V::WeylCharacter, args...) = iterate(V.terms, args...)
