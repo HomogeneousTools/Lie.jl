@@ -41,6 +41,8 @@ jobs:
         with:
           version: '1'
       - uses: julia-actions/cache@v2
-      - uses: julia-actions/julia-buildpkg@v1
+      - name: Install dependencies
+        run: |
+          julia --project=docs -e 'using Pkg; Pkg.develop(PackageSpec(path=".")); Pkg.instantiate()'
       - name: Run doctests
-        run: julia --project=. -e 'using Documenter, Lie; doctest(Lie)'
+        run: julia --project=docs -e 'using Documenter, Lie; doctest(Lie; manual="docs/src")'
