@@ -384,29 +384,12 @@ julia> length(weyl_orbit(TypeA{2}, fundamental_weight(TypeA{2}, 1)))
 ```
 """
 function weyl_orbit(::Type{DT}, w::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R}
-  C = cartan_matrix(DT)
-  orbit = Set{SVector{R,Int}}()
-  push!(orbit, w.vec)
-  queue = [w.vec]
-
-  while !isempty(queue)
-    v = popfirst!(queue)
-    for s in 1:R
-      # Reflect by s-th simple reflection
-      pairing = v[s]
-      new_v = MVector{R,Int}(v)
-      for j in 1:R
-        new_v[j] -= pairing * C[j, s]
-      end
-      sv = SVector{R,Int}(new_v)
-      if sv ∉ orbit
-        push!(orbit, sv)
-        push!(queue, sv)
-      end
-    end
+  # Use weylloop for efficient traversal (no hash set)
+  result = WeightLatticeElem{DT,R}[]
+  weylloop(DT, Vector{Int}(w.vec)) do tmp
+    push!(result, WeightLatticeElem{DT,R}(SVector{R,Int}(tmp)))
   end
-
-  return [WeightLatticeElem{DT,R}(v) for v in orbit]
+  return result
 end
 
 function weyl_orbit(w::WeightLatticeElem{DT,R}) where {DT,R}

@@ -466,6 +466,33 @@ julia> sum(values(mults))  # dim = 8
 ```
 """
 function freudenthal_formula(λ::WeightLatticeElem{DT,R}) where {DT,R}
+  dom_mults = _dominant_character(λ)
+
+  # Expand dominant multiplicities to full weight system
+  multiplicities = Dict{SVector{R,Int},Int}()
+  for (μ_vec, m) in dom_mults
+    m == 0 && continue
+    orbit = weyl_orbit(DT, WeightLatticeElem{DT,R}(μ_vec))
+    for w in orbit
+      multiplicities[w.vec] = m
+    end
+  end
+
+  return multiplicities
+end
+
+"""
+    _dominant_character(λ::WeightLatticeElem{DT,R}) -> Dict{SVector{R,Int}, Int}
+
+Compute the dominant weight multiplicities of ``\\mathrm{V}(λ)`` using
+Freudenthal's recursion. Returns a dictionary mapping *dominant* weights
+to their multiplicities (all weights in a Weyl orbit share the same
+multiplicity).
+
+This is the internal workhorse cached in `_freudenthal_cache`. The full
+weight system is obtained by expanding orbits in [`freudenthal_formula`](@ref).
+"""
+function _dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
   @assert is_dominant(λ) "Weight must be dominant"
 
   # Check cache first
@@ -641,19 +668,16 @@ function freudenthal_formula(λ::WeightLatticeElem{DT,R}) where {DT,R}
     end
   end
 
-  # ─── Phase 3: expand dominant multiplicities to full weight system ──
-  multiplicities = Dict{SVector{R,Int},Int}()
+  # ─── Build dominant-only result dict ─────────────────────────────
+  dom_result = Dict{SVector{R,Int},Int}()
+  sizehint!(dom_result, n_dom)
   for idx in 1:n_dom
     dom_mults[idx] == 0 && continue
-    m = dom_mults[idx]
-    orbit = weyl_orbit(DT, dom_weights[idx])
-    for w in orbit
-      multiplicities[w.vec] = m
-    end
+    dom_result[dom_weights[idx].vec] = dom_mults[idx]
   end
 
-  _freudenthal_cache[cache_key] = multiplicities
-  return multiplicities
+  _freudenthal_cache[cache_key] = dom_result
+  return dom_result
 end
 
 """
@@ -676,8 +700,11 @@ julia> weight_multiplicity(ω₁ + ω₂, zero(ω₁))   # zero weight of adjoin
 function weight_multiplicity(
   λ::WeightLatticeElem{DT,R}, μ::WeightLatticeElem{DT,R}
 ) where {DT,R}
-  mults = freudenthal_formula(λ)
-  return get(mults, μ.vec, 0)
+  # All weights in the same Weyl orbit have the same multiplicity,
+  # so we can look up the dominant conjugate in the dominant character.
+  dom_mults = _dominant_character(λ)
+  μ_dom = conjugate_dominant_weight(μ)
+  return get(dom_mults, μ_dom.vec, 0)
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -777,6 +804,71 @@ function brauer_klimyk(
       result[ν] = get(result, ν, 0) - m
     end
     # ε == 0: singular, skip
+  end
+
+  # Prune zeros
+  filter!(p -> !iszero(p.second), result)
+  return WeylCharacter{DT,R}(result)
+end
+
+"""
+    _brauer_klimyk_dominant(dom_char::Dict{SVector{R,Int}, Int}, μ::WeightLatticeElem{DT,R}) -> WeylCharacter{DT,R}
+
+Like [`brauer_klimyk`](@ref), but takes a **dominant-only** character dict
+(as returned by [`_dominant_character`](@ref)) and expands Weyl orbits
+on-the-fly using [`weylloop`](@ref). This avoids materializing the full
+weight system and eliminates hash-set overhead for large orbits.
+
+The Brauer–Klimyk formula is:
+``\\mathrm{V} \\otimes \\mathrm{V}(μ) = \\sum_{\\text{dom. wts } λ_d} m(λ_d) \\sum_{w \\in W \\cdot λ_d} ε(w(λ_d)+μ) \\cdot \\mathrm{V}(ν(w(λ_d)+μ))``
+"""
+function _brauer_klimyk_dominant(
+  dom_char::Dict{SVector{R,Int},Int}, μ::WeightLatticeElem{DT,R}
+) where {DT,R}
+  @assert is_dominant(μ) "Weight μ must be dominant"
+
+  C = cartan_matrix(DT)
+  result = Dict{WeightLatticeElem{DT,R},Int}()
+  dr = MVector{R,Int}(undef)      # workspace for dot_reduce
+
+  for (λ_dom_vec, m) in dom_char
+    m == 0 && continue
+
+    # Traverse the Weyl orbit of λ_dom, applying dot_reduce(μ + w) inline.
+    weylloop(DT, Vector{Int}(λ_dom_vec)) do orbit_wt
+      # Inline dot_reduce(μ + orbit_wt)
+      for j in 1:R
+        dr[j] = μ.vec[j] + orbit_wt[j]
+      end
+
+      ε = 1
+      while true
+        done = true
+        for s in 1:R
+          c = dr[s]
+          if c == -1
+            ε = 0
+            done = true
+            break
+          end
+          if c <= -2
+            ε = -ε
+            pairing = c + 1
+            for j in 1:R
+              dr[j] -= pairing * C[j, s]
+            end
+            done = false
+            break
+          end
+        end
+        done && break
+      end
+
+      if ε != 0
+        ν = WeightLatticeElem{DT,R}(SVector{R,Int}(dr))
+        result[ν] = get(result, ν, 0) + ε * m
+      end
+    end
   end
 
   # Prune zeros
@@ -1054,7 +1146,7 @@ export lr_tensor_product
 const _tensor_cache = Dict{Tuple{Type,Any,Any},Any}()
 
 # Cache for Freudenthal weight multiplicities.
-# Key: (DT, λ), Value: Dict{SVector{R,Int}, Int}.
+# Key: (DT, λ), Value: Dict{SVector{R,Int}, Int} (dominant weights only).
 const _freudenthal_cache = Dict{Tuple{Type,Any},Any}()
 
 """
@@ -1089,14 +1181,13 @@ function tensor_product(λ::WeightLatticeElem{DT,R}, μ::WeightLatticeElem{DT,R}
   key_rev = (DT, μ, λ)
   haskey(_tensor_cache, key_rev) && return _tensor_cache[key_rev]::WeylCharacter{DT,R}
 
-  # Brauer–Klimyk: decompose the smaller rep via Freudenthal, tensor with
-  # the larger one via the BK formula. Use degree() (Weyl dimension formula,
-  # O(n_pos) BigInt mults) to decide which side is smaller, avoiding
-  # computing Freudenthal for the large rep unnecessarily.
+  # Brauer–Klimyk: decompose the smaller rep via Freudenthal (dominant only),
+  # then expand orbits on-the-fly in BK. This avoids materializing the
+  # full weight system (e.g. 5M weights for E₈).
   if degree(λ) <= degree(μ)
-    result = brauer_klimyk(freudenthal_formula(λ), μ)
+    result = _brauer_klimyk_dominant(_dominant_character(λ), μ)
   else
-    result = brauer_klimyk(freudenthal_formula(μ), λ)
+    result = _brauer_klimyk_dominant(_dominant_character(μ), λ)
   end
 
   _tensor_cache[key] = result
@@ -1245,15 +1336,15 @@ end
 # Generic Newton–Girard: uses Brauer–Klimyk for each Adams ⊗ power term
 function _symmetric_power_newton_girard(λ::WeightLatticeElem{DT,R}, k::Int) where {DT,R}
   result = WeylCharacter(DT)
-  # Cache Freudenthal result: all Adams operators for V(λ) use the same weights
-  mults = freudenthal_formula(λ)
+  # Cache dominant character: all Adams operators for V(λ) use the same weights
+  dom_mults = _dominant_character(λ)
 
   for r in 1:k
-    adams = Dict{SVector{R,Int},Int}(r * μ => m for (μ, m) in mults)
+    adams = Dict{SVector{R,Int},Int}(r * μ => m for (μ, m) in dom_mults)
     prev = symmetric_power(λ, k - r)
 
     for (μ, m) in prev.terms
-      bk = brauer_klimyk(adams, μ)
+      bk = _brauer_klimyk_dominant(adams, μ)
       addmul!(result, bk, m)
     end
   end
@@ -1315,16 +1406,16 @@ end
 # Generic Newton–Girard: uses Brauer–Klimyk for each Adams ⊗ power term
 function _exterior_power_newton_girard(λ::WeightLatticeElem{DT,R}, k::Int) where {DT,R}
   result = WeylCharacter(DT)
-  # Cache Freudenthal result: all Adams operators for V(λ) use the same weights
-  mults = freudenthal_formula(λ)
+  # Cache dominant character: all Adams operators for V(λ) use the same weights
+  dom_mults = _dominant_character(λ)
 
   for r in 1:k
-    adams = Dict{SVector{R,Int},Int}(r * μ => m for (μ, m) in mults)
+    adams = Dict{SVector{R,Int},Int}(r * μ => m for (μ, m) in dom_mults)
     prev = exterior_power(λ, k - r)
 
     sign = iseven(r) ? -1 : 1
     for (μ, m) in prev.terms
-      bk = brauer_klimyk(adams, μ)
+      bk = _brauer_klimyk_dominant(adams, μ)
       addmul!(result, bk, sign * m)
     end
   end
