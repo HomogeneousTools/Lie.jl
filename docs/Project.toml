@@ -1,6 +1,7 @@
 [deps]
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 Lie = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [sources]
 Lie = {path = ".."}
