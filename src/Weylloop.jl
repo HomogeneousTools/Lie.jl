@@ -12,201 +12,277 @@
 #
 #  This eliminates the O(|orbit|) hash overhead that dominates large orbits
 #  (e.g. E₈ with 5 million orbit points).
+#
+#  All transforms and inner-loop functions dispatch on the Dynkin type,
+#  allowing the compiler to inline transforms and unroll small fixed-size
+#  loops (rank ≤ 8).  Workspace uses stack-allocated MVector where possible.
 # ═══════════════════════════════════════════════════════════════════════════════
 
 # ─── ε-basis transforms per simple type ─────────────────────────────────────
+#
+# Each pair (_w2e!, _e2w!) converts between fundamental-weight coords (w) and
+# ε-coords (e).  They dispatch on Type{DT} so the compiler knows the rank
+# and can unroll the (tiny) loops.
 
 # Type A: ε_i = ω_i + ⋯ + ω_r (partial sums from right), ε_{r+1} = 0.
-function _w2e_A!(e::AbstractVector, w::AbstractVector, r::Int)
+@inline function _w2e!(::Type{TypeA{N}}, e, w) where {N}
   s = 0
-  e[r + 1] = 0
-  for i in r:-1:1
+  @inbounds e[N + 1] = 0
+  @inbounds for i in N:-1:1
     s += w[i]
     e[i] = s
   end
 end
-function _e2w_A!(w::AbstractVector, e::AbstractVector, r::Int)
-  for i in 1:r
+@inline function _e2w!(::Type{TypeA{N}}, w, e) where {N}
+  @inbounds for i in 1:N
     w[i] = e[i] - e[i + 1]
   end
 end
 
 # Type B: ε_i = 2ω_i + ⋯ + 2ω_{r-1} + ω_r for i < r, ε_r = ω_r.
-function _w2e_B!(e::AbstractVector, w::AbstractVector, r::Int)
-  s = w[r]
-  e[r] = s
-  for i in (r - 1):-1:1
+@inline function _w2e!(::Type{TypeB{N}}, e, w) where {N}
+  @inbounds s = w[N]
+  @inbounds e[N] = s
+  @inbounds for i in (N - 1):-1:1
     s += 2 * w[i]
     e[i] = s
   end
 end
-function _e2w_B!(w::AbstractVector, e::AbstractVector, r::Int)
-  for i in 1:(r - 1)
+@inline function _e2w!(::Type{TypeB{N}}, w, e) where {N}
+  @inbounds for i in 1:(N - 1)
     w[i] = (e[i] - e[i + 1]) ÷ 2
   end
-  w[r] = e[r]
+  @inbounds w[N] = e[N]
 end
 
 # Type C: ε_i = ω_i + ⋯ + ω_r.
-function _w2e_C!(e::AbstractVector, w::AbstractVector, r::Int)
-  s = w[r]
-  e[r] = s
-  for i in (r - 1):-1:1
+@inline function _w2e!(::Type{TypeC{N}}, e, w) where {N}
+  @inbounds s = w[N]
+  @inbounds e[N] = s
+  @inbounds for i in (N - 1):-1:1
     s += w[i]
     e[i] = s
   end
 end
-function _e2w_C!(w::AbstractVector, e::AbstractVector, r::Int)
-  for i in 1:(r - 1)
+@inline function _e2w!(::Type{TypeC{N}}, w, e) where {N}
+  @inbounds for i in 1:(N - 1)
     w[i] = e[i] - e[i + 1]
   end
-  w[r] = e[r]
+  @inbounds w[N] = e[N]
 end
 
 # Type D: ε_r = ω_r - ω_{r-1}, then ε_i = 2ω_i + ⋯ + 2ω_{r-2} + ω_{r-1} + ω_r.
-function _w2e_D!(e::AbstractVector, w::AbstractVector, r::Int)
-  s = w[r] - w[r - 1]
-  e[r] = s
-  for i in (r - 1):-1:1
+@inline function _w2e!(::Type{TypeD{N}}, e, w) where {N}
+  @inbounds s = w[N] - w[N - 1]
+  @inbounds e[N] = s
+  @inbounds for i in (N - 1):-1:1
     s += 2 * w[i]
     e[i] = s
   end
 end
-function _e2w_D!(w::AbstractVector, e::AbstractVector, r::Int)
-  for i in 1:(r - 1)
+@inline function _e2w!(::Type{TypeD{N}}, w, e) where {N}
+  @inbounds for i in 1:(N - 1)
     w[i] = (e[i] - e[i + 1]) ÷ 2
   end
-  w[r] = w[r - 1] + e[r]
+  @inbounds w[N] = w[N - 1] + e[N]
 end
 
-# Type E₆/E₈ (LiE's w2eE68).
-# LiE uses 0-indexed arrays.  Key mapping to 1-indexed Julia:
-#   C: e[u-1] = w[1]-w[2]         →  Julia: e[u] = w[2]-w[3]   (u = perm_size)
-#   C: e[u-i] for i=2..rnk-1      →  Julia: e[u-i+2] for i=3..r
-#   C: e[rnk==6 ? 5 : 0] = extra  →  Julia: e[r==6 ? 6 : 1]
-# Here u = perm_size (5 for E₆, 8 for E₈).
-function _w2e_E68!(e::AbstractVector, w::AbstractVector, r::Int)
-  u = (r == 6) ? 5 : 8  # perm_size
-  s = w[2] - w[3]
-  e[u] = s
-  sumsum = 4 * w[1] - s
-  for i in 3:r
-    s += 2 * w[i]
-    e[u - i + 2] = s
+# Type E₆ (LiE's w2eE68, fully unrolled).
+@inline function _w2e!(::Type{TypeE{6}}, e, w)
+  @inbounds begin
+    s = w[2] - w[3]
+    e[5] = s
+    sumsum = 4 * w[1] - s
+    s += 2 * w[3]
+    e[4] = s
     sumsum += s
+    s += 2 * w[4]
+    e[3] = s
+    sumsum += s
+    s += 2 * w[5]
+    e[2] = s
+    sumsum += s
+    s += 2 * w[6]
+    e[1] = s
+    sumsum += s
+    e[6] = -sumsum
   end
-  e[r == 6 ? 6 : 1] = -sumsum
 end
-function _e2w_E68!(w::AbstractVector, e::AbstractVector, r::Int)
-  u = (r == 6) ? 5 : 8
-  s = e[r == 6 ? 6 : 1]
-  for i in r:-1:3
-    s += e[u - i + 2]
-    w[i] = (e[u - i + 2] - e[u - i + 3]) ÷ 2
+@inline function _e2w!(::Type{TypeE{6}}, w, e)
+  @inbounds begin
+    s = e[6]
+    s += e[1]
+    w[6] = (e[1] - e[2]) ÷ 2
+    s += e[2]
+    w[5] = (e[2] - e[3]) ÷ 2
+    s += e[3]
+    w[4] = (e[3] - e[4]) ÷ 2
+    s += e[4]
+    w[3] = (e[4] - e[5]) ÷ 2
+    w[2] = w[3] + e[5]
+    w[1] = (e[5] - s) ÷ 4
   end
-  w[2] = w[3] + e[u]
-  w[1] = (e[u] - s) ÷ 4
+end
+
+# Type E₈ (LiE's w2eE68, fully unrolled).
+@inline function _w2e!(::Type{TypeE{8}}, e, w)
+  @inbounds begin
+    s = w[2] - w[3]
+    e[8] = s
+    sumsum = 4 * w[1] - s
+    s += 2 * w[3]
+    e[7] = s
+    sumsum += s
+    s += 2 * w[4]
+    e[6] = s
+    sumsum += s
+    s += 2 * w[5]
+    e[5] = s
+    sumsum += s
+    s += 2 * w[6]
+    e[4] = s
+    sumsum += s
+    s += 2 * w[7]
+    e[3] = s
+    sumsum += s
+    s += 2 * w[8]
+    e[2] = s
+    sumsum += s
+    e[1] = -sumsum
+  end
+end
+@inline function _e2w!(::Type{TypeE{8}}, w, e)
+  @inbounds begin
+    s = e[1]
+    s += e[2]
+    w[8] = (e[2] - e[3]) ÷ 2
+    s += e[3]
+    w[7] = (e[3] - e[4]) ÷ 2
+    s += e[4]
+    w[6] = (e[4] - e[5]) ÷ 2
+    s += e[5]
+    w[5] = (e[5] - e[6]) ÷ 2
+    s += e[6]
+    w[4] = (e[6] - e[7]) ÷ 2
+    s += e[7]
+    w[3] = (e[7] - e[8]) ÷ 2
+    w[2] = w[3] + e[8]
+    w[1] = (e[8] - s) ÷ 4
+  end
 end
 
 # Type E₇ (LiE's w2eE7).
-function _w2e_E7!(e::AbstractVector, w::AbstractVector, ::Int)
-  s = 0
-  e[8] = 0
-  for i in 7:-1:3
-    s += w[i]
-    e[i] = s
+@inline function _w2e!(::Type{TypeE{7}}, e, w)
+  @inbounds begin
+    s = 0
+    e[8] = 0
+    for i in 7:-1:3
+      s += w[i]
+      e[i] = s
+    end
+    e[2] = s + w[1]
+    e[1] = e[7] + e[6] + e[5] - e[4] - e[3] - e[2] - 2 * w[2]
   end
-  e[2] = s + w[1]
-  e[1] = e[7] + e[6] + e[5] - e[4] - e[3] - e[2] - 2 * w[2]
 end
-function _e2w_E7!(w::AbstractVector, e::AbstractVector, ::Int)
-  w[1] = e[2] - e[3]
-  for i in 3:7
-    w[i] = e[i] - e[i + 1]
+@inline function _e2w!(::Type{TypeE{7}}, w, e)
+  @inbounds begin
+    w[1] = e[2] - e[3]
+    for i in 3:7
+      w[i] = e[i] - e[i + 1]
+    end
+    w[2] = (e[8] + e[7] + e[6] + e[5] - e[4] - e[3] - e[2] - e[1]) ÷ 2
   end
-  w[2] = (e[8] + e[7] + e[6] + e[5] - e[4] - e[3] - e[2] - e[1]) ÷ 2
 end
 
 # Type F₄ (LiE's w2eF4).
-function _w2e_F4!(e::AbstractVector, w::AbstractVector, ::Int)
-  e[4] = w[3]
-  e[3] = e[4] + 2 * w[2]
-  e[2] = e[3] + 2 * w[1]
-  e[1] = -2 * w[4] - e[2] - e[3] - e[4]
+@inline function _w2e!(::Type{TypeF4}, e, w)
+  @inbounds begin
+    e[4] = w[3]
+    e[3] = e[4] + 2 * w[2]
+    e[2] = e[3] + 2 * w[1]
+    e[1] = -2 * w[4] - e[2] - e[3] - e[4]
+  end
 end
-function _e2w_F4!(w::AbstractVector, e::AbstractVector, ::Int)
-  w[3] = e[4]
-  w[2] = (e[3] - e[4]) ÷ 2
-  w[1] = (e[2] - e[3]) ÷ 2
-  w[4] = -(e[1] + e[2] + e[3] + e[4]) ÷ 2
+@inline function _e2w!(::Type{TypeF4}, w, e)
+  @inbounds begin
+    w[3] = e[4]
+    w[2] = (e[3] - e[4]) ÷ 2
+    w[1] = (e[2] - e[3]) ÷ 2
+    w[4] = -(e[1] + e[2] + e[3] + e[4]) ÷ 2
+  end
 end
 
 # Type G₂ (LiE's w2eG2).
-function _w2e_G2!(e::AbstractVector, w::AbstractVector, ::Int)
-  e[3] = 0
-  e[2] = w[2]
-  e[1] = -w[1] - w[2]
+@inline function _w2e!(::Type{TypeG2}, e, w)
+  @inbounds begin
+    e[3] = 0
+    e[2] = w[2]
+    e[1] = -w[1] - w[2]
+  end
 end
-function _e2w_G2!(w::AbstractVector, e::AbstractVector, ::Int)
-  w[2] = e[2] - e[3]
-  w[1] = e[3] - w[2] - e[1]
+@inline function _e2w!(::Type{TypeG2}, w, e)
+  @inbounds begin
+    w[2] = e[2] - e[3]
+    w[1] = e[3] - w[2] - e[1]
+  end
 end
 
-# ─── Dispatch table ──────────────────────────────────────────────────────────
+# ─── Weylloop parameters (compile-time constants per type) ──────────────────
 
-# Returns (to_e!, from_e!, subtype, eps_dim, perm_size) for a simple type.
 #   subtype: :A (permutations only), :B (perm + all signs), :D (perm + even signs)
-function _weylloop_params(::Type{TypeA{N}}) where {N}
-  (_w2e_A!, _e2w_A!, :A, N + 1, N + 1)
-end
-function _weylloop_params(::Type{TypeB{N}}) where {N}
-  (_w2e_B!, _e2w_B!, :B, N, N)
-end
-function _weylloop_params(::Type{TypeC{N}}) where {N}
-  (_w2e_C!, _e2w_C!, :B, N, N)
-end
-function _weylloop_params(::Type{TypeD{N}}) where {N}
-  (_w2e_D!, _e2w_D!, :D, N, N)
-end
-function _weylloop_params(::Type{TypeE{6}})
-  (_w2e_E68!, _e2w_E68!, :D, 6, 5)
-end
-function _weylloop_params(::Type{TypeE{7}})
-  (_w2e_E7!, _e2w_E7!, :A, 8, 8)
-end
-function _weylloop_params(::Type{TypeE{8}})
-  (_w2e_E68!, _e2w_E68!, :D, 8, 8)
-end
-function _weylloop_params(::Type{TypeF4})
-  (_w2e_F4!, _e2w_F4!, :B, 4, 4)
-end
-function _weylloop_params(::Type{TypeG2})
-  (_w2e_G2!, _e2w_G2!, :A, 3, 3)
-end
+_weylloop_subtype(::Type{TypeA{N}}) where {N} = :A
+_weylloop_subtype(::Type{TypeB{N}}) where {N} = :B
+_weylloop_subtype(::Type{TypeC{N}}) where {N} = :B
+_weylloop_subtype(::Type{TypeD{N}}) where {N} = :D
+_weylloop_subtype(::Type{TypeE{6}}) = :D
+_weylloop_subtype(::Type{TypeE{7}}) = :A
+_weylloop_subtype(::Type{TypeE{8}}) = :D
+_weylloop_subtype(::Type{TypeF4}) = :B
+_weylloop_subtype(::Type{TypeG2}) = :A
+
+_weylloop_eps_dim(::Type{TypeA{N}}) where {N} = N + 1
+_weylloop_eps_dim(::Type{TypeB{N}}) where {N} = N
+_weylloop_eps_dim(::Type{TypeC{N}}) where {N} = N
+_weylloop_eps_dim(::Type{TypeD{N}}) where {N} = N
+_weylloop_eps_dim(::Type{TypeE{6}}) = 6
+_weylloop_eps_dim(::Type{TypeE{7}}) = 8
+_weylloop_eps_dim(::Type{TypeE{8}}) = 8
+_weylloop_eps_dim(::Type{TypeF4}) = 4
+_weylloop_eps_dim(::Type{TypeG2}) = 3
+
+_weylloop_perm_size(::Type{TypeA{N}}) where {N} = N + 1
+_weylloop_perm_size(::Type{TypeB{N}}) where {N} = N
+_weylloop_perm_size(::Type{TypeC{N}}) where {N} = N
+_weylloop_perm_size(::Type{TypeD{N}}) where {N} = N
+_weylloop_perm_size(::Type{TypeE{6}}) = 5
+_weylloop_perm_size(::Type{TypeE{7}}) = 8
+_weylloop_perm_size(::Type{TypeE{8}}) = 8
+_weylloop_perm_size(::Type{TypeF4}) = 4
+_weylloop_perm_size(::Type{TypeG2}) = 3
 
 # ─── Nextperm — lexicographic next permutation (increasing order) ───────────
 
 # Generates the next permutation in increasing lexicographic order.
 # Returns true if a next permutation was found, false at the last
 # (fully decreasing) permutation.
-function _nextperm!(w::AbstractVector{Int}, n::Int)
-  n <= 1 && return false
+@inline function _nextperm!(w::AbstractVector{Int}, ::Val{N}) where {N}
+  N <= 1 && return false
   # Find last ascent: rightmost i where w[i] < w[i+1]
-  i = n - 1
-  while i >= 1 && w[i] >= w[i + 1]
+  i = N - 1
+  @inbounds while i >= 1 && w[i] >= w[i + 1]
     i -= 1
   end
   i < 1 && return false
   # Find rightmost j > i with w[j] > w[i]
-  j = n
-  while w[i] >= w[j]
+  j = N
+  @inbounds while w[i] >= w[j]
     j -= 1
   end
   # Swap w[i] and w[j]
-  w[i], w[j] = w[j], w[i]
+  @inbounds w[i], w[j] = w[j], w[i]
   # Reverse suffix starting at i+1
-  lo, hi = i + 1, n
-  while lo < hi
+  lo, hi = i + 1, N
+  @inbounds while lo < hi
     w[lo], w[hi] = w[hi], w[lo]
     lo += 1
     hi -= 1
@@ -222,25 +298,25 @@ end
 # Types B/C: strip signs, sort increasingly.
 # Type D: strip signs (count parity), sort increasingly, negate w[1]
 #   if odd parity and w[1] ≠ 0.
-function _normalform!(w::AbstractVector{Int}, n::Int, subtype::Symbol)
+@inline function _normalform!(w::AbstractVector{Int}, ::Val{N}, subtype::Symbol) where {N}
   if subtype == :A
-    sort!(@view(w[1:n]))
-    if w[1] != 0
+    sort!(@view(w[1:N]))
+    @inbounds if w[1] != 0
       c = w[1]
-      for i in 1:n
+      for i in 1:N
         w[i] -= c
       end
     end
   else
     parity = 0
-    for i in 1:n
+    @inbounds for i in 1:N
       if w[i] < 0
         w[i] = -w[i]
         parity += 1
       end
     end
-    sort!(@view(w[1:n]))
-    if subtype == :D && isodd(parity) && w[1] != 0
+    sort!(@view(w[1:N]))
+    @inbounds if subtype == :D && isodd(parity) && w[1] != 0
       w[1] = -w[1]
     end
   end
@@ -252,7 +328,7 @@ function _weyl_matrix(::Type{DT}, word::Vector{Int}) where {DT}
   R = rank(DT)
   C = cartan_matrix(DT)
   M = Matrix{Int}(_I, R, R)
-  for k in word
+  @inbounds for k in word
     for i in 1:R
       pairing = M[i, k]
       iszero(pairing) && continue
@@ -378,6 +454,10 @@ permutation generation and Gray-code sign flips — with no hash set or BFS.
 For exceptional types, coset representatives W / W_classical are precomputed
 as matrices.
 
+All transforms dispatch on the Dynkin type, enabling the compiler to inline
+them and unroll fixed-size loops.  Workspace vectors use stack-allocated
+`MVector` from StaticArrays.
+
 `action!` receives a mutable workspace vector; it must NOT hold a reference
 to this vector across calls (copy if needed).
 """
@@ -385,20 +465,22 @@ function weylloop(
   action!::F, ::Type{DT}, v::AbstractVector{Int}
 ) where {F,DT<:SimpleDynkinType}
   R = rank(DT)
-  to_e!, from_e!, subtype, eps_dim, perm_size = _weylloop_params(DT)
+  subtype = _weylloop_subtype(DT)
+  ED = _weylloop_eps_dim(DT)
+  PS = _weylloop_perm_size(DT)
 
-  # Workspace vectors
-  tmp_w = Vector{Int}(undef, R)    # weight-coord scratch for from_e!
-  alt_w = Vector{Int}(undef, R)    # scratch for matrix multiply
+  # Stack-allocated workspace
+  tmp_w = MVector{R,Int}(undef)    # weight-coord scratch for _e2w!
+  alt_w = MVector{R,Int}(undef)    # scratch for matrix multiply
 
   coset_reps = _coset_reps(DT)
 
   # Tabulate suborbit representatives:
   # For each coset rep, compute v * rep in weight coords, convert to ε, normalise.
-  suborbit_eps = Vector{Vector{Int}}(undef, 0)
+  suborbit_eps = Vector{MVector{ED,Int}}(undef, 0)
   for rep in coset_reps
     # Multiply v * rep (row-vector × matrix)
-    for j in 1:R
+    @inbounds for j in 1:R
       s = 0
       for i in 1:R
         s += v[i] * rep[i, j]
@@ -406,9 +488,9 @@ function weylloop(
       alt_w[j] = s
     end
     # Convert to ε-coords
-    e_tmp = Vector{Int}(undef, eps_dim)
-    to_e!(e_tmp, alt_w, R)
-    _normalform!(e_tmp, perm_size, subtype)
+    e_tmp = MVector{ED,Int}(undef)
+    _w2e!(DT, e_tmp, alt_w)
+    _normalform!(e_tmp, Val(PS), subtype)
     push!(suborbit_eps, e_tmp)
   end
 
@@ -417,26 +499,34 @@ function weylloop(
   unique!(suborbit_eps)
 
   # Traverse each suborbit
-  inx = Vector{Int}(undef, perm_size)  # indices of nonzero entries
+  _weylloop_suborbits!(action!, DT, suborbit_eps, tmp_w, subtype, Val(PS))
+end
+
+# Inner loop separated for type specialization.  The compiler sees DT, Val{PS},
+# and subtype as constants, so _e2w! and _nextperm! are fully inlined.
+@inline function _weylloop_suborbits!(
+  action!::F, ::Type{DT}, suborbit_eps, tmp_w, subtype::Symbol, ::Val{PS}
+) where {F,DT,PS}
+  inx = MVector{PS,Int}(undef)
 
   for e_rep in suborbit_eps
-    w = copy(e_rep)
+    w = MVector(e_rep)  # copy into mutable stack vector
 
     if subtype == :A
       # ── Type A: permutations only ──────────────────────────────────
-      while true
-        from_e!(tmp_w, w, R)
+      @inbounds while true
+        _e2w!(DT, tmp_w, w)
         action!(tmp_w)
-        _nextperm!(w, perm_size) || break
+        _nextperm!(w, Val(PS)) || break
       end
     else
       # ── Types B/D: permutations + sign changes ────────────────────
-      alternate = (subtype == :D && w[1] != 0)
+      @inbounds alternate = (subtype == :D && w[1] != 0)
 
-      while true  # permutation loop
+      @inbounds while true  # permutation loop
         # Build index of nonzero entries
         n_nonzero = 0
-        for i in 1:perm_size
+        for i in 1:PS
           if w[i] != 0
             n_nonzero += 1
             inx[n_nonzero] = i
@@ -446,7 +536,7 @@ function weylloop(
         # Sign-change inner loop (Gray code, following LiE exactly)
         signcount = UInt(0)
         while true
-          from_e!(tmp_w, w, R)
+          _e2w!(DT, tmp_w, w)
           action!(tmp_w)
 
           # Generate next sign combination
@@ -465,11 +555,11 @@ function weylloop(
             # Done with sign combinations; restore last sign and break
             ii -= 1
             if ii >= 0
-              w[inx[ii + 1]] = -w[inx[ii + 1]]  # +1 for 1-based inx
+              w[inx[ii + 1]] = -w[inx[ii + 1]]
             end
             break
           end
-          w[inx[ii + 1]] = -w[inx[ii + 1]]  # +1 for 1-based inx
+          w[inx[ii + 1]] = -w[inx[ii + 1]]
         end
 
         # Generate next permutation
@@ -478,7 +568,7 @@ function weylloop(
         if minus
           w[1] = -w[1]
         end
-        has_next = _nextperm!(w, perm_size)
+        has_next = _nextperm!(w, Val(PS))
         if minus
           w[1] = -w[1]
         end
@@ -512,7 +602,7 @@ function weylloop(
     v_f = Vector{Int}(v[(offsets[i] + 1):offsets[i + 1]])
     orbits_f = Vector{Int}[]
     weylloop(FDT, v_f) do tmp
-      push!(orbits_f, copy(tmp))
+      push!(orbits_f, Vector{Int}(tmp))
     end
     factor_orbits[i] = orbits_f
   end
