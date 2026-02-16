@@ -69,6 +69,24 @@ function WeylCharacter(λ::WeightLatticeElem{DT,R}, m::Integer=1) where {DT,R}
 end
 
 """
+    WeylCharacter(::Type{DT}, v) -> WeylCharacter{DT,R}
+
+Irreducible character ``\\mathrm{V}(λ)`` where `λ` is the dominant weight
+with the given coordinates in the fundamental weight basis.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> WeylCharacter(TypeA{2}, [1, 0])
+A2(1, 0)
+```
+"""
+function WeylCharacter(::Type{DT}, v::AbstractVector{<:Integer}) where {DT<:DynkinType}
+  return WeylCharacter(WeightLatticeElem(DT, v))
+end
+
+"""
     WeylCharacter(::Type{DT}) -> WeylCharacter{DT,R}
 
 The zero virtual character (additive identity).
