@@ -18,6 +18,9 @@ include("WeightLattice.jl")
 # ─── Weyl groups ────────────────────────────────────────────────────────────
 include("WeylGroup.jl")
 
+# ─── Weylloop — systematic Weyl orbit traversal (LiE-style) ────────────────
+include("Weylloop.jl")
+
 # ─── Characters and representation ring ─────────────────────────────────────
 include("Characters.jl")
 
@@ -55,6 +58,7 @@ julia> clear_all_caches!()      # clears all caches
 function clear_all_caches!()
   empty!(_root_system_cache)
   empty!(_longest_element_cache)
+  empty!(_coset_reps_cache)
   empty!(_freudenthal_cache)
   empty!(_tensor_cache)
   empty!(_symmetric_power_cache)

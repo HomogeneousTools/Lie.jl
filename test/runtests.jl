@@ -987,6 +987,49 @@ using StaticArrays
         fundamental_weight(TypeA{2}, 1) + fundamental_weight(TypeA{2}, 2)
     end
 
+    # ─── Plethysm ─────────────────────────────────────────────────────
+    @testset "Plethysm" begin
+      # Symmetric power = plethysm with one-row partition
+      ω₁_A4 = fundamental_weight(TypeA{4}, 1)
+      for k in 2:5
+        @test plethysm(vcat([k]), ω₁_A4) == Sym(k, ω₁_A4)
+      end
+
+      # Exterior power = plethysm with one-column partition
+      for k in 2:4
+        @test plethysm(ones(Int, k), ω₁_A4) == ⋀(k, ω₁_A4)
+      end
+
+      # Mixed symmetry: S_{(2,1)} functor
+      ω₁_A3 = fundamental_weight(TypeA{3}, 1)
+      p21 = plethysm([2, 1], ω₁_A3)
+      @test is_irreducible(p21)
+      @test highest_weight(p21) ==
+        fundamental_weight(TypeA{3}, 1) + fundamental_weight(TypeA{3}, 2)
+      @test degree(p21) == 20
+
+      # Plethysm on non-type-A: B₃
+      ω₁_B3 = fundamental_weight(TypeB{3}, 1)
+      @test plethysm([2], ω₁_B3) == Sym(2, ω₁_B3)
+      @test plethysm([1, 1], ω₁_B3) == ⋀(2, ω₁_B3)
+
+      # Plethysm on G₂
+      ω₁_G2 = fundamental_weight(TypeG2, 1)
+      @test plethysm([2], ω₁_G2) == Sym(2, ω₁_G2)
+      @test plethysm([1, 1], ω₁_G2) == ⋀(2, ω₁_G2)
+
+      # S_{(2,1)} on B₃ ω₁: dimension check
+      # dim(V(ω₁)) = 7 for B₃, S_{(2,1)} has hook content dim = 7*6*5/3 = 70
+      # but in general the formula is more complex
+      p21_B3 = plethysm([2, 1], ω₁_B3)
+      @test degree(p21_B3) == 112  # known value
+
+      # Trivial cases
+      @test plethysm([1], ω₁_A3) == WeylCharacter(ω₁_A3)
+      @test plethysm(Int[], ω₁_A3) ==
+        WeylCharacter(WeightLatticeElem{TypeA{3},3}(zero(SVector{3,Int})))
+    end
+
     # ─── Dimension consistency ───────────────────────────────────────
     @testset "Dimension consistency" begin
       # Freudenthal dimension matches Weyl dimension formula

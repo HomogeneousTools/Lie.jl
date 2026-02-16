@@ -345,6 +345,55 @@ symmetric_power
 Sym
 ```
 
+## Plethysm (Schur functors)
+
+The **plethysm** ``s_\lambda(\mathrm{V}(\mu))`` applies the Schur functor
+associated to a partition ``\lambda \vdash n`` to an irreducible
+representation ``\mathrm{V}(\mu)``.  Symmetric and exterior powers are
+special cases:
+
+- ``s_{(n)} = \mathrm{Sym}^n``
+- ``s_{(1^n)} = \bigwedge^n``
+
+The general formula uses the **Murnaghan–Nakayama rule** for ``S_n``
+characters and **Adams operators** (power-sum symmetric functions):
+
+```math
+s_\lambda(\mathrm{V}) = \frac{1}{n!} \sum_{\kappa \vdash n}
+\chi^\lambda(\kappa) \cdot |\mathrm{Cl}(\kappa)| \cdot
+\psi^{\kappa_1}(\mathrm{V}) \otimes \cdots \otimes \psi^{\kappa_m}(\mathrm{V})
+```
+
+```jldoctest chars
+julia> plethysm([2], ω₁) == Sym(2, ω₁)   # one-row partition = Sym
+true
+
+julia> plethysm([1, 1], ω₁) == ⋀(2, ω₁)  # one-column partition = ⋀
+true
+
+julia> plethysm([2, 1], ω₁)               # mixed symmetry S_{(2,1)}
+A3(1, 1, 0)
+
+julia> degree(plethysm([2, 1], ω₁))       # adjoint rep of A₃
+20
+```
+
+### Plethysm on non-simply-laced types
+
+```jldoctest chars
+julia> ω₁_g2 = fundamental_weight(TypeG2, 1);
+
+julia> plethysm([2], ω₁_g2) == Sym(2, ω₁_g2)
+true
+
+julia> plethysm([1, 1], ω₁_g2) == ⋀(2, ω₁_g2)
+true
+```
+
+```@docs
+plethysm
+```
+
 ## Reconstructing characters from weights
 
 Given a weight multiplicity dictionary (e.g. from an Adams operator),

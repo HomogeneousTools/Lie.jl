@@ -17,6 +17,7 @@ export freudenthal_formula, weight_multiplicity
 export tensor_product, dual
 export adams_operator, symmetric_power, exterior_power
 export Sym, ⋀
+export plethysm
 export is_effective, is_irreducible, highest_weight
 export character_from_weights
 export add!, addmul!
@@ -1460,6 +1461,356 @@ true
 ```
 """
 ⋀(k::Int, λ::WeightLatticeElem) = exterior_power(λ, k)
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  Plethysm — Schur functor / composition of symmetric functions
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# ─── Partitions of n ─────────────────────────────────────────────────────────
+
+"""
+    _partitions(n::Int) -> Vector{Vector{Int}}
+
+Generate all partitions of `n` in decreasing order.
+"""
+function _partitions(n::Int)
+  result = Vector{Vector{Int}}()
+  _partitions_recurse!(result, Int[], n, n)
+  return result
+end
+
+function _partitions_recurse!(
+  result::Vector{Vector{Int}}, prefix::Vector{Int}, n::Int, max_part::Int
+)
+  if n == 0
+    push!(result, copy(prefix))
+    return
+  end
+  for k in min(n, max_part):-1:1
+    push!(prefix, k)
+    _partitions_recurse!(result, prefix, n - k, k)
+    pop!(prefix)
+  end
+end
+
+# ─── Conjugacy class size ────────────────────────────────────────────────────
+
+"""
+    _classord(κ::Vector{Int}) -> BigInt
+
+Compute the size of the conjugacy class in ``S_n`` corresponding to cycle
+type ``κ``:
+
+``|\\mathrm{Cl}(κ)| = \\frac{n!}{\\prod_{k>0} k^{c_k(κ)} \\cdot c_k(κ)!}``
+
+where ``c_k(κ)`` is the number of parts of ``κ`` equal to ``k``.
+The parts of `κ` must be in weakly decreasing order.
+"""
+function _classord(κ::Vector{Int})
+  x = BigInt(1)
+  n = 0
+  prev = 0
+  f = 1
+  for k in κ
+    k <= 0 && break
+    for j in 1:k
+      n += 1
+      x *= n  # extend n! in numerator
+    end
+    x = div(x, k)  # contribution to k^{c_k} in denominator
+    if k != prev
+      f = 1
+      prev = k
+    else
+      f += 1
+      x = div(x, f)  # contribution to c_k! in denominator
+    end
+  end
+  return x
+end
+
+# ─── Murnaghan–Nakayama rule ────────────────────────────────────────────────
+
+"""
+    _mn_char_val(λ::Vector{Int}, μ::Vector{Int}) -> BigInt
+
+Compute the irreducible ``S_n``-character value ``χ^λ(μ)`` using the
+Murnaghan–Nakayama rule.
+
+Both `λ` and `μ` are partitions of ``n`` with parts in weakly decreasing order.
+
+The algorithm represents the Young diagram of ``λ`` as a Maya diagram
+(edge sequence of horizontal/vertical steps), then recursively removes
+rim hooks of the sizes given by the parts of ``μ`` (largest first).
+"""
+function _mn_char_val(λ::Vector{Int}, μ::Vector{Int})
+  n = sum(λ)
+  n == 0 && return BigInt(1)
+
+  l = length(λ)
+  while l > 0 && λ[l] == 0
+    l -= 1
+  end
+  l == 0 && return BigInt(0)
+
+  m = length(μ)
+  while m > 0 && μ[m] == 0
+    m -= 1
+  end
+
+  # d = width of Maya diagram = λ[1] + l
+  d = λ[1] + l
+
+  # Build edge sequence: traverse from bottom-left to top-right of Young diagram
+  # edge[j] = true (vert) or false (hor)
+  edge = Vector{Bool}(undef, d)
+  j = 1
+  r = l
+  c = 0
+  while r >= 1
+    while c < λ[r]
+      edge[j] = false  # horizontal
+      j += 1
+      c += 1
+    end
+    edge[j] = true  # vertical
+    j += 1
+    r -= 1
+  end
+
+  # m2 = number of parts of μ that are >= 2
+  m2 = m
+  while m2 > 0 && μ[m2] <= 1
+    m2 -= 1
+  end
+
+  λ_prime = Vector{Int}(undef, l)
+  return _mn_recurse!(edge, μ, m2, d, l, λ_prime, 1, 0)
+end
+
+"""
+Recursive Murnaghan–Nakayama: remove rim hooks of sizes μ[i], μ[i+1], …
+from the Maya diagram `edge`, tracking leg-length parity in `k`.
+"""
+function _mn_recurse!(
+  edge::Vector{Bool}, μ::Vector{Int}, m2::Int, d::Int, l::Int,
+  λ_prime::Vector{Int}, i::Int, k::Int
+)
+  if i > m2
+    # All parts >= 2 placed; count remaining 1-hooks via hook-length formula
+    r_conj = l
+    c_conj = 0
+    for jj in 1:d
+      r_conj < 1 && break
+      if edge[jj]
+        r_conj -= 1
+        λ_prime[r_conj + 1] = c_conj
+      else
+        c_conj += 1
+      end
+    end
+    nt = _n_tableaux(λ_prime, l)
+    return isodd(k) ? -nt : nt
+  end
+
+  r_hook = μ[i]
+  value = BigInt(0)
+
+  # Count vertical edges in positions 2..r_hook (initial leg length for j=1)
+  leg = 0
+  for jj in 2:min(r_hook, d)
+    leg += edge[jj] ? 1 : 0
+  end
+
+  for j in 1:(d - r_hook)
+    if !edge[j] && edge[j + r_hook]
+      # Remove hook: swap edges
+      edge[j] = true
+      edge[j + r_hook] = false
+      value += _mn_recurse!(edge, μ, m2, d, l, λ_prime, i + 1, k + leg)
+      # Restore hook
+      edge[j] = false
+      edge[j + r_hook] = true
+    end
+    # Slide leg-length window: add edge entering on right, remove on left
+    # C: k += edge[j+r] - edge[j+1]  (0-indexed j maps to 1-indexed j)
+    leg += (edge[j + r_hook] ? 1 : 0) - (edge[j + 1] ? 1 : 0)
+  end
+
+  return value
+end
+
+"""
+    _n_tableaux(λ::Vector{Int}, l::Int) -> BigInt
+
+Compute the number of standard Young tableaux of shape ``λ`` using the
+hook-length formula:
+
+``f^λ = \\frac{n!}{\\prod_{\\text{boxes}} h(b)}``
+
+`l` is the number of (nonzero) rows.
+"""
+function _n_tableaux(λ::Vector{Int}, l::Int)
+  while l > 1 && λ[l] == 0
+    l -= 1
+  end
+  l <= 0 && return BigInt(1)
+  λ[1] == 0 && return BigInt(1)
+
+  h = zeros(Int, λ[1])  # accumulated column heights
+  res = BigInt(1)
+  k = 0
+
+  for i in l:-1:1
+    li = λ[i]
+    # Multiply by k+1, k+2, ..., k+li (extending the factorial)
+    for j in 1:li
+      k += 1
+      res *= k
+    end
+    # Divide by hook lengths for this row
+    for j in 1:li
+      h[j] += 1
+      hook = h[j] + li - j
+      res = div(res, hook)
+    end
+  end
+
+  return res
+end
+
+# ─── Plethysm main function ─────────────────────────────────────────────────
+
+"""
+    plethysm(λ::Vector{Int}, μ::WeightLatticeElem{DT,R}) -> WeylCharacter{DT,R}
+
+Compute the plethysm ``s_λ(\\mathrm{V}(μ))``, where ``λ`` is a partition of ``n``
+(parts in weakly decreasing order) and ``\\mathrm{V}(μ)`` is the irreducible
+representation with highest weight ``μ``.
+
+The Schur functor ``s_λ`` generalises symmetric and exterior powers:
+  - ``s_{(n)} = \\mathrm{Sym}^n``
+  - ``s_{(1,1,…,1)} = \\bigwedge^n``
+
+Uses the Murnaghan–Nakayama rule for ``S_n`` characters and the formula:
+
+```math
+s_λ(\\mathrm{V}) = \\frac{1}{n!} \\sum_{κ \\vdash n} χ^λ(κ) \\cdot |\\mathrm{Cl}(κ)| \\cdot ψ^{κ_1}(\\mathrm{V}) \\otimes \\cdots \\otimes ψ^{κ_m}(\\mathrm{V})
+```
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> ω₁ = fundamental_weight(TypeA{3}, 1);
+
+julia> plethysm([2], ω₁) == Sym(2, ω₁)
+true
+
+julia> plethysm([1, 1], ω₁) == ⋀(2, ω₁)
+true
+
+julia> plethysm([2, 1], ω₁)  # Mixed symmetry: S_{(2,1)} functor
+A3(1, 1, 0)
+```
+"""
+function plethysm(λ::Vector{Int}, μ::WeightLatticeElem{DT,R}) where {DT,R}
+  @assert is_dominant(μ) "Weight must be dominant"
+  @assert all(>=(0), λ) "Partition parts must be non-negative"
+  @assert issorted(λ; rev=true) "Partition must be in weakly decreasing order"
+
+  n = sum(λ)
+  n == 0 && return WeylCharacter(WeightLatticeElem{DT,R}(zero(SVector{R,Int})))
+  n == 1 && return WeylCharacter(μ)
+
+  # Precompute Adams operators ψ^i(V) as decomposed characters
+  dom_mults = _dominant_character(μ)
+  adams = Vector{Dict{SVector{R,Int},Int}}(undef, n)
+  for i in 1:n
+    adams[i] = Dict{SVector{R,Int},Int}(i * ν => m for (ν, m) in dom_mults)
+  end
+
+  # Enumerate all partitions κ ⊢ n
+  partitions = _partitions(n)
+
+  # Accumulate: sum over κ of χ^λ(κ) * |Cl(κ)| * p_κ(V)
+  result = WeylCharacter(DT)
+
+  for κ in partitions
+    # Compute S_n character value
+    chi_val = _mn_char_val(λ, κ)
+    iszero(chi_val) && continue
+
+    # Compute class size
+    classord = _classord(κ)
+    coeff = chi_val * classord
+    iszero(coeff) && continue
+
+    # Form p_κ(V) = ψ^{κ₁}(V) ⊗ ψ^{κ₂}(V) ⊗ ...
+    # Start with ψ^{κ₁}(V) decomposed into irreducibles
+    prod = _vdecomp(DT, adams[κ[1]])
+
+    for j in 2:length(κ)
+      κ[j] <= 0 && break
+      adams_j = _vdecomp(DT, adams[κ[j]])
+      prod = _tensor_characters(prod, adams_j)
+    end
+
+    # Add coeff * prod to result
+    addmul!(result, prod, Int(coeff))
+  end
+
+  # Divide by n!
+  n_fac = factorial(big(n))
+  for ν in keys(result.terms)
+    q, r = divrem(BigInt(result.terms[ν]), n_fac)
+    @assert iszero(r) "Plethysm: non-integer coefficient after division by $n!"
+    result.terms[ν] = Int(q)
+  end
+
+  # Prune zeros
+  filter!(p -> !iszero(p.second), result.terms)
+  return result
+end
+
+"""
+    _vdecomp(::Type{DT}, dom_char::Dict{SVector{R,Int},Int}) -> WeylCharacter{DT,R}
+Virtual decomposition: given a character as a dict of weight multiplicities
+(dominant weights only, as produced by Adams operators), decompose into
+irreducibles using the Weyl orbit / alternating-dominant method.
+
+This is the analogue of LiE's `Vdecomp` function.
+"""
+function _vdecomp(::Type{DT}, dom_char::Dict{SVector{R,Int},Int}) where {DT,R}
+  result = WeylCharacter(DT)
+  for (ν, m) in dom_char
+    m == 0 && continue
+    bk = _brauer_klimyk_dominant(Dict(ν => m), WeightLatticeElem{DT,R}(zero(SVector{R,Int})))
+    add!(result, bk)
+  end
+  return result
+end
+
+"""
+    _tensor_characters(V::WeylCharacter{DT,R}, W::WeylCharacter{DT,R}) -> WeylCharacter{DT,R}
+
+Tensor product of two virtual characters (each decomposed into irreducibles).
+"""
+function _tensor_characters(
+  V::WeylCharacter{DT,R}, W::WeylCharacter{DT,R}
+) where {DT,R}
+  result = WeylCharacter(DT)
+  for (λ, m_λ) in V.terms
+    for (μ, m_μ) in W.terms
+      # V(λ) ⊗ V(μ) via Brauer–Klimyk
+      dom_λ = _dominant_character(λ)
+      bk = _brauer_klimyk_dominant(dom_λ, μ)
+      addmul!(result, bk, m_λ * m_μ)
+    end
+  end
+  filter!(p -> !iszero(p.second), result.terms)
+  return result
+end
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  character_from_weights — reconstruct irreducible decomposition
