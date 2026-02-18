@@ -119,4 +119,49 @@ for _N in 1:9
   precompile(lr_tensor_product, (WeightLatticeElem{_DT,_R}, WeightLatticeElem{_DT,_R}))
 end
 
+# ─── Startup banner ────────────────────────────────────────────────────────
+
+function _print_banner()
+  v = pkgversion(@__MODULE__)
+  version_str = v === nothing ? "dev" : string(v)
+
+  println()
+  # Row 1: ▖ ▘     ▘▜
+  printstyled("▖ ▘"; color=:white)
+  print("     ")
+  printstyled("▘"; color=:red)
+  printstyled("▜ "; color=:magenta)
+  println(" │  semisimple Lie algebras: root systems,")
+
+  # Row 2: ▌ ▌█▌   ▌▐
+  printstyled("▌ ▌█▌"; color=:white)
+  print("   ")
+  printstyled("▌"; color=:red)
+  printstyled("▐ "; color=:magenta)
+  println(" │  Weyl groups, and representations")
+
+  # Row 3: ▙▖▌▙▖▗  ▌▐▖
+  printstyled("▙▖▌▙▖"; color=:white)
+  printstyled("▗"; color=:blue)
+  print("  ")
+  printstyled("▌"; color=:red)
+  printstyled("▐▖"; color=:magenta)
+  println(" │")
+
+  # Row 4:        ▙▌
+  print("       ")
+  printstyled("▙▌"; color=:red)
+  println("   │  Docs:    https://homogeneous.tools/lie.jl")
+
+  print("            ")
+  println("   │  Version: ", version_str)
+end
+
+function __init__()
+  if displaysize(stdout)[2] >= 60
+    _print_banner()
+  end
+  return nothing
+end
+
 end # module

@@ -1,7 +1,7 @@
 name = "Lie"
 uuid = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
 version = "0.1.0"
-authors = ["Your Name"]
+authors = ["Pieter Belmans <p.belmans@uu.nl>"]
 
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
