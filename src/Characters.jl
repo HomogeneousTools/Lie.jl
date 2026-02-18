@@ -469,13 +469,32 @@ julia> sum(values(mults))  # dim = 8
 function freudenthal_formula(λ::WeightLatticeElem{DT,R}) where {DT,R}
   dom_mults = _dominant_character(λ)
 
-  # Expand dominant multiplicities to full weight system
-  multiplicities = Dict{SVector{R,Int},Int}()
+  # Count total orbit sizes for pre-allocation (avoids Dict resizing)
+  v_buf = Vector{Int}(undef, R)
+  total_weights = 0
   for (μ_vec, m) in dom_mults
     m == 0 && continue
-    orbit = weyl_orbit(DT, WeightLatticeElem{DT,R}(μ_vec))
-    for w in orbit
-      multiplicities[w.vec] = m
+    for i in 1:R
+      v_buf[i] = μ_vec[i]
+    end
+    count = Ref(0)
+    weylloop(DT, v_buf) do _
+      count[] += 1
+    end
+    total_weights += count[]
+  end
+
+  # Expand dominant multiplicities to full weight system.
+  # Use weylloop directly to avoid materialising intermediate orbit vectors.
+  multiplicities = Dict{SVector{R,Int},Int}()
+  sizehint!(multiplicities, total_weights)
+  for (μ_vec, m) in dom_mults
+    m == 0 && continue
+    for i in 1:R
+      v_buf[i] = μ_vec[i]
+    end
+    weylloop(DT, v_buf) do tmp
+      multiplicities[SVector{R,Int}(tmp)] = m
     end
   end
 
@@ -563,6 +582,9 @@ function _dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
   # Workspace for conjugate_dominant_weight (reusable MVector)
   v_work = MVector{R,Int}(undef)
 
+  # Pre-allocate root_mults workspace (reused across iterations)
+  root_mults = Vector{Int}(undef, n_pos)
+
   # ─── Phase 2: Freudenthal recursion over dominant weights ──────────
   # dom_weights is sorted by decreasing height, so index 1 = λ.
   # We process indices 2..n_dom (each weight is below λ).
@@ -575,7 +597,7 @@ function _dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
     # Roots in the same W_μ-orbit give identical contributions.
     # Process roots by increasing level (height) so transfers always go
     # to higher levels and are never revisited (matching LiE's algorithm).
-    root_mults = ones(Int, n_pos)
+    fill!(root_mults, 1)
     has_zero = false
     for j in 1:R
       if μ_vec[j] == 0
