@@ -219,7 +219,7 @@ header("5. Freudenthal formula")
 
 function bench_freudenthal(::Type{DT}, coords) where {DT}
   R = rank(DT)
-  empty!(Lie._freudenthal_cache)
+  Lie.clear_all_caches!()
   hw = WeightLatticeElem(DT, SVector{R,Int}(Tuple(coords)))
   return freudenthal_formula(hw)
 end
@@ -273,8 +273,7 @@ header("6. Tensor product decomposition")
 
 function bench_tensor(::Type{DT}, c1, c2) where {DT}
   R = rank(DT)
-  empty!(Lie._tensor_cache)
-  empty!(Lie._freudenthal_cache)
+  Lie.clear_all_caches!()
   λ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(c1)))
   μ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(c2)))
   return tensor_product(λ, μ)
@@ -321,7 +320,7 @@ end
 
 function bench_bk(::Type{DT}, c1, c2) where {DT}
   R = rank(DT)
-  empty!(Lie._freudenthal_cache)
+  Lie.clear_all_caches!()
   λ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(c1)))
   μ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(c2)))
   if Lie.degree(λ) > Lie.degree(μ)
@@ -370,18 +369,14 @@ header("8. Exterior and symmetric powers")
 
 function bench_exterior(::Type{DT}, coords, k) where {DT}
   R = rank(DT)
-  empty!(Lie._exterior_power_cache)
-  empty!(Lie._tensor_cache)
-  empty!(Lie._freudenthal_cache)
+  Lie.clear_all_caches!()
   λ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(coords)))
   return ⋀(k, λ)
 end
 
 function bench_symmetric(::Type{DT}, coords, k) where {DT}
   R = rank(DT)
-  empty!(Lie._symmetric_power_cache)
-  empty!(Lie._tensor_cache)
-  empty!(Lie._freudenthal_cache)
+  Lie.clear_all_caches!()
   λ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(coords)))
   return Sym(k, λ)
 end
@@ -452,30 +447,71 @@ end
 
 header("9. Borel–Weil–Bott theorem")
 
-function bench_bwb(::Type{DT}, coords) where {DT}
+# ─── Box benchmark (like conjugate_dominant_weight) ──────────────────────────
+
+function bench_bwb_box(::Type{DT}, bound) where {DT}
   R = rank(DT)
-  λ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(coords)))
-  return borel_weil_bott(λ)
+  count = 0
+  for coords in Iterators.product(ntuple(_ -> (-bound):bound, R)...)
+    λ = WeightLatticeElem(DT, SVector{R,Int}(coords))
+    borel_weil_bott(λ)
+    count += 1
+  end
+  return count
 end
 
-bwb_cases = [
-  (TypeA{4}, [-3, 2, -1, 4], "generic A₄ weight"),
-  (TypeA{6}, [-2, 3, -1, 2, -4, 1], "generic A₆ weight"),
-  (TypeB{4}, [-2, 1, -3, 2], "generic B₄ weight"),
-  (TypeC{4}, [-1, 3, -2, 1], "generic C₄ weight"),
-  (TypeD{5}, [-3, 1, 2, -4, 1], "generic D₅ weight"),
-  (TypeE{6}, [-2, 1, -1, 3, -2, 1], "generic E₆ weight"),
-  (TypeE{7}, [-3, 2, -1, 1, -2, 3, -1], "generic E₇ weight"),
-  (TypeE{8}, [-5, 3, -2, -3, 5, -8, 2, 1], "deep E₈ weight"),
-  (TypeF4, [-2, 3, -1, 2], "generic F₄ weight"),
-  (TypeG2, [-3, 5], "generic G₂ weight"),
+bwb_box_cases = [
+  (TypeA{3}, 5), (TypeA{4}, 3), (TypeA{6}, 2),
+  (TypeB{3}, 5), (TypeB{4}, 3),
+  (TypeC{3}, 5),
+  (TypeD{4}, 3), (TypeD{5}, 2),
+  (TypeE{6}, 2), (TypeE{7}, 1), (TypeE{8}, 1),
+  (TypeF4, 3), (TypeG2, 8),
 ]
 
-for (DT, coords, label) in bwb_cases
-  result = bench_bwb(DT, coords)
-  d_str = result === nothing ? "singular" : "ℓ=$(result[1])"
-  b = @benchmark bench_bwb($DT, $coords) evals = 1 samples = 500
-  report("$(sprint(show,DT())): $label ($d_str)", b; category="bwb")
+for (DT, bound) in bwb_box_cases
+  R = rank(DT)
+  n = (2 * bound + 1)^R
+  bench_bwb_box(DT, bound)
+  b = @benchmark bench_bwb_box($DT, $bound) evals = 1 samples = 30
+  report("$(sprint(show,DT())): box [-$bound,$bound]^$R ($n wts)", b; category="bwb")
+end
+
+# ─── Deep non-dominant weights ───────────────────────────────────────────────
+
+function bench_bwb_deep(::Type{DT}, weights) where {DT}
+  for w in weights
+    borel_weil_bott(w)
+  end
+end
+
+function make_deep_weights(::Type{DT}, n, scale) where {DT}
+  R = rank(DT)
+  weights = WeightLatticeElem{DT,R}[]
+  for i in 1:n
+    coords = SVector{R,Int}(ntuple(j -> -scale * (1 + (i * j) % 7), R))
+    push!(weights, WeightLatticeElem(DT, coords))
+  end
+  return weights
+end
+
+bwb_deep_cases = [
+  (TypeA{3}, 500, 20, "500 deep wts (scale=20)"),
+  (TypeA{6}, 500, 10, "500 deep wts (scale=10)"),
+  (TypeB{4}, 500, 15, "500 deep wts (scale=15)"),
+  (TypeD{5}, 500, 10, "500 deep wts (scale=10)"),
+  (TypeE{6}, 200, 10, "200 deep wts (scale=10)"),
+  (TypeE{7}, 200, 8, "200 deep wts (scale=8)"),
+  (TypeE{8}, 200, 5, "200 deep wts (scale=5)"),
+  (TypeF4, 500, 15, "500 deep wts (scale=15)"),
+  (TypeG2, 500, 30, "500 deep wts (scale=30)"),
+]
+
+for (DT, n, scale, label) in bwb_deep_cases
+  weights = make_deep_weights(DT, n, scale)
+  bench_bwb_deep(DT, weights)
+  b = @benchmark bench_bwb_deep($DT, $weights) evals = 1 samples = 50
+  report("$(sprint(show,DT())): $label", b; category="bwb")
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -486,8 +522,7 @@ header("10. Plethysm")
 
 function bench_plethysm(::Type{DT}, coords, partition) where {DT}
   R = rank(DT)
-  empty!(Lie._freudenthal_cache)
-  empty!(Lie._tensor_cache)
+  Lie.clear_all_caches!()
   λ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(coords)))
   return plethysm(partition, λ)
 end
