@@ -1042,4 +1042,114 @@ using StaticArrays
       end
     end
   end
+
+  # ═══════════════════════════════════════════════════════════════════════
+  #  Representations with the same degree (Lübeck, arXiv:2601.18786)
+  # ═══════════════════════════════════════════════════════════════════════
+  @testset "Representations with the same degree (Lübeck)" begin
+
+    # ─── Proposition 2: exceptional types, A₂, and B₂ ───────────────
+    @testset "Proposition 2" begin
+      # A₂: V(ω₁+2ω₂) and V(4ω₂) both have degree 15
+      @test degree(WeightLatticeElem(TypeA{2}, [1, 2])) == 15
+      @test degree(WeightLatticeElem(TypeA{2}, [0, 4])) == 15
+
+      # B₂: V(ω₁+2ω₂) and V(4ω₂) both have degree 35
+      @test degree(WeightLatticeElem(TypeB{2}, [1, 2])) == 35
+      @test degree(WeightLatticeElem(TypeB{2}, [0, 4])) == 35
+
+      # G₂: V(3ω₁) and V(2ω₂) both have degree 77
+      # The paper uses the opposite labeling to Bourbaki for G₂ (ω₁ ↔ ω₂).
+      @test degree(WeightLatticeElem(TypeG2, [3, 0])) == 77
+      @test degree(WeightLatticeElem(TypeG2, [0, 2])) == 77
+
+      # F₄: V(ω₁+ω₄) and V(2ω₁) both have degree 1053
+      @test degree(WeightLatticeElem(TypeF4, [1, 0, 0, 1])) == 1053
+      @test degree(WeightLatticeElem(TypeF4, [2, 0, 0, 0])) == 1053
+
+      # E₆: V(2ω₁) and V(ω₃) both have degree 351
+      @test degree(WeightLatticeElem(TypeE{6}, [2, 0, 0, 0, 0, 0])) == 351
+      @test degree(WeightLatticeElem(TypeE{6}, [0, 0, 1, 0, 0, 0])) == 351
+
+      # E₇: V(ω₄+ω₅) and V(2ω₆+3ω₇) both have degree 1903725824
+      @test degree(WeightLatticeElem(TypeE{7}, [0, 0, 0, 1, 1, 0, 0])) ==
+        1903725824
+      @test degree(WeightLatticeElem(TypeE{7}, [0, 0, 0, 0, 0, 2, 3])) ==
+        1903725824
+
+      # E₈: V(ω₁+ω₃) and V(ω₁+ω₇+ω₈) both have degree 8634368000
+      @test degree(WeightLatticeElem(TypeE{8}, [1, 0, 1, 0, 0, 0, 0, 0])) ==
+        8634368000
+      @test degree(WeightLatticeElem(TypeE{8}, [1, 0, 0, 0, 0, 0, 1, 1])) ==
+        8634368000
+    end
+
+    # ─── Theorem 3(a): Type Aₗ ───────────────────────────────────────
+    # V((l-1)ω₂) and V(ω₁+(l-2)ω₂) have the same degree
+    # = (2l-1) ∏_{k=l+1}^{2l-2} k² / (l-1)!²
+    @testset "Theorem 3(a): Type A" begin
+      for l in 2:15
+        DT = TypeA{l}
+        coords_λ = zeros(Int, l)
+        coords_λ[2] = l - 1
+        coords_μ = zeros(Int, l)
+        coords_μ[1] = 1
+        coords_μ[2] = l - 2
+        λ = WeightLatticeElem(DT, coords_λ)
+        μ = WeightLatticeElem(DT, coords_μ)
+        expected =
+          BigInt(2l - 1) *
+          prod(BigInt(k)^2 for k in (l + 1):(2l - 2); init=BigInt(1)) ÷
+          factorial(BigInt(l - 1))^2
+        @test degree(λ) == degree(μ)
+        @test degree(λ) == expected
+      end
+    end
+
+    # ─── Theorem 3(b): Type Bₗ ───────────────────────────────────────
+    # V((2l-2)ω₂) and V(ω₁+(2l-3)ω₂) have the same degree
+    # = 3·(4l-5)·(6l-5)·(6l-7) ∏_{k=2l}^{4l-6} k² / (2l-3)!²
+    @testset "Theorem 3(b): Type B" begin
+      for l in 3:10
+        DT = TypeB{l}
+        coords_λ = zeros(Int, l)
+        coords_λ[2] = 2l - 2
+        coords_μ = zeros(Int, l)
+        coords_μ[1] = 1
+        coords_μ[2] = 2l - 3
+        λ = WeightLatticeElem(DT, coords_λ)
+        μ = WeightLatticeElem(DT, coords_μ)
+        expected =
+          BigInt(3) * BigInt(4l - 5) * BigInt(6l - 5) *
+          BigInt(6l - 7) *
+          prod(BigInt(k)^2 for k in (2l):(4l - 6); init=BigInt(1)) ÷
+          factorial(BigInt(2l - 3))^2
+        @test degree(λ) == degree(μ)
+        @test degree(λ) == expected
+      end
+    end
+
+    # ─── Theorem 3(c): Type Dₗ ───────────────────────────────────────
+    # V((2l-3)ω₂) and V(ω₁+(2l-4)ω₂) have the same degree
+    # = 3·(3l-4)·(3l-5)·(4l-7) ∏_{k=2l-1}^{4l-8} k² / ((l-2)²·(2l-5)!²)
+    @testset "Theorem 3(c): Type D" begin
+      for l in 4:10
+        DT = TypeD{l}
+        coords_λ = zeros(Int, l)
+        coords_λ[2] = 2l - 3
+        coords_μ = zeros(Int, l)
+        coords_μ[1] = 1
+        coords_μ[2] = 2l - 4
+        λ = WeightLatticeElem(DT, coords_λ)
+        μ = WeightLatticeElem(DT, coords_μ)
+        expected =
+          BigInt(3) * BigInt(3l - 4) * BigInt(3l - 5) *
+          BigInt(4l - 7) *
+          prod(BigInt(k)^2 for k in (2l - 1):(4l - 8); init=BigInt(1)) ÷
+          (BigInt(l - 2)^2 * factorial(BigInt(2l - 5))^2)
+        @test degree(λ) == degree(μ)
+        @test degree(λ) == expected
+      end
+    end
+  end
 end
