@@ -13,7 +13,7 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 
 export WeylCharacter
-export freudenthal_formula, weight_multiplicity
+export dominant_character, freudenthal_formula, weight_multiplicity
 export tensor_product, dual
 export adams_operator, symmetric_power, exterior_power
 export Sym, ⋀
@@ -428,18 +428,15 @@ end
 """
     freudenthal_formula(λ::WeightLatticeElem{DT,R}) -> Dict{SVector{R,Int}, Int}
 
-Compute the weight multiplicities of the irreducible representation ``\\mathrm{V}(λ)``
-using Freudenthal's recursion formula.
+Compute the full weight multiplicity dictionary of the irreducible representation
+``\\mathrm{V}(λ)``.
 
-Returns a dictionary mapping weights (in fundamental weight coordinates) to
-their multiplicities. Only weights with non-zero multiplicity are included.
+Returns a dictionary mapping *every* weight (in fundamental weight coordinates) to
+its multiplicity. Only weights with non-zero multiplicity are included.
 
-The recursion is:
-
-``(⟨λ+ρ, λ+ρ⟩ - ⟨μ+ρ, μ+ρ⟩) \\, m(μ) = 2 \\sum_{α>0} \\sum_{k≥1} ⟨μ+kα, α⟩ \\, m(μ+kα)``
-
-where the inner product `(·,·)` is the Weyl-group-invariant bilinear form
-`B = diag(d) C` on the root space, extended to the weight lattice.
+Internally, this calls [`dominant_character`](@ref) to compute multiplicities of
+dominant weights via Freudenthal's recursion, then expands each dominant weight
+to its full Weyl orbit.
 
 # Examples
 ```jldoctest
@@ -467,7 +464,7 @@ julia> sum(values(mults))  # dim = 8
 ```
 """
 function freudenthal_formula(λ::WeightLatticeElem{DT,R}) where {DT,R}
-  dom_mults = _dominant_character(λ)
+  dom_mults = dominant_character(λ)
 
   # Count total orbit sizes for pre-allocation (avoids Dict resizing)
   v_buf = Vector{Int}(undef, R)
@@ -502,23 +499,54 @@ function freudenthal_formula(λ::WeightLatticeElem{DT,R}) where {DT,R}
 end
 
 """
-    _dominant_character(λ::WeightLatticeElem{DT,R}) -> Dict{SVector{R,Int}, Int}
+    dominant_character(λ::WeightLatticeElem{DT,R}) -> Dict{SVector{R,Int}, Int}
 
-Compute the dominant weight multiplicities of ``\\mathrm{V}(λ)`` using
-Freudenthal's recursion. Returns a dictionary mapping *dominant* weights
-to their multiplicities (all weights in a Weyl orbit share the same
-multiplicity).
+Compute the **dominant character** of the irreducible representation
+``\\mathrm{V}(λ)`` using Freudenthal's recursion.
 
-This is the internal workhorse cached in `_freudenthal_cache`. The full
-weight system is obtained by expanding orbits in [`freudenthal_formula`](@ref).
+Since character polynomials are invariant under the Weyl group ``W``, and
+each ``W``-orbit of weights contains a unique dominant representative, the
+full character polynomial can be represented more compactly: the dominant
+character retains only the terms whose exponents are dominant weights.
+Concretely, it maps each dominant weight ``μ`` to the multiplicity shared
+by every weight in the orbit ``W \\cdot μ``.
+
+Use [`freudenthal_formula`](@ref) to expand the dominant character into
+the full weight multiplicity dictionary (all ``W``-orbit elements listed
+explicitly), or use [`weight_multiplicity`](@ref) to query a single weight.
+
+Results are cached per highest weight; the cache can be cleared with
+[`clear_all_caches!`](@ref).
+
+# Examples
+```jldoctest
+julia> using Lie; using StaticArrays
+
+julia> ω₁ = fundamental_weight(TypeA{2}, 1);
+
+julia> dc = dominant_character(ω₁);
+
+julia> length(dc)   # V(ω₁) of A₂ has 1 dominant weight
+1
+
+julia> dc[SVector(1, 0)]   # multiplicity of ω₁ itself
+1
+
+julia> adj = ω₁ + fundamental_weight(TypeA{2}, 2);
+
+julia> dc_adj = dominant_character(adj);
+
+julia> dc_adj[SVector(0, 0)]   # zero weight multiplicity in adjoint
+2
+```
 """
-function _dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
+function dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
   @assert is_dominant(λ) "Weight must be dominant"
 
   # Check cache first
   cache_key = (DT, λ)
-  haskey(_freudenthal_cache, cache_key) &&
-    return _freudenthal_cache[cache_key]::Dict{SVector{R,Int},Int}
+  haskey(_dominant_character_cache, cache_key) &&
+    return _dominant_character_cache[cache_key]::Dict{SVector{R,Int},Int}
 
   # ─── Phase 1: compute dominant weights below λ ─────────────────────
   dom_weights = dominant_weights(DT, λ)
@@ -699,7 +727,7 @@ function _dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
     dom_result[dom_weights[idx].vec] = dom_mults[idx]
   end
 
-  _freudenthal_cache[cache_key] = dom_result
+  _dominant_character_cache[cache_key] = dom_result
   return dom_result
 end
 
@@ -725,7 +753,7 @@ function weight_multiplicity(
 ) where {DT,R}
   # All weights in the same Weyl orbit have the same multiplicity,
   # so we can look up the dominant conjugate in the dominant character.
-  dom_mults = _dominant_character(λ)
+  dom_mults = dominant_character(λ)
   μ_dom = conjugate_dominant_weight(μ)
   return get(dom_mults, μ_dom.vec, 0)
 end
@@ -838,7 +866,7 @@ end
     _brauer_klimyk_dominant(dom_char::Dict{SVector{R,Int}, Int}, μ::WeightLatticeElem{DT,R}) -> WeylCharacter{DT,R}
 
 Like [`brauer_klimyk`](@ref), but takes a **dominant-only** character dict
-(as returned by [`_dominant_character`](@ref)) and expands Weyl orbits
+(as returned by [`dominant_character`](@ref)) and expands Weyl orbits
 on-the-fly using [`weylloop`](@ref). This avoids materializing the full
 weight system and eliminates hash-set overhead for large orbits.
 
@@ -1168,9 +1196,9 @@ export lr_tensor_product
 # Key: (DT, λ, μ), Value: WeylCharacter.
 const _tensor_cache = Dict{Tuple{Type,Any,Any},Any}()
 
-# Cache for Freudenthal weight multiplicities.
-# Key: (DT, λ), Value: Dict{SVector{R,Int}, Int} (dominant weights only).
-const _freudenthal_cache = Dict{Tuple{Type,Any},Any}()
+# Cache for dominant character computations (Freudenthal recursion).
+# Key: (DT, λ), Value: Dict{SVector{R,Int}, Int} (dominant weights → multiplicities).
+const _dominant_character_cache = Dict{Tuple{Type,Any},Any}()
 
 """
     tensor_product(λ::WeightLatticeElem{DT,R}, μ::WeightLatticeElem{DT,R}) -> WeylCharacter{DT,R}
@@ -1208,9 +1236,9 @@ function tensor_product(λ::WeightLatticeElem{DT,R}, μ::WeightLatticeElem{DT,R}
   # then expand orbits on-the-fly in BK. This avoids materializing the
   # full weight system (e.g. 5M weights for E₈).
   if degree(λ) <= degree(μ)
-    result = _brauer_klimyk_dominant(_dominant_character(λ), μ)
+    result = _brauer_klimyk_dominant(dominant_character(λ), μ)
   else
-    result = _brauer_klimyk_dominant(_dominant_character(μ), λ)
+    result = _brauer_klimyk_dominant(dominant_character(μ), λ)
   end
 
   _tensor_cache[key] = result
@@ -1303,9 +1331,9 @@ multiplicity ``m(μ)``, then ``ψ^k(\\mathrm{V}(λ))`` has ``m(μ)`` at weight `
 function adams_operator(λ::WeightLatticeElem{DT,R}, k::Int) where {DT,R}
   @assert k != 0 "Adams operator index must be non-zero"
 
-  # Use _dominant_character + direct orbit expansion (avoids building
+  # Use dominant_character + direct orbit expansion (avoids building
   # the full unscaled weight dict).
-  dom_mults = _dominant_character(λ)
+  dom_mults = dominant_character(λ)
 
   # Count total weights for pre-sizing
   v_buf = Vector{Int}(undef, R)
@@ -1390,7 +1418,7 @@ end
 function _symmetric_power_newton_girard(λ::WeightLatticeElem{DT,R}, k::Int) where {DT,R}
   result = WeylCharacter(DT)
   # Cache dominant character: all Adams operators for V(λ) use the same weights
-  dom_mults = _dominant_character(λ)
+  dom_mults = dominant_character(λ)
 
   for r in 1:k
     adams = Dict{SVector{R,Int},Int}(r * μ => m for (μ, m) in dom_mults)
@@ -1460,7 +1488,7 @@ end
 function _exterior_power_newton_girard(λ::WeightLatticeElem{DT,R}, k::Int) where {DT,R}
   result = WeylCharacter(DT)
   # Cache dominant character: all Adams operators for V(λ) use the same weights
-  dom_mults = _dominant_character(λ)
+  dom_mults = dominant_character(λ)
 
   for r in 1:k
     adams = Dict{SVector{R,Int},Int}(r * μ => m for (μ, m) in dom_mults)
@@ -1776,7 +1804,7 @@ function plethysm(λ::Vector{Int}, μ::WeightLatticeElem{DT,R}) where {DT,R}
   n == 1 && return WeylCharacter(μ)
 
   # Precompute Adams operators ψ^i(V) as decomposed characters
-  dom_mults = _dominant_character(μ)
+  dom_mults = dominant_character(μ)
   adams = Vector{Dict{SVector{R,Int},Int}}(undef, n)
   for i in 1:n
     adams[i] = Dict{SVector{R,Int},Int}(i * ν => m for (ν, m) in dom_mults)
@@ -1857,7 +1885,7 @@ function _tensor_characters(
   for (λ, m_λ) in V.terms
     for (μ, m_μ) in W.terms
       # V(λ) ⊗ V(μ) via Brauer–Klimyk
-      dom_λ = _dominant_character(λ)
+      dom_λ = dominant_character(λ)
       bk = _brauer_klimyk_dominant(dom_λ, μ)
       addmul!(result, bk, m_λ * m_μ)
     end
