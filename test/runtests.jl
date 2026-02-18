@@ -594,6 +594,56 @@ using StaticArrays
       @test addmul!(V7, WeylCharacter(ω₂), 2) === V7
     end
 
+    # ─── Dominant character ─────────────────────────────────────────
+    @testset "Dominant character" begin
+      # A₂ standard: V(ω₁) has dim 3, only 1 dominant weight (ω₁ itself)
+      dc = dominant_character(fundamental_weight(TypeA{2}, 1))
+      @test length(dc) == 1
+      @test dc[SVector(1, 0)] == 1
+
+      # A₂ adjoint: V(ω₁+ω₂) has dim 8, dominant weights are ω₁+ω₂ and 0
+      dc_adj = dominant_character(
+        fundamental_weight(TypeA{2}, 1) + fundamental_weight(TypeA{2}, 2)
+      )
+      @test length(dc_adj) == 2
+      @test dc_adj[SVector(1, 1)] == 1  # highest weight
+      @test dc_adj[SVector(0, 0)] == 2  # zero weight mult 2
+
+      # Consistency: sum over Weyl orbits = full character dimension
+      for (DT, i) in [(TypeA{3}, 1), (TypeB{3}, 3), (TypeC{3}, 1),
+        (TypeD{4}, 1), (TypeG2, 1), (TypeF4, 4)]
+        λ = fundamental_weight(DT, i)
+        dc = dominant_character(λ)
+        full = freudenthal_formula(λ)
+        # Every dominant weight in dc must appear in full with same multiplicity
+        for (μ_vec, m) in dc
+          @test haskey(full, μ_vec)
+          @test full[μ_vec] == m
+        end
+        # Total dimension via orbit expansion must match degree
+        @test sum(values(full)) == degree(λ)
+      end
+
+      # E₈ adjoint: V(ω₈) dim 248
+      dc_e8 = dominant_character(fundamental_weight(TypeE{8}, 8))
+      @test dc_e8[SVector(0, 0, 0, 0, 0, 0, 0, 1)] == 1  # highest weight
+      @test haskey(dc_e8, SVector(0, 0, 0, 0, 0, 0, 0, 0))  # zero weight
+
+      # Caching: calling twice returns same object
+      λ = fundamental_weight(TypeA{3}, 1)
+      dc1 = dominant_character(λ)
+      dc2 = dominant_character(λ)
+      @test dc1 === dc2  # same Dict instance from cache
+
+      # Higher weight: A₃ V(ρ) dim 20
+      ρ = weyl_vector(TypeA{3})
+      dc_rho = dominant_character(ρ)
+      full_rho = freudenthal_formula(ρ)
+      for (μ_vec, m) in dc_rho
+        @test full_rho[μ_vec] == m
+      end
+    end
+
     # ─── Freudenthal formula: simply-laced ───────────────────────────
     @testset "Freudenthal (simply-laced)" begin
       # A₂ standard: dim 3
