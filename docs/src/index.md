@@ -2,6 +2,18 @@
 
 A Julia package for computations with semisimple Lie algebras: root systems,
 Weyl groups, weight lattices, and representation-theoretic operations.
+It is heavily optimized, and uses various Julia features making this possible.
+
+Lie.jl is inspired by (and partially ported) from [LiE](http://wwwmathlabo.univ-poitiers.fr/~maavl/LiE/),
+a computer algebra system for Lie group computations written in C.
+Parts of the Lie.jl code have been written with the assistance of Claude Opus 4.6.
+
+Similar features are also available in [SageMath](https://sagemath.org),
+and a similar package is [LieART](https://lieart.hepforge.org/),
+which runs on the proprietary [Mathematica](https://www.wolfram.com/mathematica/) software.
+
+Note that Lie.jl is less feature-complete than any of the aforementioned packages.
+Porting more features is planned.
 
 ## Features
 
