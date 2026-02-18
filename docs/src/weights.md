@@ -88,6 +88,7 @@ julia> conjugate_dominant_weight(w)
 is_dominant
 conjugate_dominant_weight
 conjugate_dominant_weight_with_elem
+conjugate_dominant_weight_with_length
 ```
 
 ## Reflections

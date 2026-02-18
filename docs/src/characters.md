@@ -77,6 +77,37 @@ add!
 addmul!
 ```
 
+## Dominant character
+
+The **dominant character** of an irreducible representation
+``\mathrm{V}(\lambda)`` is the restriction of its full character to
+dominant weights only. Since every weight lies in the Weyl orbit of a
+unique dominant weight (and all weights in an orbit share the same
+multiplicity), the dominant character is a compact summary that
+determines the full character.
+
+`dominant_character` computes this using Freudenthal's recursion formula
+and returns a `Dict{SVector{R,Int}, Int}` mapping dominant weight
+coordinates to multiplicities. This is the cached building block behind
+[`freudenthal_formula`](@ref), [`weight_multiplicity`](@ref), tensor
+products, Adams operators, and plethysms.
+
+```jldoctest chars
+julia> ω₁_a2 = fundamental_weight(TypeA{2}, 1);
+
+julia> dc = dominant_character(ω₁_a2);
+
+julia> length(dc)   # only 1 dominant weight for V(ω₁) of A₂
+1
+
+julia> dc[SVector(1, 0)]  # the highest weight itself
+1
+```
+
+```@docs
+dominant_character
+```
+
 ## Freudenthal's formula
 
 Compute the full weight multiplicity dictionary of an irreducible
