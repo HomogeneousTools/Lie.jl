@@ -8,7 +8,8 @@
 
 export WeightLatticeElem
 export fundamental_weight, fundamental_weights, weyl_vector
-export is_dominant, conjugate_dominant_weight, conjugate_dominant_weight_with_elem
+export is_dominant, conjugate_dominant_weight, conjugate_dominant_weight_with_elem,
+  conjugate_dominant_weight_with_length
 export reflect
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -308,6 +309,47 @@ function conjugate_dominant_weight_with_elem(w::WeightLatticeElem{DT,R}) where {
     end
   end
   return WeightLatticeElem{DT,R}(SVector{R,Int}(v)), word
+end
+
+"""
+    conjugate_dominant_weight_with_length(w::WeightLatticeElem{DT,R}) -> (WeightLatticeElem, Int)
+
+Return the dominant weight in the Weyl orbit of `w` together with the number
+of simple reflections applied (i.e. the length of the Weyl group element
+mapping `w` into the dominant chamber).
+
+This is faster than [`conjugate_dominant_weight_with_elem`](@ref) because it
+only tracks a counter instead of building the full word.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> conjugate_dominant_weight_with_length(WeightLatticeElem(TypeA{2}, [-1, 1]))
+(ω1, 1)
+
+julia> conjugate_dominant_weight_with_length(fundamental_weight(TypeA{3}, 1))
+(ω1, 0)
+```
+"""
+function conjugate_dominant_weight_with_length(w::WeightLatticeElem{DT,R}) where {DT,R}
+  v = MVector{R,Int}(w.vec)
+  C = cartan_matrix(DT)
+  len = 0
+  s = 1
+  while s <= R
+    if v[s] < 0
+      pairing = v[s]
+      for j in 1:R
+        v[j] -= pairing * C[j, s]
+      end
+      len += 1
+      s = 1
+    else
+      s += 1
+    end
+  end
+  return WeightLatticeElem{DT,R}(SVector{R,Int}(v)), len
 end
 
 # ─── Inner products involving weights ────────────────────────────────────────

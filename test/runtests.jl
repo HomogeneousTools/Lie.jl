@@ -175,6 +175,15 @@ using StaticArrays
     w_neg = WeightLatticeElem(DT, [-1, 2])
     w_dom = conjugate_dominant_weight(w_neg)
     @test is_dominant(w_dom)
+
+    # conjugate_dominant_weight_with_length agrees with _with_elem
+    for coords in [[-1, 2], [-3, 5], [2, -4], [-2, -3], [0, 0]]
+      wt = WeightLatticeElem(DT, coords)
+      dom_e, word = conjugate_dominant_weight_with_elem(wt)
+      dom_l, len = conjugate_dominant_weight_with_length(wt)
+      @test dom_e == dom_l
+      @test length(word) == len
+    end
   end
 
   # ═══════════════════════════════════════════════════════════════════════

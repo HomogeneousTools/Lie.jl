@@ -642,10 +642,10 @@ function borel_weil_bott(λ::WeightLatticeElem{DT,R}) where {DT,R}
   μ = λ + ρ
 
   # Move μ to the dominant chamber; the number of reflections is the degree
-  μ_dom, word = conjugate_dominant_weight_with_elem(μ)
+  μ_dom, d = conjugate_dominant_weight_with_length(μ)
 
   # If μ_dom is the zero weight, λ + ρ is singular → no cohomology
   iszero(μ_dom) && return nothing
 
-  return (length(word), μ_dom - ρ)
+  return (d, μ_dom - ρ)
 end
