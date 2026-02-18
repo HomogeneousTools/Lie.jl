@@ -192,6 +192,15 @@ hw_cases = [
   (TypeE{8}, [2, 0, 0, 0, 0, 0, 0, 1], "2ω₁+ω₈"),
   (TypeE{8}, [1, 1, 1, 1, 1, 1, 1, 1], "ρ"),
   (TypeF4, [2, 2, 2, 2], "2ρ"),
+  # Lübeck (arXiv:2601.18786) — high-dimensional pairs with equal degree
+  (TypeA{10}, [0, 9, 0, 0, 0, 0, 0, 0, 0, 0], "9ω₂ [Lübeck A₁₀]"),
+  (TypeA{15}, [0, 14, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "14ω₂ [Lübeck A₁₅]"),
+  (TypeB{8}, [0, 14, 0, 0, 0, 0, 0, 0], "14ω₂ [Lübeck B₈]"),
+  (TypeB{10}, [0, 18, 0, 0, 0, 0, 0, 0, 0, 0], "18ω₂ [Lübeck B₁₀]"),
+  (TypeD{8}, [0, 13, 0, 0, 0, 0, 0, 0], "13ω₂ [Lübeck D₈]"),
+  (TypeD{10}, [0, 17, 0, 0, 0, 0, 0, 0, 0, 0], "17ω₂ [Lübeck D₁₀]"),
+  (TypeE{7}, [0, 0, 0, 1, 1, 0, 0], "ω₄+ω₅ [Lübeck E₇]"),
+  (TypeE{8}, [1, 0, 1, 0, 0, 0, 0, 0], "ω₁+ω₃ [Lübeck E₈]"),
 ]
 
 for (DT, coords, label) in hw_cases
@@ -210,6 +219,7 @@ header("5. Freudenthal formula")
 
 function bench_freudenthal(::Type{DT}, coords) where {DT}
   R = rank(DT)
+  empty!(Lie._freudenthal_cache)
   hw = WeightLatticeElem(DT, SVector{R,Int}(Tuple(coords)))
   return freudenthal_formula(hw)
 end
@@ -219,6 +229,7 @@ freudenthal_cases = [
   (TypeA{3}, [2, 0, 2], "2ω₁+2ω₃ (dim 50)"),
   (TypeA{4}, [1, 0, 0, 1], "ω₁+ω₄ (adj, dim 24)"),
   (TypeA{4}, [2, 0, 0, 0], "2ω₁ (dim 15)"),
+  (TypeA{4}, [2, 1, 1, 2], "2ω₁+ω₂+ω₃+2ω₄ (dim 6125)"),
   (TypeB{3}, [0, 1, 0], "ω₂ (dim 21)"),
   (TypeB{3}, [1, 0, 0], "ω₁ (dim 7)"),
   (TypeB{4}, [0, 0, 0, 1], "ω₄ (spinor, dim 16)"),
@@ -228,16 +239,29 @@ freudenthal_cases = [
   (TypeG2, [1, 0], "ω₁ (dim 7)"),
   (TypeG2, [0, 1], "ω₂ (dim 14)"),
   (TypeG2, [1, 1], "ω₁+ω₂ (dim 64)"),
+  (TypeG2, [2, 1], "2ω₁+ω₂ (dim 189)"),
   (TypeF4, [0, 0, 0, 1], "ω₄ (dim 26)"),
+  (TypeF4, [1, 0, 0, 1], "ω₁+ω₄ [Lübeck] (dim 1053)"),
   (TypeE{6}, [1, 0, 0, 0, 0, 0], "ω₁ (dim 27)"),
   (TypeE{6}, [0, 0, 0, 0, 0, 1], "ω₆ (dim 27)"),
+  (TypeE{6}, [0, 0, 1, 0, 0, 0], "ω₃ [Lübeck] (dim 351)"),
   (TypeE{7}, [1, 0, 0, 0, 0, 0, 0], "ω₁ (dim 133)"),
+  (TypeE{7}, [0, 0, 0, 1, 1, 0, 0], "ω₄+ω₅ [Lübeck] (dim 1903725824)"),
   (TypeE{8}, [0, 0, 0, 0, 0, 0, 0, 1], "ω₈ (dim 248)"),
+  (TypeE{8}, [1, 0, 1, 0, 0, 0, 0, 0], "ω₁+ω₃ [Lübeck] (dim 8634368000)"),
 ]
+
+# Per-case sample counts: large E₇/E₈ Lübeck representations are expensive
+# when the Freudenthal cache is cleared each iteration.
+freudenthal_samples = Dict{Tuple{Type,Vector{Int}},Int}(
+  (TypeE{7}, [0, 0, 0, 1, 1, 0, 0]) => 5,
+  (TypeE{8}, [1, 0, 1, 0, 0, 0, 0, 0]) => 5,
+)
 
 for (DT, coords, label) in freudenthal_cases
   bench_freudenthal(DT, coords)
-  b = @benchmark bench_freudenthal($DT, $coords) evals = 1 samples = 50
+  nsamp = get(freudenthal_samples, (DT, coords), 50)
+  b = @benchmark bench_freudenthal($DT, $coords) evals = 1 samples = nsamp
   report("$(sprint(show,DT())): $label", b; category="freudenthal")
 end
 
@@ -462,6 +486,8 @@ header("10. Plethysm")
 
 function bench_plethysm(::Type{DT}, coords, partition) where {DT}
   R = rank(DT)
+  empty!(Lie._freudenthal_cache)
+  empty!(Lie._tensor_cache)
   λ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(coords)))
   return plethysm(partition, λ)
 end
