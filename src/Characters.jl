@@ -1303,8 +1303,38 @@ multiplicity ``m(μ)``, then ``ψ^k(\\mathrm{V}(λ))`` has ``m(μ)`` at weight `
 function adams_operator(λ::WeightLatticeElem{DT,R}, k::Int) where {DT,R}
   @assert k != 0 "Adams operator index must be non-zero"
 
-  mults = freudenthal_formula(λ)
-  return Dict{SVector{R,Int},Int}(k * μ => m for (μ, m) in mults)
+  # Use _dominant_character + direct orbit expansion (avoids building
+  # the full unscaled weight dict).
+  dom_mults = _dominant_character(λ)
+
+  # Count total weights for pre-sizing
+  v_buf = Vector{Int}(undef, R)
+  total_weights = 0
+  for (μ_vec, m) in dom_mults
+    m == 0 && continue
+    for i in 1:R
+      v_buf[i] = μ_vec[i]
+    end
+    cnt = Ref(0)
+    weylloop(DT, v_buf) do _
+      cnt[] += 1
+    end
+    total_weights += cnt[]
+  end
+
+  result = Dict{SVector{R,Int},Int}()
+  sizehint!(result, total_weights)
+  for (μ_vec, m) in dom_mults
+    m == 0 && continue
+    for i in 1:R
+      v_buf[i] = μ_vec[i]
+    end
+    weylloop(DT, v_buf) do tmp
+      result[SVector{R,Int}(ntuple(i -> k * tmp[i], Val(R)))] = m
+    end
+  end
+
+  return result
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════
