@@ -1,3 +1,7 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+#  Lie.jl — computations with semisimple Lie algebras
+# ═══════════════════════════════════════════════════════════════════════════════
+
 module Lie
 
 using StaticArrays
@@ -127,34 +131,23 @@ function _print_banner()
 
   println()
   # Row 1: ▖ ▘     ▘▜
-  printstyled("▖ ▘"; color=:white)
-  print("     ")
-  printstyled("▘"; color=:red)
-  printstyled("▜ "; color=:magenta)
+  print("▖ ▘     ▘▜ ")
   println(" │  semisimple Lie algebras: root systems,")
 
   # Row 2: ▌ ▌█▌   ▌▐
-  printstyled("▌ ▌█▌"; color=:white)
-  print("   ")
-  printstyled("▌"; color=:red)
-  printstyled("▐ "; color=:magenta)
+  print("▌ ▌█▌   ▌▐ ")
   println(" │  Weyl groups, and representations")
 
   # Row 3: ▙▖▌▙▖▗  ▌▐▖
-  printstyled("▙▖▌▙▖"; color=:white)
-  printstyled("▗"; color=:blue)
-  print("  ")
-  printstyled("▌"; color=:red)
-  printstyled("▐▖"; color=:magenta)
+  print("▙▖▌▙▖▗  ▌▐▖")
   println(" │")
 
   # Row 4:        ▙▌
-  print("       ")
-  printstyled("▙▌"; color=:red)
-  println("   │  Docs:    https://homogeneous.tools/lie.jl")
+  print("       ▙▌  ")
+  println(" │  Docs:    https://homogeneous.tools/lie.jl")
 
   print("            ")
-  println("   │  Version: ", version_str)
+  println("│  Version: ", version_str)
 end
 
 function __init__()
