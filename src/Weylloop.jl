@@ -298,7 +298,9 @@ end
 # Types B/C: strip signs, sort increasingly.
 # Type D: strip signs (count parity), sort increasingly, negate w[1]
 #   if odd parity and w[1] ≠ 0.
-@inline function _normalform!(w::AbstractVector{<:Integer}, ::Val{N}, subtype::Symbol) where {N}
+@inline function _normalform!(
+  w::AbstractVector{<:Integer}, ::Val{N}, subtype::Symbol
+) where {N}
   if subtype == :A
     sort!(@view(w[1:N]))
     @inbounds if w[1] != 0
