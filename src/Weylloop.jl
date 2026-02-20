@@ -265,7 +265,7 @@ _weylloop_perm_size(::Type{TypeG2}) = 3
 # Generates the next permutation in increasing lexicographic order.
 # Returns true if a next permutation was found, false at the last
 # (fully decreasing) permutation.
-@inline function _nextperm!(w::AbstractVector{Int}, ::Val{N}) where {N}
+@inline function _nextperm!(w::AbstractVector{<:Integer}, ::Val{N}) where {N}
   N <= 1 && return false
   # Find last ascent: rightmost i where w[i] < w[i+1]
   i = N - 1
@@ -298,7 +298,7 @@ end
 # Types B/C: strip signs, sort increasingly.
 # Type D: strip signs (count parity), sort increasingly, negate w[1]
 #   if odd parity and w[1] ≠ 0.
-@inline function _normalform!(w::AbstractVector{Int}, ::Val{N}, subtype::Symbol) where {N}
+@inline function _normalform!(w::AbstractVector{<:Integer}, ::Val{N}, subtype::Symbol) where {N}
   if subtype == :A
     sort!(@view(w[1:N]))
     @inbounds if w[1] != 0
@@ -324,7 +324,7 @@ end
 
 # ─── Weyl group matrix from a reduced word ──────────────────────────────────
 
-function _weyl_matrix(::Type{DT}, word::Vector{Int}) where {DT}
+function _weyl_matrix(::Type{DT}, word::Vector{<:Integer}) where {DT}
   R = rank(DT)
   C = cartan_matrix(DT)
   M = Matrix{Int}(_I, R, R)
@@ -422,7 +422,7 @@ end
 
 # Build coset reps: {cox^k * X_j : 0 ≤ k < cox_order, j ∈ X}, deduplicated.
 function _build_from_cox_and_X(
-  R::Int, cox_mat::Matrix{Int}, cox_order::Int, X_mats::Vector{Matrix{Int}}
+  R::Integer, cox_mat::Matrix{Int}, cox_order::Integer, X_mats::Vector{Matrix{Int}}
 )
   all_reps = Matrix{Int}[]
   cur = Matrix{Int}(_I, R, R)
@@ -441,7 +441,7 @@ end
 # ─── Weylloop — the main orbit traversal ────────────────────────────────────
 
 """
-    weylloop(action!, ::Type{DT}, v::AbstractVector{Int})
+    weylloop(action!, ::Type{DT}, v::AbstractVector{<:Integer})
 
 Call `action!(w)` once for each weight `w` in the Weyl orbit of `v`,
 where `v` and `w` are in the fundamental weight (ω) basis.
@@ -462,7 +462,7 @@ them and unroll fixed-size loops.  Workspace vectors use stack-allocated
 to this vector across calls (copy if needed).
 """
 function weylloop(
-  action!::F, ::Type{DT}, v::AbstractVector{Int}
+  action!::F, ::Type{DT}, v::AbstractVector{<:Integer}
 ) where {F,DT<:SimpleDynkinType}
   R = rank(DT)
   subtype = _weylloop_subtype(DT)
@@ -581,7 +581,7 @@ end
 # ─── Product type support ───────────────────────────────────────────────────
 
 function weylloop(
-  action!::F, ::Type{ProductDynkinType{T}}, v::AbstractVector{Int}
+  action!::F, ::Type{ProductDynkinType{T}}, v::AbstractVector{<:Integer}
 ) where {F,T}
   DT = ProductDynkinType{T}
   R = rank(DT)

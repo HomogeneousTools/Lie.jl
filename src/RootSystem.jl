@@ -183,7 +183,7 @@ Returns:
 - `pos_coroots::Vector{SVector{R,Int}}` — positive coroots
 - `refl::Matrix{UInt}` — reflection table
 """
-function _compute_positive_roots_and_reflections(C::SMatrix{R,R,Int}, rk::Int) where {R}
+function _compute_positive_roots_and_reflections(C::SMatrix{R,R,Int}, rk::Integer) where {R}
   # Start with simple roots (standard basis vectors)
   pos_roots = [SVector{R,Int}(ntuple(j -> Int(i == j), R)) for i in 1:rk]
   pos_coroots = [SVector{R,Int}(ntuple(j -> Int(i == j), R)) for i in 1:rk]

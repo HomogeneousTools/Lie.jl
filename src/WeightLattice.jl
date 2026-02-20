@@ -44,7 +44,7 @@ function WeightLatticeElem(::Type{DT}, v::AbstractVector{<:Integer}) where {DT<:
 end
 
 coefficients(w::WeightLatticeElem) = w.vec
-Base.getindex(w::WeightLatticeElem, i::Int) = w.vec[i]
+Base.getindex(w::WeightLatticeElem, i::Integer) = w.vec[i]
 
 Base.:+(a::WeightLatticeElem{DT,R}, b::WeightLatticeElem{DT,R}) where {DT,R} =
   WeightLatticeElem{DT,R}(a.vec + b.vec)

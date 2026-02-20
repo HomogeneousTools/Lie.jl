@@ -36,7 +36,7 @@ struct TypeA{N} <: SimpleDynkinType
     new{N}()
   end
 end
-TypeA(n::Int) = TypeA{n}()
+TypeA(n::Integer) = TypeA{n}()
 
 """
     TypeB{N} <: SimpleDynkinType
@@ -50,7 +50,7 @@ struct TypeB{N} <: SimpleDynkinType
     new{N}()
   end
 end
-TypeB(n::Int) = TypeB{n}()
+TypeB(n::Integer) = TypeB{n}()
 
 """
     TypeC{N} <: SimpleDynkinType
@@ -64,7 +64,7 @@ struct TypeC{N} <: SimpleDynkinType
     new{N}()
   end
 end
-TypeC(n::Int) = TypeC{n}()
+TypeC(n::Integer) = TypeC{n}()
 
 """
     TypeD{N} <: SimpleDynkinType
@@ -78,7 +78,7 @@ struct TypeD{N} <: SimpleDynkinType
     new{N}()
   end
 end
-TypeD(n::Int) = TypeD{n}()
+TypeD(n::Integer) = TypeD{n}()
 
 # ─── Exceptional types ──────────────────────────────────────────────────────
 
@@ -94,7 +94,7 @@ struct TypeE{N} <: SimpleDynkinType
     new{N}()
   end
 end
-TypeE(n::Int) = TypeE{n}()
+TypeE(n::Integer) = TypeE{n}()
 
 """
     TypeF4 <: SimpleDynkinType

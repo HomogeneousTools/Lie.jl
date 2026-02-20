@@ -961,7 +961,7 @@ for ``\\mathrm{SL}_{N+1}``. First reduces the partition by subtracting the
 minimum part (to pass from ``\\mathrm{GL}`` to ``\\mathrm{SL}``), then computes
 successive differences: ``λ_i = μ_i - μ_{i+1}``.
 """
-function _partition_to_weight(::Type{TypeA{N}}, p::Vector{Int}) where {N}
+function _partition_to_weight(::Type{TypeA{N}}, p::Vector{<:Integer}) where {N}
   # Reduce: subtract the minimum part (SL quotient)
   m = length(p) >= N + 1 ? p[N + 1] : 0
   v = SVector{N,Int}(
@@ -975,7 +975,7 @@ function _partition_to_weight(::Type{TypeA{N}}, p::Vector{Int}) where {N}
 end
 
 """
-    _lr_coefficients(α::Vector{Int}, β::Vector{Int}, n::Int) -> Dict{Vector{Int}, Int}
+    _lr_coefficients(α::Vector{<:Integer}, β::Vector{<:Integer}, n::Integer) -> Dict{Vector{Int}, Int}
 
 Compute all Littlewood–Richardson coefficients ``c^ν_{αβ}`` for partitions
 `α` and `β`, where partitions have at most `n` parts.
@@ -993,7 +993,7 @@ enforcing:
 We enumerate valid fillings recursively row by row, which implicitly
 determines the partition `ν`.
 """
-function _lr_coefficients(α::Vector{Int}, β::Vector{Int}, n::Int)
+function _lr_coefficients(α::Vector{<:Integer}, β::Vector{<:Integer}, n::Integer)
   α = copy(α)
   β = copy(β)
 
@@ -1030,11 +1030,11 @@ function _lr_coefficients(α::Vector{Int}, β::Vector{Int}, n::Int)
 
   function enumerate_rows!(
     result::Dict{Vector{Int},Int},
-    row::Int,
+    row::Integer,
     counts::Vector{Int},      # counts[j] = total uses of label j in rows 1..row-1
     prev_labels::Vector{Int}, # prev_labels[c] = label at column c in row-1 (0 if none)
     ν_so_far::Vector{Int},    # ν[1..row-1]
-    total_remaining::Int,
+    total_remaining::Integer,
   )
     if total_remaining == 0
       ν = copy(ν_so_far)
@@ -1056,10 +1056,10 @@ function _lr_coefficients(α::Vector{Int}, β::Vector{Int}, n::Int)
     end
 
     function fill_row!(
-      col::Int,             # current column to fill (1-indexed)
-      min_label::Int,       # weakly increasing: min label at this column
+      col::Integer,             # current column to fill (1-indexed)
+      min_label::Integer,       # weakly increasing: min label at this column
       row_counts::Vector{Int},  # row_counts[j] = #j's placed in this row so far
-      remaining::Int,
+      remaining::Integer,
     )
       # Option 1: stop the row here (ν_row = col - 1)
       ν_row = col - 1
@@ -1320,7 +1320,7 @@ end
 # ═══════════════════════════════════════════════════════════════════════════════
 
 """
-    adams_operator(λ::WeightLatticeElem{DT,R}, k::Int) -> Dict{SVector{R,Int}, Int}
+    adams_operator(λ::WeightLatticeElem{DT,R}, k::Integer) -> Dict{SVector{R,Int}, Int}
 
 Compute the `k`-th Adams operator ``ψ^k(\\mathrm{V}(λ))``, returned as a dictionary of
 weight multiplicities (not decomposed into irreducibles).
@@ -1328,7 +1328,7 @@ weight multiplicities (not decomposed into irreducibles).
 The Adams operator scales every weight by `k`: if ``\\mathrm{V}(λ)`` has weight
 multiplicity ``m(μ)``, then ``ψ^k(\\mathrm{V}(λ))`` has ``m(μ)`` at weight ``kμ``.
 """
-function adams_operator(λ::WeightLatticeElem{DT,R}, k::Int) where {DT,R}
+function adams_operator(λ::WeightLatticeElem{DT,R}, k::Integer) where {DT,R}
   @assert k != 0 "Adams operator index must be non-zero"
 
   # Use dominant_character + direct orbit expansion (avoids building
@@ -1374,7 +1374,7 @@ const _symmetric_power_cache = Dict{Tuple{Type,Any,Int},Any}()
 const _exterior_power_cache = Dict{Tuple{Type,Any,Int},Any}()
 
 """
-    symmetric_power(λ::WeightLatticeElem{DT,R}, k::Int) -> WeylCharacter{DT,R}
+    symmetric_power(λ::WeightLatticeElem{DT,R}, k::Integer) -> WeylCharacter{DT,R}
 
 Compute the `k`-th symmetric power ``\\mathrm{Sym}^k \\mathrm{V}(λ)`` of the irreducible
 representation with highest weight `λ`, using the Newton–Girard recurrence:
@@ -1398,7 +1398,7 @@ julia> Sym(6, spin)
 B3(0, 0, 6) + B3(0, 0, 4) + B3(0, 0, 2) + B3(0, 0, 0)
 ```
 """
-function symmetric_power(λ::WeightLatticeElem{DT,R}, k::Int) where {DT,R}
+function symmetric_power(λ::WeightLatticeElem{DT,R}, k::Integer) where {DT,R}
   @assert is_dominant(λ) "Weight must be dominant"
   k < 0 && return WeylCharacter(DT)
   k == 0 && return WeylCharacter(WeightLatticeElem{DT,R}(zero(SVector{R,Int})))
@@ -1415,7 +1415,7 @@ function symmetric_power(λ::WeightLatticeElem{DT,R}, k::Int) where {DT,R}
 end
 
 # Generic Newton–Girard: uses Brauer–Klimyk for each Adams ⊗ power term
-function _symmetric_power_newton_girard(λ::WeightLatticeElem{DT,R}, k::Int) where {DT,R}
+function _symmetric_power_newton_girard(λ::WeightLatticeElem{DT,R}, k::Integer) where {DT,R}
   result = WeylCharacter(DT)
   # Cache dominant character: all Adams operators for V(λ) use the same weights
   dom_mults = dominant_character(λ)
@@ -1434,7 +1434,7 @@ function _symmetric_power_newton_girard(λ::WeightLatticeElem{DT,R}, k::Int) whe
   return result
 end
 
-function _newton_girard_divide!(result::WeylCharacter, k::Int)
+function _newton_girard_divide!(result::WeylCharacter, k::Integer)
   for λv in keys(result.terms)
     q, r = divrem(result.terms[λv], k)
     @assert iszero(r) "Newton–Girard: non-integer coefficient after division by k=$k"
@@ -1443,7 +1443,7 @@ function _newton_girard_divide!(result::WeylCharacter, k::Int)
 end
 
 """
-    exterior_power(λ::WeightLatticeElem{DT,R}, k::Int) -> WeylCharacter{DT,R}
+    exterior_power(λ::WeightLatticeElem{DT,R}, k::Integer) -> WeylCharacter{DT,R}
 
 Compute the `k`-th exterior power ``\\bigwedge^k \\mathrm{V}(λ)`` of the irreducible
 representation with highest weight `λ`, using the Newton–Girard recurrence:
@@ -1467,7 +1467,7 @@ julia> ⋀(6, spin)
 B3(1, 0, 0) + B3(0, 1, 0)
 ```
 """
-function exterior_power(λ::WeightLatticeElem{DT,R}, k::Int) where {DT,R}
+function exterior_power(λ::WeightLatticeElem{DT,R}, k::Integer) where {DT,R}
   @assert is_dominant(λ) "Weight must be dominant"
   k < 0 && return WeylCharacter(DT)
   k == 0 && return WeylCharacter(WeightLatticeElem{DT,R}(zero(SVector{R,Int})))
@@ -1485,7 +1485,7 @@ function exterior_power(λ::WeightLatticeElem{DT,R}, k::Int) where {DT,R}
 end
 
 # Generic Newton–Girard: uses Brauer–Klimyk for each Adams ⊗ power term
-function _exterior_power_newton_girard(λ::WeightLatticeElem{DT,R}, k::Int) where {DT,R}
+function _exterior_power_newton_girard(λ::WeightLatticeElem{DT,R}, k::Integer) where {DT,R}
   result = WeylCharacter(DT)
   # Cache dominant character: all Adams operators for V(λ) use the same weights
   dom_mults = dominant_character(λ)
@@ -1506,7 +1506,7 @@ function _exterior_power_newton_girard(λ::WeightLatticeElem{DT,R}, k::Int) wher
 end
 
 """
-    Sym(k::Int, λ::WeightLatticeElem) -> WeylCharacter
+    Sym(k::Integer, λ::WeightLatticeElem) -> WeylCharacter
 
 Shorthand for `symmetric_power(λ, k)`.
 
@@ -1523,10 +1523,10 @@ julia> degree(highest_weight(Sym(3, ω₁)))
 10
 ```
 """
-Sym(k::Int, λ::WeightLatticeElem) = symmetric_power(λ, k)
+Sym(k::Integer, λ::WeightLatticeElem) = symmetric_power(λ, k)
 
 """
-    ⋀(k::Int, λ::WeightLatticeElem) -> WeylCharacter
+    ⋀(k::Integer, λ::WeightLatticeElem) -> WeylCharacter
 
 Shorthand for `exterior_power(λ, k)`.
 
@@ -1540,7 +1540,7 @@ julia> ⋀(2, ω₁) == WeylCharacter(fundamental_weight(TypeA{3}, 2))
 true
 ```
 """
-⋀(k::Int, λ::WeightLatticeElem) = exterior_power(λ, k)
+⋀(k::Integer, λ::WeightLatticeElem) = exterior_power(λ, k)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  Plethysm — Schur functor / composition of symmetric functions
@@ -1549,18 +1549,18 @@ true
 # ─── Partitions of n ─────────────────────────────────────────────────────────
 
 """
-    _partitions(n::Int) -> Vector{Vector{Int}}
+    _partitions(n::Integer) -> Vector{Vector{Int}}
 
 Generate all partitions of `n` in decreasing order.
 """
-function _partitions(n::Int)
+function _partitions(n::Integer)
   result = Vector{Vector{Int}}()
   _partitions_recurse!(result, Int[], n, n)
   return result
 end
 
 function _partitions_recurse!(
-  result::Vector{Vector{Int}}, prefix::Vector{Int}, n::Int, max_part::Int
+  result::Vector{Vector{Int}}, prefix::Vector{Int}, n::Integer, max_part::Integer
 )
   if n == 0
     push!(result, copy(prefix))
@@ -1586,7 +1586,7 @@ type ``κ``:
 where ``c_k(κ)`` is the number of parts of ``κ`` equal to ``k``.
 The parts of `κ` must be in weakly decreasing order.
 """
-function _classord(κ::Vector{Int})
+function _classord(κ::Vector{<:Integer})
   x = BigInt(1)
   n = 0
   prev = 0
@@ -1623,7 +1623,7 @@ The algorithm represents the Young diagram of ``λ`` as a Maya diagram
 (edge sequence of horizontal/vertical steps), then recursively removes
 rim hooks of the sizes given by the parts of ``μ`` (largest first).
 """
-function _mn_char_val(λ::Vector{Int}, μ::Vector{Int})
+function _mn_char_val(λ::Vector{<:Integer}, μ::Vector{<:Integer})
   n = sum(λ)
   n == 0 && return BigInt(1)
 
@@ -1673,8 +1673,8 @@ Recursive Murnaghan–Nakayama: remove rim hooks of sizes μ[i], μ[i+1], …
 from the Maya diagram `edge`, tracking leg-length parity in `k`.
 """
 function _mn_recurse!(
-  edge::Vector{Bool}, μ::Vector{Int}, m2::Int, d::Int, l::Int,
-  λ_prime::Vector{Int}, i::Int, k::Int,
+  edge::Vector{Bool}, μ::Vector{<:Integer}, m2::Integer, d::Integer, l::Integer,
+  λ_prime::Vector{Int}, i::Integer, k::Integer,
 )
   if i > m2
     # All parts >= 2 placed; count remaining 1-hooks via hook-length formula
@@ -1721,7 +1721,7 @@ function _mn_recurse!(
 end
 
 """
-    _n_tableaux(λ::Vector{Int}, l::Int) -> BigInt
+    _n_tableaux(λ::Vector{<:Integer}, l::Integer) -> BigInt
 
 Compute the number of standard Young tableaux of shape ``λ`` using the
 hook-length formula:
@@ -1730,7 +1730,7 @@ hook-length formula:
 
 `l` is the number of (nonzero) rows.
 """
-function _n_tableaux(λ::Vector{Int}, l::Int)
+function _n_tableaux(λ::Vector{<:Integer}, l::Integer)
   while l > 1 && λ[l] == 0
     l -= 1
   end
@@ -1762,7 +1762,7 @@ end
 # ─── Plethysm main function ─────────────────────────────────────────────────
 
 """
-    plethysm(λ::Vector{Int}, μ::WeightLatticeElem{DT,R}) -> WeylCharacter{DT,R}
+    plethysm(λ::Vector{<:Integer}, μ::WeightLatticeElem{DT,R}) -> WeylCharacter{DT,R}
 
 Compute the plethysm ``s_λ(\\mathrm{V}(μ))``, where ``λ`` is a partition of ``n``
 (parts in weakly decreasing order) and ``\\mathrm{V}(μ)`` is the irreducible
@@ -1794,7 +1794,7 @@ julia> plethysm([2, 1], ω₁)  # Mixed symmetry: S_{(2,1)} functor
 A3(1, 1, 0)
 ```
 """
-function plethysm(λ::Vector{Int}, μ::WeightLatticeElem{DT,R}) where {DT,R}
+function plethysm(λ::Vector{<:Integer}, μ::WeightLatticeElem{DT,R}) where {DT,R}
   @assert is_dominant(μ) "Weight must be dominant"
   @assert all(>=(0), λ) "Partition parts must be non-negative"
   @assert issorted(λ; rev=true) "Partition must be in weakly decreasing order"

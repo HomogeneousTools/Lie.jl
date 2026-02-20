@@ -175,7 +175,7 @@ Returns `(insert::Bool, position::Int, letter::UInt8)`:
 - if `insert=true`: insert `letter` at `position`
 - if `insert=false`: delete the element at `position`
 """
-function _explain_rmul(x::WeylGroupElem, s::UInt8, refl::AbstractMatrix{UInt}, rk::Int)
+function _explain_rmul(x::WeylGroupElem, s::UInt8, refl::AbstractMatrix{UInt}, rk::Integer)
   insert_index = length(x.word) + 1
   insert_letter = s
 
@@ -227,7 +227,7 @@ end
 
 Base.isone(x::WeylGroupElem) = isempty(x.word)
 
-function Base.:^(x::WeylGroupElem, n::Int)
+function Base.:^(x::WeylGroupElem, n::Integer)
   W = parent(x)
   if n == 0
     return one(W)
