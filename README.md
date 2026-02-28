@@ -18,7 +18,7 @@ Weyl groups, weight lattices, and representation-theoretic operations.
 
 ```julia
 using Pkg
-Pkg.add(url="https://github.com/YourOrg/Lie.jl")  # adjust URL
+Pkg.add(url="https://github.com/HomogeneousTools/Lie.jl")  # adjust URL
 ```
 
 Or for local development:
