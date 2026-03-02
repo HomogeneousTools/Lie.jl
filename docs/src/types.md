@@ -195,4 +195,27 @@ cartan_matrix
 cartan_symmetrizer
 cartan_bilinear_form
 cartan_matrix_inverse
+cartan_determinant
 ```
+
+### Connection index
+
+The determinant of the Cartan matrix is the **connection index**, which gives the index
+of the root lattice $Q$ in the weight lattice $P$:
+
+$$\det(C) = [P : Q]$$
+
+For simply-laced types (A, D, E), the index varies by type. For multiply-laced types,
+the determinant encodes how the roots and weights are related:
+
+```jldoctest types
+julia> using Lie
+
+julia> cartan_determinant(TypeA{3})   # A₃: det = 4 = n+1
+4
+
+julia> cartan_determinant(TypeB{2})   # B₂ multiply-laced
+2
+
+julia> cartan_determinant(TypeG2)
+1
