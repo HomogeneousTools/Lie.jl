@@ -407,6 +407,80 @@ function highest_root(RS::RootSystem{DT,R}) where {DT,R}
   return positive_root(RS, best_idx)
 end
 
+# ─── Degrees of fundamental invariants ────────────────────────────────────────
+
+"""
+    degrees_fundamental_invariants(::Type{DT}) -> SVector{R,Int}
+    degrees_fundamental_invariants(dt::DT) -> SVector{R,Int}
+
+Return the degrees of the fundamental invariants of the Weyl group action on the
+polynomial ring.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> degrees_fundamental_invariants(TypeA{2})
+2-element StaticArraysCore.SVector{2, Int64} with indices SOneTo(2):
+ 2
+ 3
+
+julia> degrees_fundamental_invariants(TypeB{3})
+3-element StaticArraysCore.SVector{3, Int64} with indices SOneTo(3):
+ 2
+ 4
+ 6
+
+julia> degrees_fundamental_invariants(TypeD{4})
+4-element StaticArraysCore.SVector{4, Int64} with indices SOneTo(4):
+ 2
+ 4
+ 6
+ 4
+
+julia> degrees_fundamental_invariants(TypeG2)
+2-element StaticArraysCore.SVector{2, Int64} with indices SOneTo(2):
+ 2
+ 6
+```
+"""
+degrees_fundamental_invariants(::Type{TypeA{N}}) where {N} =
+  SVector{N,Int}(Tuple(2:(N + 1)))
+
+# B_n and C_n: 2, 4, 6, ..., 2n
+function degrees_fundamental_invariants(::Type{TypeB{N}}) where {N}
+  return SVector{N,Int}(Tuple(2:2:(2N)))
+end
+
+function degrees_fundamental_invariants(::Type{TypeC{N}}) where {N}
+  return SVector{N,Int}(Tuple(2:2:(2N)))
+end
+
+# D_n: 2, 4, ..., 2(n-1), n
+function degrees_fundamental_invariants(::Type{TypeD{N}}) where {N}
+  return SVector{N,Int}(Tuple(vcat(collect(2:2:(2N - 2)), [N])))
+end
+
+degrees_fundamental_invariants(::Type{TypeE{6}}) = SVector{6,Int}((2, 5, 6, 8, 9, 12))
+degrees_fundamental_invariants(::Type{TypeE{7}}) =
+  SVector{7,Int}((2, 6, 8, 10, 12, 14, 18))
+degrees_fundamental_invariants(::Type{TypeE{8}}) =
+  SVector{8,Int}((2, 8, 12, 14, 18, 20, 24, 30))
+degrees_fundamental_invariants(::Type{TypeF4}) = SVector{4,Int}((2, 6, 8, 12))
+degrees_fundamental_invariants(::Type{TypeG2}) = SVector{2,Int}((2, 6))
+
+@generated function degrees_fundamental_invariants(::Type{ProductDynkinType{Ts}}) where {Ts}
+  types = Ts.parameters
+  all_degrees = vcat([degrees_fundamental_invariants(T) for T in types]...)
+  R = length(all_degrees)
+  entries = Tuple(all_degrees)
+  return :(SVector{$R,Int}($entries))
+end
+
+function degrees_fundamental_invariants(dt::DynkinType)
+  return degrees_fundamental_invariants(typeof(dt))
+end
+
 # ─── Root queries ────────────────────────────────────────────────────────────
 
 """
