@@ -92,7 +92,7 @@ oscar_cartan(::Type{TypeG2}) = (:G, 2)
 
 # Cold Lie.jl: clear cache inside timing so every sample is a fresh computation.
 function _bench_lie_tensor_cold(
-  ::Type{DT}, c1::NTuple{R,Int}, c2::NTuple{R,Int},
+  ::Type{DT}, c1::NTuple{R,Int}, c2::NTuple{R,Int}
 ) where {DT,R}
   Lie.clear_all_caches!()
   λ = WeightLatticeElem(DT, SVector{R,Int}(c1))
@@ -103,7 +103,7 @@ end
 # Cold LR: LR is combinatorial (no Freudenthal cache) but we clear anyway for
 # consistency with the "cold" contract used throughout this file.
 function _bench_lie_lr_cold(
-  ::Type{TypeA{N}}, c1::NTuple{N,Int}, c2::NTuple{N,Int},
+  ::Type{TypeA{N}}, c1::NTuple{N,Int}, c2::NTuple{N,Int}
 ) where {N}
   Lie.clear_all_caches!()
   λ = WeightLatticeElem(TypeA{N}, SVector{N,Int}(c1))
@@ -113,7 +113,7 @@ end
 
 # Cold BK: Freudenthal cache cleared before computing the smaller character.
 function _bench_lie_bk_cold(
-  ::Type{TypeA{N}}, c1::NTuple{N,Int}, c2::NTuple{N,Int},
+  ::Type{TypeA{N}}, c1::NTuple{N,Int}, c2::NTuple{N,Int}
 ) where {N}
   Lie.clear_all_caches!()
   λ = WeightLatticeElem(TypeA{N}, SVector{N,Int}(c1))
@@ -221,8 +221,8 @@ function run_tensor_case(
   )
   n_irreps = length(tp.terms)
 
-  b_lie =
-    @benchmark _bench_lie_tensor_cold($DT, $c1_tup, $c2_tup) evals = 1 samples = samples
+  b_lie = @benchmark _bench_lie_tensor_cold($DT, $c1_tup, $c2_tup) evals = 1 samples =
+    samples
 
   b_oscar = nothing
   if OSCAR_AVAILABLE && !skip_large_oscar
@@ -232,9 +232,8 @@ function run_tensor_case(
       iv1 = collect(Int, c1_tup)
       iv2 = collect(Int, c2_tup)
       _bench_oscar_tensor(oscar_R, iv1, iv2)   # warmup — fills RootSystem caches
-      b_oscar =
-        @benchmark _bench_oscar_tensor($oscar_R, $iv1, $iv2) evals = 1 samples =
-          samples_oscar
+      b_oscar = @benchmark _bench_oscar_tensor($oscar_R, $iv1, $iv2) evals = 1 samples =
+        samples_oscar
     catch e
       @warn "Oscar benchmark failed for \"$label\"" exception = e
     end
@@ -293,12 +292,10 @@ function run_lr_bk_case(
   )
   n_irreps = length(tp.terms)
 
-  b_lr =
-    @benchmark _bench_lie_lr_cold($(TypeA{N}), $c1_tup, $c2_tup) evals = 1 samples =
-      samples
-  b_bk =
-    @benchmark _bench_lie_bk_cold($(TypeA{N}), $c1_tup, $c2_tup) evals = 1 samples =
-      samples
+  b_lr = @benchmark _bench_lie_lr_cold($(TypeA{N}), $c1_tup, $c2_tup) evals = 1 samples =
+    samples
+  b_bk = @benchmark _bench_lie_bk_cold($(TypeA{N}), $c1_tup, $c2_tup) evals = 1 samples =
+    samples
 
   b_oscar = nothing
   if OSCAR_AVAILABLE && !skip_large_oscar
@@ -307,9 +304,8 @@ function run_lr_bk_case(
       iv1 = collect(Int, c1_tup)
       iv2 = collect(Int, c2_tup)
       _bench_oscar_tensor(oscar_R, iv1, iv2)   # warmup
-      b_oscar =
-        @benchmark _bench_oscar_tensor($oscar_R, $iv1, $iv2) evals = 1 samples =
-          samples_oscar
+      b_oscar = @benchmark _bench_oscar_tensor($oscar_R, $iv1, $iv2) evals = 1 samples =
+        samples_oscar
     catch e
       @warn "Oscar benchmark failed for \"$label\"" exception = e
     end
