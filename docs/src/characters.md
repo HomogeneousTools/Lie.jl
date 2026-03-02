@@ -77,20 +77,44 @@ add!
 addmul!
 ```
 
-## Dominant character
+## Character polynomials
 
-The **dominant character** of an irreducible representation
-``\mathrm{V}(\lambda)`` is the restriction of its full character to
-dominant weights only. Since every weight lies in the Weyl orbit of a
-unique dominant weight (and all weights in an orbit share the same
-multiplicity), the dominant character is a compact summary that
-determines the full character.
+A **character polynomial** of a finite-dimensional representation is a formal sum
 
-`dominant_character` computes this using Freudenthal's recursion formula
-and returns a `Dict{SVector{R,Int}, Int}` mapping dominant weight
-coordinates to multiplicities. This is the cached building block behind
-[`freudenthal_formula`](@ref), [`weight_multiplicity`](@ref), tensor
-products, Adams operators, and plethysms.
+$$\chi(\lambda) = \sum_{\mu \in P} m_\lambda(\mu) e^\mu$$
+
+where $P$ is the weight lattice, $m_\lambda(\mu)$ is the multiplicity of weight $\mu$ in the representation with highest weight $\lambda$, and $e^\mu$ is a formal exponential. This encodes the weight multiplicities in a single object that respects the representation ring structure (tensor product → multiplication of characters).
+
+Since character polynomials are **Weyl group invariant** (i.e., $\chi_\lambda(w \cdot \mu) = \chi_\lambda(\mu)$ for all $w \in W$), the full character is determined by its values on dominant weights. More precisely: each weight orbit under the Weyl group contains exactly one dominant weight, and all weights in an orbit have equal multiplicity.
+
+```jldoctest chars
+julia> ω₁_a2 = fundamental_weight(TypeA{2}, 1);
+
+julia> full_mults = freudenthal_formula(ω₁_a2);
+
+julia> length(full_mults)   # includes all W-orbit members
+3
+
+julia> dom_mults = dominant_character(ω₁_a2);
+
+julia> length(dom_mults)   # only dominant weights
+1
+```
+
+## Dominant character polynomials
+
+The **dominant character polynomial** (or sometimes just "dominant character") is a more compact representation:
+
+$$\chi_{\lambda, \text{dom}} = \sum_{\mu \in P^+ : m_\lambda(\mu) > 0} m_\lambda(\mu) e^\mu$$
+
+where $P^+$ is the set of dominant weights. By W-invariance, this omits all non-dominant weights while retaining *all information* about the full character.
+
+Explicitly: since each W-orbit contains a unique dominant representative, reconstructing the full character from the dominant character is straightforward — just apply the Weyl group orbit operator. This is what [`freudenthal_formula`](@ref) does internally.
+
+`dominant_character` computes this using Freudenthal's recursion formula and returns a 
+`Dict{SVector{R,Int}, Int}` mapping dominant weight coordinates to multiplicities. This is the cached building block behind [`freudenthal_formula`](@ref), [`weight_multiplicity`](@ref), tensor products, Adams operators, and plethysms.
+
+The relationship to the LiE computer algebra system: the "dominant character polynomial" used here corresponds to the output of the `domchar` command in LiE, which filters the full character to list only the dominant weights and uses the Weyl group orbit operator to go back and forth.
 
 ```jldoctest chars
 julia> ω₁_a2 = fundamental_weight(TypeA{2}, 1);
@@ -107,6 +131,7 @@ julia> dc[SVector(1, 0)]  # the highest weight itself
 ```@docs
 dominant_character
 ```
+
 
 ## Freudenthal's formula
 
