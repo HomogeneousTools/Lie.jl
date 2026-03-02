@@ -5,7 +5,7 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 
 export cartan_matrix, cartan_symmetrizer, cartan_bilinear_form, cartan_matrix_inverse
-export omega_bilinear_form_scaled
+export omega_bilinear_form_scaled, cartan_determinant
 
 # ─── Type A ──────────────────────────────────────────────────────────────────
 # A_n: tridiagonal, 2 on diagonal, -1 on super/sub-diagonal
@@ -416,3 +416,54 @@ that makes all entries integral.  This is a compile-time constant.
 end
 
 omega_bilinear_form_scaled(dt::DynkinType) = omega_bilinear_form_scaled(typeof(dt))
+
+# ─── Cartan matrix determinant (connection index) ────────────────────────────
+# Pre-computed for all simple types; for product types, take the product.
+
+"""
+    cartan_determinant(::Type{DT}) -> Int
+    cartan_determinant(dt::DT) -> Int
+
+Compute the determinant of the Cartan matrix of the Dynkin type `DT`.
+
+For semisimple Lie algebras, this determinant equals the **connection index**,
+which measures the index of the root lattice in the weight lattice.
+
+This is a compile-time constant based on hardcoded values for simple types.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> cartan_determinant(TypeA{3})
+4
+
+julia> cartan_determinant(TypeB{3})
+2
+
+julia> cartan_determinant(TypeG2)
+1
+```
+"""
+cartan_determinant(::Type{TypeA{N}}) where {N} = N + 1
+cartan_determinant(::Type{TypeB{N}}) where {N} = 2
+cartan_determinant(::Type{TypeC{N}}) where {N} = 2
+cartan_determinant(::Type{TypeD{N}}) where {N} = 4
+cartan_determinant(::Type{TypeE{6}}) = 3
+cartan_determinant(::Type{TypeE{7}}) = 2
+cartan_determinant(::Type{TypeE{8}}) = 1
+cartan_determinant(::Type{TypeF4}) = 1
+cartan_determinant(::Type{TypeG2}) = 1
+
+@generated function cartan_determinant(::Type{ProductDynkinType{Ts}}) where {Ts}
+  types = Ts.parameters
+  det_product = 1
+  for T in types
+    det_product *= cartan_determinant(T)
+  end
+  return :($det_product)
+end
+
+function cartan_determinant(dt::DynkinType)
+  return cartan_determinant(typeof(dt))
+end
