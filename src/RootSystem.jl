@@ -403,9 +403,197 @@ function highest_root(RS::RootSystem{DT,R}) where {DT,R}
       best_ht = h
       best_idx = i
     end
+# ─── Coxeter coefficients ────────────────────────────────────────────────
+
+"""
+    coxeter_coefficients(::Type{DT}) -> SVector{R,Int}
+    coxeter_coefficients(dt::DT) -> SVector{R,Int}
+
+Return the **Coxeter coefficients** (exponents of the Dynkin diagram), which are the coefficients
+of the highest root in the simple root basis:
+``θ = ∑_i m_i α_i``
+
+These appear in the defining relations of the corresponding Lie algebra and are related to the
+exponents of the invariant polynomials in the algebra of invariants of the Weyl group.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> coxeter_coefficients(TypeA{3})
+3-element StaticArraysCore.SVector{3, Int64} with indices SOneTo(3):
+ 1
+ 1
+ 1
+
+julia> coxeter_coefficients(TypeB{2})
+2-element StaticArraysCore.SVector{2, Int64} with indices SOneTo(2):
+ 1
+ 2
+```
+"""
+coxeter_coefficients(::Type{TypeA{N}}) where {N} = SVector{N,Int}(ntuple(_ -> 1, N))
+
+function coxeter_coefficients(::Type{TypeB{N}}) where {N}
+  return SVector{N,Int}(Tuple(vcat([1], fill(2, N - 1))))
+end
+
+function coxeter_coefficients(::Type{TypeC{N}}) where {N}
+  return SVector{N,Int}(Tuple(vcat(fill(2, N - 1), [1])))
+end
+
+function coxeter_coefficients(::Type{TypeD{N}}) where {N}
+  if N == 2
+    return SVector{2,Int}((1, 1))
+  else
+    return SVector{N,Int}(Tuple(vcat([1], fill(2, max(0, N - 3)), [1, 1])))
   end
   return positive_root(RS, best_idx)
 end
+
+coxeter_coefficients(::Type{TypeE{6}}) = SVector{6,Int}((1, 2, 2, 3, 2, 1))
+coxeter_coefficients(::Type{TypeE{7}}) = SVector{7,Int}((2, 2, 3, 4, 3, 2, 1))
+coxeter_coefficients(::Type{TypeE{8}}) = SVector{8,Int}((2, 3, 4, 6, 5, 4, 3, 2))
+coxeter_coefficients(::Type{TypeF4}) = SVector{4,Int}((2, 3, 4, 2))
+coxeter_coefficients(::Type{TypeG2}) = SVector{2,Int}((3, 2))
+
+@generated function coxeter_coefficients(::Type{ProductDynkinType{Ts}}) where {Ts}
+  types = Ts.parameters
+  all_coeffs = vcat([coxeter_coefficients(T) for T in types]...)
+  R = length(all_coeffs)
+  entries = Tuple(all_coeffs)
+  return :(SVector{$R,Int}($entries))
+end
+
+function coxeter_coefficients(dt::DynkinType)
+  return coxeter_coefficients(typeof(dt))
+end
+
+# ─── Dual Coxeter coefficients ────────────────────────────────────────────────
+
+"""
+    dual_coxeter_coefficients(::Type{DT}) -> SVector{R,Int}
+    dual_coxeter_coefficients(dt::DT) -> SVector{R,Int}
+
+Return the **dual Coxeter coefficients**: the coefficients of simple roots in the
+highest short root of the dual root system (Langlands dual). The dual Coxeter number
+is ``h^\\vee = 1 + \\sum_i n_i^\\vee``.
+
+For simply-laced types (A, D, E) all roots have the same length, so these equal the
+Coxeter coefficients. For B, C, F₄, G₂ they differ.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> dual_coxeter_coefficients(TypeB{2})
+2-element StaticArraysCore.SVector{2, Int64} with indices SOneTo(2):
+ 1
+ 1
+
+julia> dual_coxeter_coefficients(TypeG2)
+2-element StaticArraysCore.SVector{2, Int64} with indices SOneTo(2):
+ 1
+ 2
+```
+"""
+dual_coxeter_coefficients(::Type{TypeA{N}}) where {N} = coxeter_coefficients(TypeA{N})
+
+# Dual of B_n is C_n; highest short root of C_n = e₁+e₂, coefficients [1,2,...,2,1]
+function dual_coxeter_coefficients(::Type{TypeB{N}}) where {N}
+  if N == 1
+    return SVector{1,Int}((1,))
+  elseif N == 2
+    return SVector{2,Int}((1, 1))
+  else
+    return SVector{N,Int}(Tuple(vcat([1], fill(2, N - 2), [1])))
+  end
+end
+
+# Dual of C_n is B_n; highest short root of B_n = e₁ = α₁+...+αₙ, coefficients [1,...,1]
+function dual_coxeter_coefficients(::Type{TypeC{N}}) where {N}
+  return SVector{N,Int}(ntuple(_ -> 1, N))
+end
+
+dual_coxeter_coefficients(::Type{TypeD{N}}) where {N} = coxeter_coefficients(TypeD{N})
+dual_coxeter_coefficients(::Type{TypeE{6}}) = coxeter_coefficients(TypeE{6})
+dual_coxeter_coefficients(::Type{TypeE{7}}) = coxeter_coefficients(TypeE{7})
+dual_coxeter_coefficients(::Type{TypeE{8}}) = coxeter_coefficients(TypeE{8})
+# Dual of F₄ is F₄; highest short root of F₄ = α₁+2α₂+3α₃+2α₄, coefficients [1,2,3,2]
+dual_coxeter_coefficients(::Type{TypeF4}) = SVector{4,Int}((1, 2, 3, 2))
+# Dual of G₂ is G₂; highest short root of G₂∨ in coroot basis, coefficients [1,2]
+dual_coxeter_coefficients(::Type{TypeG2}) = SVector{2,Int}((1, 2))
+
+@generated function dual_coxeter_coefficients(::Type{ProductDynkinType{Ts}}) where {Ts}
+  types = Ts.parameters
+  all_coeffs = vcat([dual_coxeter_coefficients(T) for T in types]...)
+  R = length(all_coeffs)
+  entries = Tuple(all_coeffs)
+  return :(SVector{$R,Int}($entries))
+end
+
+function dual_coxeter_coefficients(dt::DynkinType)
+  return dual_coxeter_coefficients(typeof(dt))
+end
+
+# ─── Coxeter number ────────────────────────────────────────────────────────
+
+"""
+    coxeter_number(::Type{DT}) -> Int
+    coxeter_number(dt::DT) -> Int
+
+Return the **Coxeter number** ``h`` of the Dynkin type, defined as ``h = 1 + ∑_i m_i``
+where ``m_i`` are the Coxeter coefficients (coefficients of the highest root).
+
+The Coxeter number is the order of a Coxeter element (product of all simple reflections)
+in the Weyl group.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> coxeter_number(TypeA{1})
+2
+
+julia> coxeter_number(TypeA{3})
+4
+
+julia> coxeter_number(TypeG2)
+6
+```
+"""
+coxeter_number(::Type{DT}) where {DT<:DynkinType} = 1 + sum(coxeter_coefficients(DT))
+coxeter_number(dt::DynkinType) = coxeter_number(typeof(dt))
+
+# ─── Dual Coxeter number ────────────────────────────────────────────────────
+
+"""
+    dual_coxeter_number(::Type{DT}) -> Int
+    dual_coxeter_number(dt::DT) -> Int
+
+Return the **dual Coxeter number** ``h^∨`` of the Dynkin type, which is the Coxeter
+number of the Langlands dual root system.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> dual_coxeter_number(TypeA{1})
+2
+
+julia> dual_coxeter_number(TypeA{3})
+4
+
+julia> dual_coxeter_number(TypeB{2})
+3
+
+julia> dual_coxeter_number(TypeG2)
+4
+```
+"""
+dual_coxeter_number(::Type{DT}) where {DT<:DynkinType} =
+  1 + sum(dual_coxeter_coefficients(DT))
+dual_coxeter_number(dt::DynkinType) = dual_coxeter_number(typeof(dt))
 
 # ─── Degrees of fundamental invariants ────────────────────────────────────────
 
