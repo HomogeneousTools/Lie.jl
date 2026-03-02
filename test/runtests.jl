@@ -81,6 +81,25 @@ using StaticArrays
     @test C_prod[1:2, 1:2] == cartan_matrix(TypeA{2})
     @test C_prod[3:4, 3:4] == cartan_matrix(TypeG2)
     @test C_prod[1:2, 3:4] == zeros(Int, 2, 2)
+
+    # Cartan determinant (connection index)
+    # The determinant depends on the root system structure
+    @test cartan_determinant(TypeA{1}) == 2
+    @test cartan_determinant(TypeA{2}) == 3
+    @test cartan_determinant(TypeA{3}) == 4
+    @test cartan_determinant(TypeD{4}) == 4
+    @test cartan_determinant(TypeE{6}) == 3
+
+    # Multiply-laced types
+    @test cartan_determinant(TypeB{2}) == 2
+    @test cartan_determinant(TypeB{3}) == 2
+    @test cartan_determinant(TypeC{2}) == 2
+    @test cartan_determinant(TypeC{3}) == 2
+    @test cartan_determinant(TypeF4) == 1
+    @test cartan_determinant(TypeG2) == 1
+
+    # Instance dispatch
+    @test cartan_determinant(TypeA{2}()) == cartan_determinant(TypeA{2})
   end
 
   # ═══════════════════════════════════════════════════════════════════════
@@ -117,6 +136,121 @@ using StaticArrays
     RS_B2 = RootSystem(TypeB{2})
     hr_B2 = highest_root(RS_B2)
     @test height(hr_B2) == sum(coefficients(hr_B2))
+
+    # Highest short root
+    # For B₂: short roots have length 1 (±eᵢ); highest is e₁ = α₁+α₂
+    hsr_B2 = highest_short_root(RS_B2)
+    @test coefficients(hsr_B2) == [1, 1]  # B₂ highest short root = α₁+α₂
+
+    # For A₂ (simply-laced): highest short root = highest root
+    hsr_A2 = highest_short_root(RS_A2)
+    @test coefficients(hsr_A2) == coefficients(hr)
+
+    # For G₂: short roots have length² = 2; highest is 2α₁+α₂
+    RS_G2 = RootSystem(TypeG2)
+    hsr_G2 = highest_short_root(RS_G2)
+    @test coefficients(hsr_G2) == [2, 1]
+
+    # Highest coroot and Coxeter coefficients
+    hcr_A2 = highest_coroot(RS_A2)
+    @test coefficients(hcr_A2) == [1, 1]  # Same coroot structure for A₂
+
+    c_A2 = coxeter_coefficients(TypeA{2})
+    @test c_A2 == [1, 1]
+    @test length(c_A2) == rank(TypeA{2})
+
+    c_A3 = coxeter_coefficients(TypeA{3})
+    @test c_A3 == [1, 1, 1]  # Simply-laced: all 1s
+
+    c_B2 = coxeter_coefficients(TypeB{2})
+    @test c_B2 == [1, 2]  # Type B: [1, 2, ..., 2]
+
+    c_G2 = coxeter_coefficients(TypeG2)
+    @test c_G2 == [3, 2]  # G₂ Coxeter coefficients
+
+    # Dual Coxeter coefficients: highest short root of the dual root system
+    dc_B2 = dual_coxeter_coefficients(TypeB{2})
+    @test dc_B2 == [1, 1]  # B₂∨=C₂; highest short root of C₂ has coefficients [1,1]
+
+    dc_C2 = dual_coxeter_coefficients(TypeC{2})
+    @test dc_C2 == [1, 1]  # C₂∨=B₂; highest short root of B₂ (=e₁) has coefficients [1,1]
+
+    dc_G2 = dual_coxeter_coefficients(TypeG2)
+    @test dc_G2 == [1, 2]  # G₂ self-dual; highest short root of G₂∨ has coefficients [1,2]
+
+    dc_F4 = dual_coxeter_coefficients(TypeF4)
+    @test dc_F4 == [1, 2, 3, 2]  # F₄ self-dual; highest short root coefficients [1,2,3,2]
+
+    # Coxeter number: h = 1 + ∑ cᵢ
+    h_A1 = coxeter_number(TypeA{1})
+    @test h_A1 == 2  # 1 + 1
+
+    h_A2 = coxeter_number(TypeA{2})
+    @test h_A2 == 3  # 1 + 1 + 1
+
+    h_A3 = coxeter_number(TypeA{3})
+    @test h_A3 == 4  # 1 + 1 + 1 + 1
+
+    h_B2 = coxeter_number(TypeB{2})
+    @test h_B2 == 4  # 1 + 1 + 2
+
+    h_G2 = coxeter_number(TypeG2)
+    @test h_G2 == 6  # 1 + 3 + 2
+
+    # Dual Coxeter number: h* = 1 + ∑ c*ᵢ
+    h_star_A1 = dual_coxeter_number(TypeA{1})
+    @test h_star_A1 == 2  # 1 + 1
+
+    h_star_A2 = dual_coxeter_number(TypeA{2})
+    @test h_star_A2 == 3  # 1 + 1 + 1
+
+    h_star_A3 = dual_coxeter_number(TypeA{3})
+    @test h_star_A3 == 4  # 1 + 1 + 1 + 1
+
+    h_star_B2 = dual_coxeter_number(TypeB{2})
+    @test h_star_B2 == 3  # 1 + 1 + 1 = 3 = 2·2-1
+
+    h_star_C2 = dual_coxeter_number(TypeC{2})
+    @test h_star_C2 == 3  # 1 + 1 + 1 = 3 = 2+1
+
+    h_star_B3 = dual_coxeter_number(TypeB{3})
+    @test h_star_B3 == 5  # 1 + 1+2+1 = 5 = 2·3-1
+
+    h_star_C3 = dual_coxeter_number(TypeC{3})
+    @test h_star_C3 == 4  # 1 + 1+1+1 = 4 = 3+1
+
+    h_star_G2 = dual_coxeter_number(TypeG2)
+    @test h_star_G2 == 4  # 1 + 1 + 2 = 4
+
+    h_star_F4 = dual_coxeter_number(TypeF4)
+    @test h_star_F4 == 9  # 1 + 1+2+3+2 = 9
+
+    # Degrees of fundamental invariants
+    deg_A2 = degrees_fundamental_invariants(TypeA{2})
+    @test deg_A2 == [2, 3]
+    @test degrees_fundamental_invariants(TypeA{4}) == [2, 3, 4, 5]  # 2..n+1
+
+    deg_G2 = degrees_fundamental_invariants(TypeG2)
+    @test deg_G2 == [2, 6]
+    @test degrees_fundamental_invariants(TypeF4) == [2, 6, 8, 12]
+
+    # B_n and C_n: 2, 4, 6, ..., 2n
+    @test degrees_fundamental_invariants(TypeB{2}) == [2, 4]
+    @test degrees_fundamental_invariants(TypeB{3}) == [2, 4, 6]
+    @test degrees_fundamental_invariants(TypeB{4}) == [2, 4, 6, 8]
+    @test degrees_fundamental_invariants(TypeC{2}) == [2, 4]
+    @test degrees_fundamental_invariants(TypeC{3}) == [2, 4, 6]
+
+    # D_n: 2, 4, ..., 2(n-1), n
+    @test degrees_fundamental_invariants(TypeD{3}) == [2, 4, 3]   # D_3 ≅ A_3
+    @test degrees_fundamental_invariants(TypeD{4}) == [2, 4, 6, 4] # n=4 even: 4 twice
+    @test degrees_fundamental_invariants(TypeD{5}) == [2, 4, 6, 8, 5] # n=5 odd: once
+    @test degrees_fundamental_invariants(TypeD{6}) == [2, 4, 6, 8, 10, 6] # n=6 even
+
+    # E-series
+    @test degrees_fundamental_invariants(TypeE{6}) == [2, 5, 6, 8, 9, 12]
+    @test degrees_fundamental_invariants(TypeE{7}) == [2, 6, 8, 10, 12, 14, 18]
+    @test degrees_fundamental_invariants(TypeE{8}) == [2, 8, 12, 14, 18, 20, 24, 30]
 
     # Root operations
     α1 = simple_root(RS_A2, 1)
