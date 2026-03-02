@@ -111,7 +111,7 @@ where $P^+$ is the set of dominant weights. By W-invariance, this omits all non-
 
 Explicitly: since each W-orbit contains a unique dominant representative, reconstructing the full character from the dominant character is straightforward — just apply the Weyl group orbit operator. This is what [`freudenthal_formula`](@ref) does internally.
 
-`dominant_character` computes this using Freudenthal's recursion formula and returns a 
+`dominant_character` computes this using Freudenthal's recursion formula and returns a
 `Dict{SVector{R,Int}, Int}` mapping dominant weight coordinates to multiplicities. This is the cached building block behind [`freudenthal_formula`](@ref), [`weight_multiplicity`](@ref), tensor products, Adams operators, and plethysms.
 
 The relationship to the LiE computer algebra system: the "dominant character polynomial" used here corresponds to the output of the `domchar` command in LiE, which filters the full character to list only the dominant weights and uses the Weyl group orbit operator to go back and forth.

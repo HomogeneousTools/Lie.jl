@@ -52,6 +52,10 @@ julia> coefficients(α₁)
 
 ### Listing roots
 
+Positive roots are returned in **non-decreasing order of height**:
+indices `1` through `rank` are the simple roots
+(height 1), and the last element is always the highest root.
+
 ```jldoctest roots
 julia> length(positive_roots(RS))
 6
@@ -65,6 +69,9 @@ julia> positive_root(RS, 4)
 julia> highest_root(RS)
 α1 + α2 + α3
 ```
+
+Because the ordering is canonical, `highest_root` simply returns the last
+positive root — no search is performed.
 
 Negative roots are the negations of positive roots:
 
@@ -84,6 +91,7 @@ negative_root
 roots
 root
 highest_root
+highest_short_root
 coefficients
 ```
 
@@ -158,6 +166,62 @@ simple_coroots
 positive_coroots
 ```
 
+## Coxeter invariants
+
+The **highest root** is a fundamental invariant of the root system. When expressed in the simple root basis as
+``θ = \sum_i m_i α_i``, the coefficients ``m_i`` are called the **Coxeter coefficients**.
+Because positive roots are sorted by height, `highest_root(RS)` is simply `positive_root(RS, N)` where `N` is the
+number of positive roots — no search needed.
+
+The **highest short root** ``θ_s`` is the short root of greatest height.  For simply-laced types
+(A, D, E) it coincides with ``θ``.  Its index in the positive root list is precomputed at compile time
+and stored in `RS.highest_coroot_idx`.
+
+The **highest coroot** (or **dominant coroot**) ``θ^\vee`` is the positive coroot of greatest height.
+It equals the coroot of the highest short root, and is stored at the same precomputed index
+`RS.highest_coroot_idx`.
+
+The **Coxeter number** ``h = 1 + \sum_i m_i`` is the order of a Coxeter element in the Weyl group.
+
+For the **dual root system** (Langlands dual, swapping B↔C), the corresponding invariants are the
+**dual Coxeter coefficients** and **dual Coxeter number** ``h^\vee``.
+
+```jldoctest roots
+julia> c_coeff = coxeter_coefficients(TypeA{3})
+3-element StaticArraysCore.SVector{3, Int64} with indices SOneTo(3):
+ 1
+ 1
+ 1
+
+julia> coxeter_number(TypeA{3})
+4
+
+julia> cartan_determinant(TypeA{3})
+4
+```
+
+For multiply-laced types like ``\mathrm{G}_2``:
+
+```jldoctest roots
+julia> c_coeff_G2 = coxeter_coefficients(TypeG2)
+2-element StaticArraysCore.SVector{2, Int64} with indices SOneTo(2):
+ 3
+ 2
+
+julia> coxeter_number(TypeG2)
+6
+```
+
+```@docs
+highest_coroot
+coxeter_coefficients
+dual_coxeter_coefficients
+coxeter_number
+dual_coxeter_number
+cartan_determinant
+degrees_fundamental_invariants
+```
+
 ## Examples
 
 ### A₂
@@ -174,11 +238,22 @@ julia> [positive_root(RS₂, i) for i in 1:3]
 
 julia> highest_root(RS₂)
 α1 + α2
+
+julia> highest_short_root(RS₂)
+α1 + α2
+
+julia> coefficients(highest_coroot(RS₂))
+2-element StaticArraysCore.SVector{2, Int64} with indices SOneTo(2):
+ 1
+ 1
 ```
+
+A₂ is simply-laced, so the highest root, highest short root, and highest coroot all coincide.
 
 ### G₂
 
-The exceptional type ``\mathrm{G}_2`` has 6 positive roots:
+The exceptional type ``\mathrm{G}_2`` has short roots (length² = 2) and long roots (length² = 6).
+The highest short root and the highest long root are distinct:
 
 ```jldoctest roots
 julia> RS_G2 = RootSystem(TypeG2);
@@ -188,4 +263,28 @@ julia> n_positive_roots(TypeG2)
 
 julia> highest_root(RS_G2)
 3α1 + 2α2
+
+julia> highest_short_root(RS_G2)
+2α1 + α2
+
+julia> coefficients(highest_coroot(RS_G2))
+2-element StaticArraysCore.SVector{2, Int64} with indices SOneTo(2):
+ 2
+ 3
 ```
+
+### B₂
+
+```jldoctest roots
+julia> RS_B2 = RootSystem(TypeB{2});
+
+julia> highest_root(RS_B2)
+α1 + 2α2
+
+julia> highest_short_root(RS_B2)
+α1 + α2
+
+julia> coefficients(highest_coroot(RS_B2))
+2-element StaticArraysCore.SVector{2, Int64} with indices SOneTo(2):
+ 2
+ 1
