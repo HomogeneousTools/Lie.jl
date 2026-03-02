@@ -9,10 +9,11 @@
 export RootSystem, RootSpaceElem
 export simple_roots, simple_root, positive_roots, positive_root
 export negative_roots, negative_root, roots, root
-export n_roots, n_simple_roots, highest_root
+export n_roots, n_simple_roots, highest_root, highest_short_root, highest_coroot
 export simple_coroots, positive_coroots
 export is_root, is_positive_root, height
-export dot, coefficients
+export dot, coefficients, coxeter_coefficients, dual_coxeter_coefficients, coxeter_number,
+  dual_coxeter_number, degrees_fundamental_invariants
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  RootSpaceElem — a vector in the root space (linear combination of simple roots)
@@ -113,15 +114,20 @@ All data is computed at compile time via a `@generated` constructor, so
 there is exactly one `RootSystem` per Dynkin type — a compile-time singleton.
 
 Fields:
-- `positive_roots_list`: `NTuple{N, SVector{R,Int}}` of positive roots
-- `positive_coroots_list`: `NTuple{N, SVector{R,Int}}` of positive coroots
+- `positive_roots_list`: `NTuple{N, SVector{R,Int}}` of positive roots,
+  ordered by non-decreasing height (`pos_roots[N]` is the highest root).
+- `positive_coroots_list`: `NTuple{N, SVector{R,Int}}` of positive coroots,
+  in the same order as the roots.
 - `refl`: `SMatrix{R,N,UInt}` reflection table — `refl[s, i]` = index of
-          `s_s(α_i)` among positive roots, or 0 if the result is negative.
+  `s_s(α_i)` among positive roots, or 0 if the result is negative.
+- `highest_coroot_idx`: the index of the positive coroot with greatest height
+  (= index of the highest short root in `positive_roots_list`).
 """
 struct RootSystem{DT<:DynkinType,R,N}
   positive_roots_list::NTuple{N,SVector{R,Int}}
   positive_coroots_list::NTuple{N,SVector{R,Int}}
   refl::SMatrix{R,N,UInt}
+  highest_coroot_idx::Int
 end
 
 """
@@ -146,6 +152,12 @@ end
   pos_roots, pos_coroots, refl_mat = _compute_positive_roots_and_reflections(C, R)
   N = length(pos_roots)
 
+  # The highest coroot is the positive coroot with greatest coroot-height
+  # (sum of simple coroot coordinates).  It corresponds to the highest short
+  # root, and both are at the same index.  Compute it now while we have all
+  # data available at compile time.
+  hcr_idx = argmax(sum(pos_coroots[i]) for i in 1:N)
+
   # Flatten data into tuples for embedding in the generated expression
   roots_tuple = Tuple(Tuple(v) for v in pos_roots)
   coroots_tuple = Tuple(Tuple(v) for v in pos_coroots)
@@ -157,6 +169,7 @@ end
       $(roots_tuple),
       $(coroots_tuple),
       SMatrix{$R,$N,UInt,$(R * N)}($refl_entries),
+      $hcr_idx,
     )
   end
 end
@@ -259,12 +272,27 @@ function _compute_positive_roots_and_reflections(C::SMatrix{R,R,Int}, rk::Intege
     i += 1
   end
 
-  # Build the reflection matrix
+  # Sort positive roots by height (non-decreasing)
+  # roots[1..R] are the simple roots (height 1), roots[end] is the highest root.
+  # Compute the height-sorted permutation (stable sort to keep simple roots first).
   n_pos = length(pos_roots)
+  heights = [sum(r) for r in pos_roots]
+  perm = sortperm(heights; alg=MergeSort)  # stable: keeps original order within same height
+  inv_perm = Vector{Int}(undef, n_pos)
+  for (new_i, old_i) in enumerate(perm)
+    inv_perm[old_i] = new_i
+  end
+
+  pos_roots = pos_roots[perm]
+  pos_coroots = pos_coroots[perm]
+
+  # Remap reflection table indices
   refl = zeros(UInt, rk, n_pos)
-  for ((s, i), v) in refl_data
-    if 1 <= s <= rk && 1 <= i <= n_pos
-      refl[s, i] = v
+  for ((s, old_i), old_v) in refl_data
+    if 1 <= s <= rk && 1 <= old_i <= n_pos
+      new_i = inv_perm[old_i]
+      new_v = old_v == 0 ? UInt(0) : UInt(inv_perm[old_v])
+      refl[s, new_i] = new_v
     end
   end
 
@@ -392,17 +420,63 @@ positive_coroots(RS::RootSystem{DT,R}) where {DT,R} =
 """
     highest_root(RS::RootSystem{DT,R}) -> RootSpaceElem
 
-Return the highest root (the positive root with greatest height).
+Return the highest root. Positive roots are ordered by non-decreasing height,
+so the highest root is always the last positive root.
 """
 function highest_root(RS::RootSystem{DT,R}) where {DT,R}
-  best_idx = 1
-  best_ht = height(positive_root(RS, 1))
-  for i in 2:n_positive_roots(RS)
-    h = sum(RS.positive_roots_list[i])
-    if h > best_ht
-      best_ht = h
-      best_idx = i
-    end
+  positive_root(RS, n_positive_roots(RS))
+end
+
+# ─── Highest coroot ──────────────────────────────────────────────────────────
+
+"""
+    highest_coroot(RS::RootSystem{DT,R}) -> RootSpaceElem
+
+Return the highest coroot θ∨: the positive coroot of greatest height.
+This is the coroot of the highest short root.
+
+The index is precomputed at compile time and stored in `RS.highest_coroot_idx`.
+"""
+function highest_coroot(RS::RootSystem{DT,R}) where {DT,R}
+  RootSpaceElem{DT,R}(RS.positive_coroots_list[RS.highest_coroot_idx])
+end
+
+# ─── Highest short root ──────────────────────────────────────────────────────
+
+"""
+    highest_short_root(RS::RootSystem{DT,R}) -> RootSpaceElem
+
+Return the highest short root: the positive root of minimal length that has
+greatest height among all short positive roots.
+
+For simply-laced types (A, D, E), every root has the same length, so this
+coincides with `highest_root`.
+
+The index equals `RS.highest_coroot_idx`, precomputed at compile time.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> RS = RootSystem(TypeB{2});
+
+julia> coefficients(highest_short_root(RS))
+2-element StaticArraysCore.SVector{2, Int64} with indices SOneTo(2):
+ 1
+ 1
+
+julia> RS_G2 = RootSystem(TypeG2);
+
+julia> coefficients(highest_short_root(RS_G2))
+2-element StaticArraysCore.SVector{2, Int64} with indices SOneTo(2):
+ 2
+ 1
+```
+"""
+function highest_short_root(RS::RootSystem{DT,R}) where {DT,R}
+  positive_root(RS, RS.highest_coroot_idx)
+end
+
 # ─── Coxeter coefficients ────────────────────────────────────────────────
 
 """
@@ -448,7 +522,6 @@ function coxeter_coefficients(::Type{TypeD{N}}) where {N}
   else
     return SVector{N,Int}(Tuple(vcat([1], fill(2, max(0, N - 3)), [1, 1])))
   end
-  return positive_root(RS, best_idx)
 end
 
 coxeter_coefficients(::Type{TypeE{6}}) = SVector{6,Int}((1, 2, 2, 3, 2, 1))
