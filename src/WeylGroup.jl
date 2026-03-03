@@ -625,7 +625,7 @@ and all other cohomology groups vanish.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Lie; import Lie: borel_weil_bott
 
 julia> borel_weil_bott(fundamental_weight(TypeA{2}, 1))
 (0, ω1)

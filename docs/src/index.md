@@ -38,6 +38,8 @@ Pkg.add(url="https://github.com/…/Lie.jl")
 ```jldoctest quickstart
 julia> using Lie
 
+julia> import Lie: borel_weil_bott
+
 julia> ω₁ = fundamental_weight(TypeA{3}, 1)
 ω1
 

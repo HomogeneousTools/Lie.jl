@@ -182,6 +182,8 @@ Compute the cohomological degree and resulting representation for
 a weight on a flag variety:
 
 ```jldoctest weyl
+julia> import Lie: borel_weil_bott
+
 julia> borel_weil_bott(ω₁)   # dominant weight → degree 0
 (0, ω1)
 
