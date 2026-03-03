@@ -599,7 +599,7 @@ function weylloop(
 
   factor_orbits = Vector{Vector{Vector{Int}}}(undef, n_factors)
   for i in 1:n_factors
-    FDT = typeof(factors[i])
+    FDT = factors[i]
     r_f = rank(FDT)
     v_f = Vector{Int}(v[(offsets[i] + 1):offsets[i + 1]])
     orbits_f = Vector{Int}[]
