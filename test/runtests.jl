@@ -553,12 +553,8 @@ using StaticArrays
       @test d == 1
       @test μ == WeightLatticeElem(TypeA{2}, [1, 1])  # adjoint rep
 
-      # λ = [-3, 1]: λ+ρ = [-2, 2], s₁ gives [2, 0], which gives μ-ρ = [1, -1]
-      result = borel_weil_bott(WeightLatticeElem(TypeA{2}, [-3, 1]))
-      @test result !== nothing
-      d, μ = result
-      @test d == 1
-      @test μ == WeightLatticeElem(TypeA{2}, [1, -1])
+      # λ = [-3, 1]: λ+ρ = [-2, 2], conjugates to singular weight [2, 0]
+      @test borel_weil_bott(WeightLatticeElem(TypeA{2}, [-3, 1])) === nothing
     end
 
     # ── A₁ ──────────────────────────────────────────────────────────────
@@ -611,11 +607,8 @@ using StaticArrays
     # ── E₈ example ──────────────────────────────────────────────────────────────────────────
     @testset "E₈" begin
       λ = WeightLatticeElem(TypeE{8}, [-5, 3, -2, -3, 5, -8, 2, 1])
-      result = borel_weil_bott(λ)
-      @test result !== nothing
-      d, μ = result
-      @test d == 49
-      @test μ == WeightLatticeElem(TypeE{8}, [0, -1, -1, -1, 0, -1, -1, 0])
+      # λ+ρ conjugates to a singular weight, so all cohomology vanishes
+      @test borel_weil_bott(λ) === nothing
     end
   end
 

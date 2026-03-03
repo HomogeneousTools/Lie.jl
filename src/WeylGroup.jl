@@ -644,8 +644,9 @@ function borel_weil_bott(λ::WeightLatticeElem{DT,R}) where {DT,R}
   # Move μ to the dominant chamber; the number of reflections is the degree
   μ_dom, d = conjugate_dominant_weight_with_length(μ)
 
-  # If μ_dom is the zero weight, λ + ρ is singular → no cohomology
-  iszero(μ_dom) && return nothing
+  # If any coordinate of μ_dom is zero, λ + ρ lies on a Weyl chamber wall
+  # (including the case μ = 0 when λ = -ρ), so all cohomology vanishes.
+  any(==(0), μ_dom.vec) && return nothing
 
   return (d, μ_dom - ρ)
 end
