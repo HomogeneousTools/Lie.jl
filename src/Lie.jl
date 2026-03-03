@@ -125,6 +125,10 @@ end
 
 # ─── Startup banner ────────────────────────────────────────────────────────
 
+# Set to false (at module level, before __init__ runs) to suppress the banner.
+# Used by packages that re-export Lie and show their own banner.
+const _PRINT_BANNER = Ref(true)
+
 function _print_banner()
   v = pkgversion(@__MODULE__)
   version_str = v === nothing ? "dev" : string(v)
@@ -151,7 +155,7 @@ function _print_banner()
 end
 
 function __init__()
-  if displaysize(stdout)[2] >= 60
+  if _PRINT_BANNER[] && displaysize(stdout)[2] >= 60
     _print_banner()
   end
   return nothing
