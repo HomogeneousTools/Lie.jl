@@ -11,7 +11,7 @@ export weyl_group, root_system, gens, gen, longest_element
 export word, weyl_order
 export weyl_orbit, dominant_weights
 export degree, weyl_dimension
-export is_singular, borel_weil_bott
+export is_singular
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  WeylGroup

@@ -1,5 +1,6 @@
 using Test
 using Lie
+import Lie: borel_weil_bott  # no longer publicly exported; tested here via explicit import
 using StaticArrays
 
 @testset "Lie.jl" begin
