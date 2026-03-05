@@ -21,7 +21,7 @@ makedocs(;
 )
 
 deploydocs(;
-  repo="github.com/HomogeneousTools/Lie.jl.git",
+  repo="git@github.com:HomogeneousTools/Lie.jl.git",
   target="build",
   branch="gh-pages",
   devbranch="main",
