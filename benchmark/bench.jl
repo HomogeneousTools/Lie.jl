@@ -16,6 +16,8 @@ using Lie
 using StaticArrays
 using Dates
 
+import Lie: borel_weil_bott
+
 # ─── CLI ────────────────────────────────────────────────────────────────────
 
 const COMPARE = "--compare" in ARGS
