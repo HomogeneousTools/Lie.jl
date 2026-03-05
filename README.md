@@ -1,5 +1,8 @@
 # Lie.jl
 
+[![tests](https://github.com/HomogeneousTools/Lie.jl/actions/workflows/tests.yml/badge.svg)](https://github.com/HomogeneousTools/Lie.jl/actions/workflows/tests.yml)
+[![docs](https://github.com/HomogeneousTools/Lie.jl/actions/workflows/docs.yml/badge.svg)](https://homogeneoustools.github.io/Lie.jl)
+
 A Julia package for computations with semisimple Lie algebras: root systems,
 Weyl groups, weight lattices, and representation-theoretic operations.
 
