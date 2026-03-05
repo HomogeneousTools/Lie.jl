@@ -57,5 +57,7 @@ jobs:
           version: '1'
       - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
+      - name: Install benchmark dependencies
+        run: julia --project=. -e 'using Pkg; Pkg.add("BenchmarkTools")'
       - name: Run benchmarks
         run: julia --project=. benchmark/bench.jl
