@@ -15,4 +15,15 @@ makedocs(;
   ],
   doctest=true,
   warnonly=[:missing_docs],
+  format=Documenter.HTML(;
+    canonical="https://HomogeneousTools.github.io/Lie.jl"
+  ),
+)
+
+deploydocs(;
+  repo="github.com/HomogeneousTools/Lie.jl.git",
+  target="build",
+  branch="gh-pages",
+  devbranch="main",
+  push_preview=true,
 )
