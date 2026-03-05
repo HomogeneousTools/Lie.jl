@@ -218,7 +218,6 @@ coxeter_coefficients
 dual_coxeter_coefficients
 coxeter_number
 dual_coxeter_number
-cartan_determinant
 degrees_fundamental_invariants
 ```
 

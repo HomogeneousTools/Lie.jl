@@ -205,7 +205,6 @@ true
 
 ```@docs
 is_singular
-borel_weil_bott
 ```
 
 ## Weyl group orders
