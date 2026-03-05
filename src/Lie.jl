@@ -4,6 +4,7 @@
 
 module Lie
 
+using PrecompileTools
 using Preferences
 using StaticArrays
 using LinearAlgebra: dot as _dot, I as _I
@@ -74,54 +75,71 @@ end
 export clear_all_caches!
 
 # ─── Precompilation ─────────────────────────────────────────────────────────
+# @compile_workload executes real code during precompilation, so Julia
+# transitively caches every callee (SMatrix constructors, getindex, etc.),
+# not just the top-level method signatures that bare precompile() would cover.
 
-# ─── Precompilation ─────────────────────────────────────────────────────────
-# Hint the compiler to precompile key methods for all simple Dynkin types
-# below rank 10. This reduces first-call latency after module loading.
+@compile_workload begin
+  # CartanMatrix, RootSystem, WeylGroup infrastructure, and Characters
+  # for all simple Dynkin types below rank 10.
+  for _DT in (
+    TypeA{1}, TypeA{2}, TypeA{3}, TypeA{4}, TypeA{5},
+    TypeA{6}, TypeA{7}, TypeA{8}, TypeA{9},
+    TypeB{2}, TypeB{3}, TypeB{4}, TypeB{5},
+    TypeB{6}, TypeB{7}, TypeB{8}, TypeB{9},
+    TypeC{2}, TypeC{3}, TypeC{4}, TypeC{5},
+    TypeC{6}, TypeC{7}, TypeC{8}, TypeC{9},
+    TypeD{4}, TypeD{5}, TypeD{6}, TypeD{7}, TypeD{8}, TypeD{9},
+    TypeE{6}, TypeE{7}, TypeE{8},
+    TypeF4, TypeG2,
+  )
+    # CartanMatrix
+    cartan_matrix(_DT)
+    cartan_symmetrizer(_DT)
+    cartan_bilinear_form(_DT)
+    cartan_matrix_inverse(_DT)
 
-for _DT in (
-  TypeA{1}, TypeA{2}, TypeA{3}, TypeA{4}, TypeA{5},
-  TypeA{6}, TypeA{7}, TypeA{8}, TypeA{9},
-  TypeB{2}, TypeB{3}, TypeB{4}, TypeB{5},
-  TypeB{6}, TypeB{7}, TypeB{8}, TypeB{9},
-  TypeC{2}, TypeC{3}, TypeC{4}, TypeC{5},
-  TypeC{6}, TypeC{7}, TypeC{8}, TypeC{9},
-  TypeD{4}, TypeD{5}, TypeD{6}, TypeD{7}, TypeD{8}, TypeD{9},
-  TypeE{6}, TypeE{7}, TypeE{8},
-  TypeF4, TypeG2,
-)
-  _R = rank(_DT)
+    # RootSystem
+    _make_root_system(_DT)
 
-  # CartanMatrix
-  precompile(cartan_matrix, (Type{_DT},))
-  precompile(cartan_symmetrizer, (Type{_DT},))
-  precompile(cartan_bilinear_form, (Type{_DT},))
-  precompile(cartan_matrix_inverse, (Type{_DT},))
+    # WeylGroup internal helpers
+    _weyl_denominator(_DT)
+    _weyl_dim_scaled_roots(_DT)
 
-  # RootSystem
-  precompile(_make_root_system, (Type{_DT},))
+    # WeightLattice + public WeylGroup API
+    _ω₁ = fundamental_weight(_DT, 1)
+    degree(_DT, _ω₁)
+    conjugate_dominant_weight(_ω₁)
+    weyl_orbit(_DT, _ω₁)
 
-  # WeylGroup
-  precompile(_weyl_denominator, (Type{_DT},))
-  precompile(_weyl_dim_scaled_roots, (Type{_DT},))
-  precompile(degree, (Type{_DT}, WeightLatticeElem{_DT,_R}))
-  precompile(conjugate_dominant_weight, (WeightLatticeElem{_DT,_R},))
-  precompile(weyl_orbit, (Type{_DT}, WeightLatticeElem{_DT,_R}))
+    # WeylGroup actions on roots and weights
+    simple_root(RootSystem(_DT), 1) * gen(weyl_group(_DT), 1)
+    _ω₁ * gen(weyl_group(_DT), 1)
 
-  # WeylGroup actions
-  precompile(Base.:*, (RootSpaceElem{_DT,_R}, WeylGroupElem{_DT,_R}))
-  precompile(Base.:*, (WeightLatticeElem{_DT,_R}, WeylGroupElem{_DT,_R}))
+    # Characters
+    freudenthal_formula(_ω₁)
+    dot_reduce(_ω₁)
+  end
 
-  # Characters
-  precompile(freudenthal_formula, (WeightLatticeElem{_DT,_R},))
-  precompile(dot_reduce, (WeightLatticeElem{_DT,_R},))
-end
+  # Tensor products — skip high ranks to keep precompile time reasonable
+  # (248⊗248 for E₈ etc. is expensive even for ω₁)
+  for _DT in (
+    TypeA{2}, TypeA{3}, TypeA{4}, TypeA{5},
+    TypeB{2}, TypeB{3}, TypeB{4},
+    TypeC{2}, TypeC{3}, TypeC{4},
+    TypeD{4}, TypeD{5},
+    TypeE{6}, TypeF4, TypeG2,
+  )
+    _ω₁ = fundamental_weight(_DT, 1)
+    tensor_product(_ω₁, _ω₁)
+  end
 
-# Littlewood–Richardson: precompile for TypeA
-for _N in 1:9
-  _DT = TypeA{_N}
-  _R = _N
-  precompile(lr_tensor_product, (WeightLatticeElem{_DT,_R}, WeightLatticeElem{_DT,_R}))
+  # Littlewood–Richardson (TypeA only)
+  for _N in 1:9
+    _DT = TypeA{_N}
+    _ω₁ = fundamental_weight(_DT, 1)
+    lr_tensor_product(_ω₁, _ω₁)
+  end
 end
 
 # ─── Startup banner ────────────────────────────────────────────────────────

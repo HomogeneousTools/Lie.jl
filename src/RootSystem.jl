@@ -145,44 +145,6 @@ function RootSystem(::Type{DT}) where {DT<:DynkinType}
   end::RootSystem{DT,rank(DT),n_positive_roots(DT)}
 end
 
-@generated function _make_root_system(::Type{DT}) where {DT<:DynkinType}
-  R = rank(DT)
-  C_data = _cartan_matrix_data(DT)
-  C = SMatrix{R,R,Int,R * R}(Tuple(C_data))
-  pos_roots, pos_coroots, refl_mat = _compute_positive_roots_and_reflections(C, R)
-  N = length(pos_roots)
-
-  # The highest coroot is the positive coroot with greatest coroot-height
-  # (sum of simple coroot coordinates).  It corresponds to the highest short
-  # root, and both are at the same index.  Compute it now while we have all
-  # data available at compile time.
-  hcr_idx = argmax(sum(pos_coroots[i]) for i in 1:N)
-
-  # Flatten data into tuples for embedding in the generated expression
-  roots_tuple = Tuple(Tuple(v) for v in pos_roots)
-  coroots_tuple = Tuple(Tuple(v) for v in pos_coroots)
-  # refl_mat is Matrix{UInt} of size (R, N) — flatten column-major
-  refl_entries = Tuple(UInt(refl_mat[i, j]) for j in 1:N for i in 1:R)
-
-  return quote
-    RootSystem{$DT,$R,$N}(
-      $(roots_tuple),
-      $(coroots_tuple),
-      SMatrix{$R,$N,UInt,$(R * N)}($refl_entries),
-      $hcr_idx,
-    )
-  end
-end
-
-RootSystem(dt::DynkinType) = RootSystem(typeof(dt))
-
-function Base.show(io::IO, RS::RootSystem{DT,R}) where {DT,R}
-  print(
-    io,
-    "Root system of type $(_type_name(DT)), rank $R with $(n_positive_roots(RS)) positive roots",
-  )
-end
-
 # ─── Core computation of positive roots ─────────────────────────────────────
 
 """
@@ -297,6 +259,44 @@ function _compute_positive_roots_and_reflections(C::SMatrix{R,R,Int}, rk::Intege
   end
 
   return pos_roots, pos_coroots, refl
+end
+
+@generated function _make_root_system(::Type{DT}) where {DT<:DynkinType}
+  R = rank(DT)
+  C_data = _cartan_matrix_data(DT)
+  C = SMatrix{R,R,Int,R * R}(Tuple(C_data))
+  pos_roots, pos_coroots, refl_mat = _compute_positive_roots_and_reflections(C, R)
+  N = length(pos_roots)
+
+  # The highest coroot is the positive coroot with greatest coroot-height
+  # (sum of simple coroot coordinates).  It corresponds to the highest short
+  # root, and both are at the same index.  Compute it now while we have all
+  # data available at compile time.
+  hcr_idx = argmax(sum(pos_coroots[i]) for i in 1:N)
+
+  # Flatten data into tuples for embedding in the generated expression
+  roots_tuple = Tuple(Tuple(v) for v in pos_roots)
+  coroots_tuple = Tuple(Tuple(v) for v in pos_coroots)
+  # refl_mat is Matrix{UInt} of size (R, N) — flatten column-major
+  refl_entries = Tuple(UInt(refl_mat[i, j]) for j in 1:N for i in 1:R)
+
+  return quote
+    RootSystem{$DT,$R,$N}(
+      $(roots_tuple),
+      $(coroots_tuple),
+      SMatrix{$R,$N,UInt,$(R * N)}($refl_entries),
+      $hcr_idx,
+    )
+  end
+end
+
+RootSystem(dt::DynkinType) = RootSystem(typeof(dt))
+
+function Base.show(io::IO, RS::RootSystem{DT,R}) where {DT,R}
+  print(
+    io,
+    "Root system of type $(_type_name(DT)), rank $R with $(n_positive_roots(RS)) positive roots",
+  )
 end
 
 # ─── Accessors ───────────────────────────────────────────────────────────────

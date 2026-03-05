@@ -146,38 +146,6 @@ end
 
 # ─── Product types ───────────────────────────────────────────────────────────
 
-"""
-    cartan_matrix(::Type{ProductDynkinType{Ts}})
-
-Block-diagonal Cartan matrix for a product of simple types.
-
-# Examples
-```jldoctest
-julia> using Lie, StaticArrays
-
-julia> cartan_matrix(TypeA{2}) == SMatrix{2,2}(2, -1, -1, 2)
-true
-
-julia> cartan_matrix(TypeG2) == SMatrix{2,2}(2, -1, -3, 2)
-true
-```
-"""
-@generated function cartan_matrix(::Type{ProductDynkinType{Ts}}) where {Ts}
-  types = Ts.parameters
-  R = sum(rank(T) for T in types)
-  C = zeros(Int, R, R)
-  offset = 0
-  for T in types
-    r = rank(T)
-    # Build the Cartan matrix for this component at compile time
-    C_block = _cartan_matrix_data(T)
-    C[(offset + 1):(offset + r), (offset + 1):(offset + r)] .= C_block
-    offset += r
-  end
-  entries = Tuple(C[i, j] for j in 1:R for i in 1:R)
-  return :(SMatrix{$R,$R,Int,$(R * R)}($entries))
-end
-
 # Helper to get raw matrix data at code-generation time
 function _cartan_matrix_data(::Type{TypeA{N}}) where {N}
   C = zeros(Int, N, N)
@@ -248,47 +216,43 @@ function _cartan_matrix_data(::Type{ProductDynkinType{Ts}}) where {Ts}
   return C
 end
 
-# Instance dispatch
-cartan_matrix(dt::DynkinType) = cartan_matrix(typeof(dt))
-
-# ─── Cartan symmetrizer ─────────────────────────────────────────────────────
-# d_i such that d_i * C_{ij} = d_j * C_{ji}  (symmetrizes the Cartan matrix)
-
 """
-    cartan_symmetrizer(::Type{DT}) -> SVector
+    cartan_matrix(::Type{ProductDynkinType{Ts}})
 
-Return the symmetrizer `d` such that `diag(d) * C` is symmetric, where `C` is
-the Cartan matrix of `DT`. Entries are positive integers with gcd 1.
+Block-diagonal Cartan matrix for a product of simple types.
 
 # Examples
 ```jldoctest
 julia> using Lie, StaticArrays
 
-julia> cartan_symmetrizer(TypeB{3}) == SVector(2, 2, 1)
+julia> cartan_matrix(TypeA{2}) == SMatrix{2,2}(2, -1, -1, 2)
 true
 
-julia> cartan_symmetrizer(TypeG2) == SVector(1, 3)
+julia> cartan_matrix(TypeG2) == SMatrix{2,2}(2, -1, -3, 2)
 true
 ```
 """
-@generated function cartan_symmetrizer(::Type{DT}) where {DT<:SimpleDynkinType}
-  d = _cartan_symmetrizer_data(DT)
-  N = rank(DT)
-  entries = Tuple(d)
-  return :(SVector{$N,Int}($entries))
-end
-
-@generated function cartan_symmetrizer(::Type{ProductDynkinType{Ts}}) where {Ts}
+@generated function cartan_matrix(::Type{ProductDynkinType{Ts}}) where {Ts}
   types = Ts.parameters
   R = sum(rank(T) for T in types)
-  d = Int[]
+  C = zeros(Int, R, R)
+  offset = 0
   for T in types
-    d_T = _cartan_symmetrizer_data(T)
-    append!(d, d_T)
+    r = rank(T)
+    # Build the Cartan matrix for this component at compile time
+    C_block = _cartan_matrix_data(T)
+    C[(offset + 1):(offset + r), (offset + 1):(offset + r)] .= C_block
+    offset += r
   end
-  entries = Tuple(d)
-  return :(SVector{$R,Int}($entries))
+  entries = Tuple(C[i, j] for j in 1:R for i in 1:R)
+  return :(SMatrix{$R,$R,Int,$(R * R)}($entries))
 end
+
+# Instance dispatch
+cartan_matrix(dt::DynkinType) = cartan_matrix(typeof(dt))
+
+# ─── Cartan symmetrizer ─────────────────────────────────────────────────────
+# d_i such that d_i * C_{ij} = d_j * C_{ji}  (symmetrizes the Cartan matrix)
 
 function _cartan_symmetrizer_data(::Type{DT}) where {DT<:SimpleDynkinType}
   C = _cartan_matrix_data(DT)
@@ -328,6 +292,42 @@ function _cartan_symmetrizer_data(::Type{ProductDynkinType{Ts}}) where {Ts}
   return d
 end
 
+"""
+    cartan_symmetrizer(::Type{DT}) -> SVector
+
+Return the symmetrizer `d` such that `diag(d) * C` is symmetric, where `C` is
+the Cartan matrix of `DT`. Entries are positive integers with gcd 1.
+
+# Examples
+```jldoctest
+julia> using Lie, StaticArrays
+
+julia> cartan_symmetrizer(TypeB{3}) == SVector(2, 2, 1)
+true
+
+julia> cartan_symmetrizer(TypeG2) == SVector(1, 3)
+true
+```
+"""
+@generated function cartan_symmetrizer(::Type{DT}) where {DT<:SimpleDynkinType}
+  d = _cartan_symmetrizer_data(DT)
+  N = rank(DT)
+  entries = Tuple(d)
+  return :(SVector{$N,Int}($entries))
+end
+
+@generated function cartan_symmetrizer(::Type{ProductDynkinType{Ts}}) where {Ts}
+  types = Ts.parameters
+  R = sum(rank(T) for T in types)
+  d = Int[]
+  for T in types
+    d_T = _cartan_symmetrizer_data(T)
+    append!(d, d_T)
+  end
+  entries = Tuple(d)
+  return :(SVector{$R,Int}($entries))
+end
+
 cartan_symmetrizer(dt::DynkinType) = cartan_symmetrizer(typeof(dt))
 
 # ─── Symmetric bilinear form ────────────────────────────────────────────────
@@ -350,21 +350,6 @@ cartan_bilinear_form(dt::DynkinType) = cartan_bilinear_form(typeof(dt))
 
 # ─── Inverse Cartan matrix (rational) ───────────────────────────────────────
 
-"""
-    cartan_matrix_inverse(::Type{DT}) -> SMatrix{R,R,Rational{Int}}
-
-Return the inverse of the Cartan matrix over the rationals.
-"""
-@generated function cartan_matrix_inverse(::Type{DT}) where {DT<:DynkinType}
-  R = rank(DT)
-  C = _cartan_matrix_data_full(DT)
-  # Compute inverse over Rational
-  Crat = Rational{Int}.(C)
-  Cinv = inv(Crat)
-  entries = Tuple(Cinv[i, j] for j in 1:R for i in 1:R)
-  return :(SMatrix{$R,$R,Rational{Int},$(R * R)}($entries))
-end
-
 # Full Cartan matrix data helper (works for both simple and product)
 function _cartan_matrix_data_full(::Type{DT}) where {DT<:SimpleDynkinType}
   return _cartan_matrix_data(DT)
@@ -382,6 +367,21 @@ function _cartan_matrix_data_full(::Type{ProductDynkinType{Ts}}) where {Ts}
     offset += r
   end
   return C
+end
+
+"""
+    cartan_matrix_inverse(::Type{DT}) -> SMatrix{R,R,Rational{Int}}
+
+Return the inverse of the Cartan matrix over the rationals.
+"""
+@generated function cartan_matrix_inverse(::Type{DT}) where {DT<:DynkinType}
+  R = rank(DT)
+  C = _cartan_matrix_data_full(DT)
+  # Compute inverse over Rational
+  Crat = Rational{Int}.(C)
+  Cinv = inv(Crat)
+  entries = Tuple(Cinv[i, j] for j in 1:R for i in 1:R)
+  return :(SMatrix{$R,$R,Rational{Int},$(R * R)}($entries))
 end
 
 cartan_matrix_inverse(dt::DynkinType) = cartan_matrix_inverse(typeof(dt))
