@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Weyl groups · Lie.jl</title><meta name="title" content="Weyl groups · Lie.jl"/><meta property="og:title" content="Weyl groups · Lie.jl"/><meta property="twitter:title" content="Weyl groups · Lie.jl"/><meta name="description" content="Documentation for Lie.jl."/><meta property="og:description" content="Documentation for Lie.jl."/><meta property="twitter:description" content="Documentation for Lie.jl."/><meta property="og:url" content="https://HomogeneousTools.github.io/Lie.jl/weyl/"/><meta property="twitter:url" content="https://HomogeneousTools.github.io/Lie.jl/weyl/"/><link rel="canonical" href="https://HomogeneousTools.github.io/Lie.jl/weyl/"/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">Lie.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../types/">Dynkin types and Cartan matrices</a></li><li><a class="tocitem" href="../roots/">Root systems</a></li><li><a class="tocitem" href="../weights/">Weight lattice</a></li><li class="is-active"><a class="tocitem" href>Weyl groups</a><ul class="internal"><li><a class="tocitem" href="#Creating-the-Weyl-group"><span>Creating the Weyl group</span></a></li><li><a class="tocitem" href="#Generators-and-multiplication"><span>Generators and multiplication</span></a></li><li><a class="tocitem" href="#Action-on-weights"><span>Action on weights</span></a></li><li><a class="tocitem" href="#Action-on-roots"><span>Action on roots</span></a></li><li><a class="tocitem" href="#Weyl-orbits"><span>Weyl orbits</span></a></li><li><a class="tocitem" href="#Dominant-weights"><span>Dominant weights</span></a></li><li><a class="tocitem" href="#Weyl-dimension-formula"><span>Weyl dimension formula</span></a></li><li><a class="tocitem" href="#Borel–Weil–Bott-theorem"><span>Borel–Weil–Bott theorem</span></a></li><li><a class="tocitem" href="#Weyl-group-orders"><span>Weyl group orders</span></a></li></ul></li><li><a class="tocitem" href="../characters/">Characters and representations</a></li><li><a class="tocitem" href="../details/">Implementation details</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Weyl groups</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Weyl groups</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/HomogeneousTools/Lie.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/HomogeneousTools/Lie.jl/blob/main/docs/src/weyl.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Weyl-groups"><a class="docs-heading-anchor" href="#Weyl-groups">Weyl groups</a><a id="Weyl-groups-1"></a><a class="docs-heading-anchor-permalink" href="#Weyl-groups" title="Permalink"></a></h1><p>The Weyl group is generated by simple reflections <span>$s_1, \ldots, s_r$</span>. Elements are stored as reduced words (sequences of generator indices).</p><h2 id="Creating-the-Weyl-group"><a class="docs-heading-anchor" href="#Creating-the-Weyl-group">Creating the Weyl group</a><a id="Creating-the-Weyl-group-1"></a><a class="docs-heading-anchor-permalink" href="#Creating-the-Weyl-group" title="Permalink"></a></h2><pre><code class="language-julia-repl hljs">julia&gt; using Lie
+
+julia&gt; W = weyl_group(TypeA{3})
+Weyl group of type A3
+
+julia&gt; weyl_order(TypeA{3})
+24</code></pre><article><details class="docstring" open="true"><summary id="Lie.WeylGroup"><a class="docstring-binding" href="#Lie.WeylGroup"><code>Lie.WeylGroup</code></a> — <span class="docstring-category">Type</span></summary><section><div><pre><code class="language-julia hljs">WeylGroup{DT,R}</code></pre><p>The Weyl group of a root system of Dynkin type <code>DT</code> with rank <code>R</code>.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/WeylGroup.jl#L20-L24">source</a></section></details></article><article><details class="docstring" open="true"><summary id="Lie.WeylGroupElem"><a class="docstring-binding" href="#Lie.WeylGroupElem"><code>Lie.WeylGroupElem</code></a> — <span class="docstring-category">Type</span></summary><section><div><pre><code class="language-julia hljs">WeylGroupElem{DT,R}</code></pre><p>An element of the Weyl group, stored as a reduced word (vector of simple reflection indices).</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/WeylGroup.jl#L64-L69">source</a></section></details></article><article><details class="docstring" open="true"><summary id="Lie.weyl_group"><a class="docstring-binding" href="#Lie.weyl_group"><code>Lie.weyl_group</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">weyl_group(::Type{DT}) -&gt; WeylGroup{DT}</code></pre><p>Construct the Weyl group for the given Dynkin type.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; using Lie
+
+julia&gt; W = weyl_group(TypeA{2})
+Weyl group of type A2</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/WeylGroup.jl#L29-L41">source</a></section></details></article><article><details class="docstring" open="true"><summary id="Lie.weyl_order"><a class="docstring-binding" href="#Lie.weyl_order"><code>Lie.weyl_order</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">weyl_order(::Type{DT}) -&gt; BigInt</code></pre><p>Return the order of the Weyl group of type <code>DT</code>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; using Lie
+
+julia&gt; weyl_order(TypeA{3})
+24
+
+julia&gt; weyl_order(TypeE{8})
+696729600</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/WeylGroup.jl#L339-L354">source</a></section></details></article><article><details class="docstring" open="true"><summary id="Lie.root_system"><a class="docstring-binding" href="#Lie.root_system"><code>Lie.root_system</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">root_system(W::WeylGroup) -&gt; RootSystem</code></pre><p>Return the root system underlying the Weyl group <code>W</code>.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/WeylGroup.jl#L49-L53">source</a></section></details></article><h2 id="Generators-and-multiplication"><a class="docs-heading-anchor" href="#Generators-and-multiplication">Generators and multiplication</a><a id="Generators-and-multiplication-1"></a><a class="docs-heading-anchor-permalink" href="#Generators-and-multiplication" title="Permalink"></a></h2><pre><code class="language-julia-repl hljs">julia&gt; s₁ = gen(W, 1)
+s1
+
+julia&gt; s₂ = gen(W, 2)
+s2
+
+julia&gt; s₁ * s₂
+s1 * s2
+
+julia&gt; word(s₁)
+1-element Vector{UInt8}:
+ 0x01
+
+julia&gt; word(s₁ * s₂)
+2-element Vector{UInt8}:
+ 0x01
+ 0x02</code></pre><h3 id="Longest-element"><a class="docs-heading-anchor" href="#Longest-element">Longest element</a><a id="Longest-element-1"></a><a class="docs-heading-anchor-permalink" href="#Longest-element" title="Permalink"></a></h3><p>The longest element <span>$w_0$</span> has maximal length in the Weyl group:</p><pre><code class="language-julia-repl hljs">julia&gt; w₀ = longest_element(W)
+s1 * s2 * s1 * s3 * s2 * s1
+
+julia&gt; length(word(w₀))
+6</code></pre><article><details class="docstring" open="true"><summary id="Lie.gens"><a class="docstring-binding" href="#Lie.gens"><code>Lie.gens</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">gens(W::WeylGroup) -&gt; Vector{WeylGroupElem}</code></pre><p>Return all simple reflections.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/WeylGroup.jl#L140-L144">source</a></section></details></article><article><details class="docstring" open="true"><summary id="Lie.gen"><a class="docstring-binding" href="#Lie.gen"><code>Lie.gen</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">gen(W::WeylGroup, i) -&gt; WeylGroupElem</code></pre><p>Return the <code>i</code>-th simple reflection.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/WeylGroup.jl#L130-L134">source</a></section></details></article><article><details class="docstring" open="true"><summary id="Lie.longest_element"><a class="docstring-binding" href="#Lie.longest_element"><code>Lie.longest_element</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">longest_element(W::WeylGroup{DT,R}) -&gt; WeylGroupElem{DT,R}</code></pre><p>Compute the longest element w₀ of the Weyl group. Uses the iterative algorithm: repeatedly find a simple reflection that increases length. The result is cached per Dynkin type.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; using Lie
+
+julia&gt; W = weyl_group(TypeA{2});
+
+julia&gt; w₀ = longest_element(W);
+
+julia&gt; length(w₀)
+3</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/WeylGroup.jl#L285-L303">source</a></section></details></article><article><details class="docstring" open="true"><summary id="Lie.word"><a class="docstring-binding" href="#Lie.word"><code>Lie.word</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">word(x::WeylGroupElem) -&gt; Vector{UInt8}</code></pre><p>Return the reduced word of <code>x</code>.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/WeylGroup.jl#L77-L81">source</a></section></details></article><h2 id="Action-on-weights"><a class="docs-heading-anchor" href="#Action-on-weights">Action on weights</a><a id="Action-on-weights-1"></a><a class="docs-heading-anchor-permalink" href="#Action-on-weights" title="Permalink"></a></h2><p>The Weyl group acts on the weight lattice. Right multiplication corresponds to the geometric reflection:</p><pre><code class="language-julia-repl hljs">julia&gt; ω₁ = fundamental_weight(TypeA{3}, 1);
+
+julia&gt; ω₁ * s₁   # s₁(ω₁) = -ω₁ + ω₂
+-ω1 + ω2
+
+julia&gt; ω₁ * s₂   # s₂(ω₁) = ω₁ (orthogonal)
+ω1</code></pre><h2 id="Action-on-roots"><a class="docs-heading-anchor" href="#Action-on-roots">Action on roots</a><a id="Action-on-roots-1"></a><a class="docs-heading-anchor-permalink" href="#Action-on-roots" title="Permalink"></a></h2><pre><code class="language-julia-repl hljs">julia&gt; RS = RootSystem(TypeA{3});
+
+julia&gt; α₁ = simple_root(RS, 1);
+
+julia&gt; α₁ * s₁   # s₁(α₁) = -α₁
+-α1
+
+julia&gt; α₁ * s₂   # s₂(α₁) = α₁ + α₂
+α1 + α2</code></pre><h2 id="Weyl-orbits"><a class="docs-heading-anchor" href="#Weyl-orbits">Weyl orbits</a><a id="Weyl-orbits-1"></a><a class="docs-heading-anchor-permalink" href="#Weyl-orbits" title="Permalink"></a></h2><p>The orbit of a weight under the full Weyl group:</p><pre><code class="language-julia-repl hljs">julia&gt; orbit = weyl_orbit(TypeA{3}, ω₁);
+
+julia&gt; length(orbit)   # |W/Stab(ω₁)| = 4 for std rep of A₃
+4</code></pre><p>For the adjoint representation of <span>$\mathrm{A}_2$</span>:</p><pre><code class="language-julia-repl hljs">julia&gt; ω = fundamental_weight(TypeA{2}, 1) + fundamental_weight(TypeA{2}, 2);
+
+julia&gt; length(weyl_orbit(TypeA{2}, ω))
+6</code></pre><article><details class="docstring" open="true"><summary id="Lie.weyl_orbit"><a class="docstring-binding" href="#Lie.weyl_orbit"><code>Lie.weyl_orbit</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">weyl_orbit(::Type{DT}, w::WeightLatticeElem{DT,R}) -&gt; Vector{WeightLatticeElem{DT,R}}</code></pre><p>Compute the full Weyl orbit of the weight <code>w</code>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; using Lie
+
+julia&gt; length(weyl_orbit(TypeA{2}, fundamental_weight(TypeA{2}, 1)))
+3</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/WeylGroup.jl#L373-L385">source</a></section></details></article><h2 id="Dominant-weights"><a class="docs-heading-anchor" href="#Dominant-weights">Dominant weights</a><a id="Dominant-weights-1"></a><a class="docs-heading-anchor-permalink" href="#Dominant-weights" title="Permalink"></a></h2><p>All dominant weights <span>$\mu \leq \lambda$</span> (in the dominance order):</p><pre><code class="language-julia-repl hljs">julia&gt; ω₂ = fundamental_weight(TypeA{3}, 2);
+
+julia&gt; dw = dominant_weights(TypeA{3}, ω₁ + ω₂);
+
+julia&gt; length(dw)
+2</code></pre><article><details class="docstring" open="true"><summary id="Lie.dominant_weights"><a class="docstring-binding" href="#Lie.dominant_weights"><code>Lie.dominant_weights</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">dominant_weights(::Type{DT}, hw::WeightLatticeElem{DT,R}) -&gt; Vector{WeightLatticeElem{DT,R}}</code></pre><p>Compute the dominant weights occurring in the irreducible representation with highest weight <code>hw</code>, sorted by decreasing level below <code>hw</code>.</p><p>The level of <code>μ</code> below <code>hw</code> is the root-lattice height of <code>hw - μ</code>, i.e. the sum of coefficients when <code>hw - μ</code> is written in the simple root basis.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/WeylGroup.jl#L401-L409">source</a></section></details></article><h2 id="Weyl-dimension-formula"><a class="docs-heading-anchor" href="#Weyl-dimension-formula">Weyl dimension formula</a><a id="Weyl-dimension-formula-1"></a><a class="docs-heading-anchor-permalink" href="#Weyl-dimension-formula" title="Permalink"></a></h2><p>The dimension of the irreducible representation <span>$\mathrm{V}(\lambda)$</span>:</p><pre><code class="language-julia-repl hljs">julia&gt; degree(ω₁)   # standard rep of A₃ (SL₄)
+4
+
+julia&gt; degree(ω₂)   # ⋀² of standard = 6-dim
+6
+
+julia&gt; degree(ω₁ + ω₂)   # 20-dim rep
+20
+
+julia&gt; degree(weyl_vector(TypeA{3}))   # ρ = ω₁+ω₂+ω₃
+64</code></pre><p>A₂ examples:</p><pre><code class="language-julia-repl hljs">julia&gt; ω₁_a2 = fundamental_weight(TypeA{2}, 1);
+
+julia&gt; degree(ω₁_a2)
+3
+
+julia&gt; degree(ω₁_a2 + fundamental_weight(TypeA{2}, 2))   # adjoint
+8</code></pre><p>The zero weight gives the trivial representation:</p><pre><code class="language-julia-repl hljs">julia&gt; degree(WeightLatticeElem(TypeA{3}, [0, 0, 0]))
+1</code></pre><article><details class="docstring" open="true"><summary id="Lie.degree"><a class="docstring-binding" href="#Lie.degree"><code>Lie.degree</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">degree(::Type{DT}, hw::WeightLatticeElem{DT,R}) -&gt; BigInt
+degree(hw::WeightLatticeElem{DT,R}) -&gt; BigInt</code></pre><p>Dimension of the irreducible representation with highest weight <code>hw</code>, computed via the Weyl dimension formula:</p><p><span>$\dim \mathrm{V}(λ) = \prod_{α &gt; 0} \frac{⟨λ + ρ, α⟩}{⟨ρ, α⟩}$</span></p><p>The denominator <code>∏ ⟨ρ, α⟩</code> and the symmetrizer-scaled root vectors are precomputed at compile time. The numerator <code>∏ ⟨λ+ρ, α⟩</code> is computed as a <code>BigInt</code> product of <code>Int</code>-valued inner products via in-place GMP arithmetic.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; using Lie
+
+julia&gt; degree(fundamental_weight(TypeA{3}, 1))
+4
+
+julia&gt; degree(fundamental_weight(TypeB{3}, 3))
+8
+
+julia&gt; degree(fundamental_weight(TypeE{8}, 8))
+248
+
+julia&gt; [degree(fundamental_weight(TypeB{3}, i)) for i in 1:3]
+3-element Vector{BigInt}:
+  7
+ 21
+  8</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/WeylGroup.jl#L500-L532">source</a></section><section><div><pre><code class="language-julia hljs">degree(::Type{DT}, v::AbstractVector{&lt;:Integer}) -&gt; BigInt</code></pre><p>Dimension of the irreducible representation with highest weight given by the integer vector <code>v</code> (in the fundamental weight basis).</p><p>This is a convenience wrapper: <code>degree(DT, v) == degree(WeightLatticeElem(DT, v))</code>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; using Lie
+
+julia&gt; degree(TypeA{2}, [1, 0])  # standard representation of A₂
+3
+
+julia&gt; degree(TypeE{8}, [0, 0, 0, 0, 0, 0, 0, 1])  # adjoint of E₈
+248</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/WeylGroup.jl#L559-L577">source</a></section><section><div><pre><code class="language-julia hljs">degree(V::WeylCharacter) -&gt; Int or BigInt</code></pre><p>Return the dimension of an effective character (actual representation).</p><p>For an effective character <code>V = ∑ mᵢ V(λᵢ)</code> where all <code>mᵢ ≥ 0</code>, the degree is:</p><pre><code class="language-julia hljs">deg(V) = ∑ mᵢ dim(V(λᵢ))</code></pre><p>This is the total dimension of the representation as a direct sum of irreducibles. If <code>V</code> is not effective (has negative multiplicities), this function will error.</p><p>Returns <code>Int</code> for small dimensions, automatically promotes to <code>BigInt</code> when needed.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; using Lie
+
+julia&gt; ω₁ = fundamental_weight(TypeA{2}, 1);
+
+julia&gt; V = WeylCharacter(ω₁);
+
+julia&gt; degree(V)  # dim of standard representation
+3
+
+julia&gt; degree(V^2)  # dim of V ⊗ V = Sym²V ⊕ ⋀²V
+9
+
+julia&gt; degree(symmetric_power(ω₁, 2))  # dim of Sym²V
+6
+
+julia&gt; # E₈ adjoint has dimension 248
+       ω₈ = fundamental_weight(TypeE{8}, 8);
+
+julia&gt; degree(WeylCharacter(ω₈))
+248</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/Characters.jl#L156-L194">source</a></section></details></article><article><details class="docstring" open="true"><summary id="Lie.weyl_dimension"><a class="docstring-binding" href="#Lie.weyl_dimension"><code>Lie.weyl_dimension</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">weyl_dimension(args...) -&gt; BigInt</code></pre><p>Synonym for <a href="#Lie.degree"><code>degree</code></a>. Computes the dimension of the irreducible representation via the Weyl dimension formula.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/WeylGroup.jl#L584-L589">source</a></section></details></article><h2 id="Borel–Weil–Bott-theorem"><a class="docs-heading-anchor" href="#Borel–Weil–Bott-theorem">Borel–Weil–Bott theorem</a><a id="Borel–Weil–Bott-theorem-1"></a><a class="docs-heading-anchor-permalink" href="#Borel–Weil–Bott-theorem" title="Permalink"></a></h2><p>Compute the cohomological degree and resulting representation for a weight on a flag variety:</p><pre><code class="language-julia-repl hljs">julia&gt; import Lie: borel_weil_bott
+
+julia&gt; borel_weil_bott(ω₁)   # dominant weight → degree 0
+(0, ω1)
+
+julia&gt; borel_weil_bott(WeightLatticeElem(TypeA{3}, [-3, 2, 1]))
+(1, ω1 + ω3)</code></pre><h3 id="Singular-weights"><a class="docs-heading-anchor" href="#Singular-weights">Singular weights</a><a id="Singular-weights-1"></a><a class="docs-heading-anchor-permalink" href="#Singular-weights" title="Permalink"></a></h3><p>A weight <span>$\lambda$</span> is <strong>singular</strong> when <span>$\langle \lambda + \rho, \alpha^\vee \rangle = 0$</span> for some positive root <span>$\alpha$</span>. Singular weights give zero cohomology:</p><pre><code class="language-julia-repl hljs">julia&gt; λ = WeightLatticeElem(TypeA{2}, [-1, 0]);
+
+julia&gt; is_singular(λ)
+true</code></pre><article><details class="docstring" open="true"><summary id="Lie.is_singular"><a class="docstring-binding" href="#Lie.is_singular"><code>Lie.is_singular</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">is_singular(w::WeightLatticeElem{DT,R}) -&gt; Bool</code></pre><p>Check whether the weight <code>w</code> is singular, i.e. lies on some wall of a Weyl chamber. Equivalently, <code>w</code> is singular iff <code>⟨α∨, w⟩ = 0</code> for some positive root <code>α</code>.</p><p>For a dominant weight this simplifies to checking whether any fundamental weight coordinate is zero. For a general weight, we first conjugate to the dominant chamber.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/WeylGroup.jl#L594-L604">source</a></section></details></article><h2 id="Weyl-group-orders"><a class="docs-heading-anchor" href="#Weyl-group-orders">Weyl group orders</a><a id="Weyl-group-orders-1"></a><a class="docs-heading-anchor-permalink" href="#Weyl-group-orders" title="Permalink"></a></h2><pre><code class="language-julia-repl hljs">julia&gt; weyl_order(TypeA{3})
+24
+
+julia&gt; weyl_order(TypeB{3})
+48
+
+julia&gt; weyl_order(TypeG2)
+12
+
+julia&gt; weyl_order(TypeE{8})
+696729600</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../weights/">« Weight lattice</a><a class="docs-footer-nextpage" href="../characters/">Characters and representations »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Tuesday 10 March 2026 15:54">Tuesday 10 March 2026</span>. Using Julia version 1.12.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

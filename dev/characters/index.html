@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Characters and representations · Lie.jl</title><meta name="title" content="Characters and representations · Lie.jl"/><meta property="og:title" content="Characters and representations · Lie.jl"/><meta property="twitter:title" content="Characters and representations · Lie.jl"/><meta name="description" content="Documentation for Lie.jl."/><meta property="og:description" content="Documentation for Lie.jl."/><meta property="twitter:description" content="Documentation for Lie.jl."/><meta property="og:url" content="https://HomogeneousTools.github.io/Lie.jl/characters/"/><meta property="twitter:url" content="https://HomogeneousTools.github.io/Lie.jl/characters/"/><link rel="canonical" href="https://HomogeneousTools.github.io/Lie.jl/characters/"/><script data-outdated-warner src="../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../assets/documenter.js"></script><script src="../search_index.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../">Lie.jl</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../">Home</a></li><li><a class="tocitem" href="../types/">Dynkin types and Cartan matrices</a></li><li><a class="tocitem" href="../roots/">Root systems</a></li><li><a class="tocitem" href="../weights/">Weight lattice</a></li><li><a class="tocitem" href="../weyl/">Weyl groups</a></li><li class="is-active"><a class="tocitem" href>Characters and representations</a><ul class="internal"><li><a class="tocitem" href="#Constructing-characters"><span>Constructing characters</span></a></li><li><a class="tocitem" href="#Arithmetic"><span>Arithmetic</span></a></li><li><a class="tocitem" href="#Character-polynomials"><span>Character polynomials</span></a></li><li><a class="tocitem" href="#Dominant-character-polynomials"><span>Dominant character polynomials</span></a></li><li><a class="tocitem" href="#Freudenthal&#39;s-formula"><span>Freudenthal&#39;s formula</span></a></li><li><a class="tocitem" href="#Tensor-products"><span>Tensor products</span></a></li><li><a class="tocitem" href="#Duality"><span>Duality</span></a></li><li><a class="tocitem" href="#Adams-operators"><span>Adams operators</span></a></li><li><a class="tocitem" href="#Exterior-powers"><span>Exterior powers</span></a></li><li><a class="tocitem" href="#Symmetric-powers"><span>Symmetric powers</span></a></li><li><a class="tocitem" href="#Plethysm-(Schur-functors)"><span>Plethysm (Schur functors)</span></a></li><li><a class="tocitem" href="#Reconstructing-characters-from-weights"><span>Reconstructing characters from weights</span></a></li><li><a class="tocitem" href="#Cross-type-examples"><span>Cross-type examples</span></a></li></ul></li><li><a class="tocitem" href="../details/">Implementation details</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Characters and representations</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Characters and representations</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/HomogeneousTools/Lie.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/HomogeneousTools/Lie.jl/blob/main/docs/src/characters.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Characters-and-representations"><a class="docs-heading-anchor" href="#Characters-and-representations">Characters and representations</a><a id="Characters-and-representations-1"></a><a class="docs-heading-anchor-permalink" href="#Characters-and-representations" title="Permalink"></a></h1><p>A <code>WeylCharacter</code> is an element of the representation ring (Grothendieck ring) of a semisimple Lie algebra. It stores a formal <span>$\mathbb{Z}$</span>-linear combination of irreducible representations, indexed by their dominant highest weights.</p><h2 id="Constructing-characters"><a class="docs-heading-anchor" href="#Constructing-characters">Constructing characters</a><a id="Constructing-characters-1"></a><a class="docs-heading-anchor-permalink" href="#Constructing-characters" title="Permalink"></a></h2><pre><code class="language-julia-repl hljs">julia&gt; using Lie, StaticArrays
+
+julia&gt; ω₁ = fundamental_weight(TypeA{3}, 1);
+
+julia&gt; ω₂ = fundamental_weight(TypeA{3}, 2);
+
+julia&gt; V = WeylCharacter(ω₁)   # irreducible V(ω₁)
+A3(1, 0, 0)
+
+julia&gt; WeylCharacter(TypeA{3})   # zero character (additive identity)
+0
+
+julia&gt; is_effective(V)
+true
+
+julia&gt; is_irreducible(V)
+true
+
+julia&gt; highest_weight(V)
+ω1</code></pre><article><details class="docstring" open="true"><summary id="Lie.WeylCharacter"><a class="docstring-binding" href="#Lie.WeylCharacter"><code>Lie.WeylCharacter</code></a> — <span class="docstring-category">Type</span></summary><section><div><pre><code class="language-julia hljs">WeylCharacter{DT,R}</code></pre><p>An element of the representation ring (Grothendieck ring) of a semisimple Lie algebra of Dynkin type <code>DT</code> with rank <code>R</code>. Each character is a formal ℤ-linear combination of irreducible representations, mathematically represented as a <strong>character polynomial</strong>.</p><p>A character polynomial of a finite-dimensional representation is the sum</p><pre><code class="language-julia hljs">χ(λ) = ∑_μ m(μ) e^μ</code></pre><p>where the sum runs over all weights μ in the weight lattice, m(μ) is the multiplicity of weight μ, and e^μ is a formal exponential.</p><p>Computationally, this is stored as a <code>Dict{WeightLatticeElem{DT,R}, Int}</code> mapping dominant highest weights to their integer multiplicities. Positive multiplicities correspond to actual irreducible representations; negative multiplicities arise in virtual differences (elements of the Grothendieck group).</p><p>Since character polynomials are invariant under the Weyl group W (as <code>χ(w·μ) = χ(μ)</code> for all w ∈ W and all weights μ), and each W-orbit of weights contains exactly one dominant weight, the character polynomial can be more compactly represented as a <strong>dominant character polynomial</strong> — the restriction that omits all non-dominant weights. This is the standard internal representation in Lie.jl.</p><p>Use <a href="#Lie.dominant_character"><code>dominant_character</code></a> to compute the dominant character polynomial (which omits all non-dominant weights), and <a href="#Lie.freudenthal_formula"><code>freudenthal_formula</code></a> to expand to the full character (all W-orbit elements listed explicitly).</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; using Lie
+
+julia&gt; ω₁ = fundamental_weight(TypeA{2}, 1);
+
+julia&gt; V = WeylCharacter(ω₁)
+A2(1, 0)
+
+julia&gt; V + V == 2 * V
+true</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/Characters.jl#L29-L72">source</a></section></details></article><article><details class="docstring" open="true"><summary id="Lie.is_effective"><a class="docstring-binding" href="#Lie.is_effective"><code>Lie.is_effective</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">is_effective(V::WeylCharacter) -&gt; Bool</code></pre><p>True when all multiplicities are non-negative, i.e. <code>V</code> corresponds to an actual (not merely virtual) representation.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/Characters.jl#L129-L134">source</a></section></details></article><article><details class="docstring" open="true"><summary id="Lie.is_irreducible"><a class="docstring-binding" href="#Lie.is_irreducible"><code>Lie.is_irreducible</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">is_irreducible(V::WeylCharacter) -&gt; Bool</code></pre><p>True when <code>V</code> is a single irreducible with multiplicity 1.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/Characters.jl#L137-L141">source</a></section></details></article><article><details class="docstring" open="true"><summary id="Lie.highest_weight"><a class="docstring-binding" href="#Lie.highest_weight"><code>Lie.highest_weight</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">highest_weight(V::WeylCharacter{DT,R}) -&gt; WeightLatticeElem{DT,R}</code></pre><p>Return the highest weight of an irreducible virtual character. Throws if <code>V</code> is not irreducible.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/Characters.jl#L145-L150">source</a></section></details></article><h2 id="Arithmetic"><a class="docs-heading-anchor" href="#Arithmetic">Arithmetic</a><a id="Arithmetic-1"></a><a class="docs-heading-anchor-permalink" href="#Arithmetic" title="Permalink"></a></h2><p>Characters support addition, subtraction, and scalar multiplication:</p><pre><code class="language-julia-repl hljs">julia&gt; V₂ = WeylCharacter(ω₂);
+
+julia&gt; V + V₂
+A3(1, 0, 0) + A3(0, 1, 0)
+
+julia&gt; 2 * V
+2*A3(1, 0, 0)
+
+julia&gt; V + V == 2 * V
+true</code></pre><h3 id="In-place-mutation"><a class="docs-heading-anchor" href="#In-place-mutation">In-place mutation</a><a id="In-place-mutation-1"></a><a class="docs-heading-anchor-permalink" href="#In-place-mutation" title="Permalink"></a></h3><p>For performance-critical loops, use <code>add!</code> and <code>addmul!</code>:</p><pre><code class="language-julia-repl hljs">julia&gt; result = WeylCharacter(TypeA{3});
+
+julia&gt; add!(result, V);
+
+julia&gt; result
+A3(1, 0, 0)
+
+julia&gt; addmul!(result, V₂, 3);
+
+julia&gt; result
+A3(1, 0, 0) + 3*A3(0, 1, 0)</code></pre><article><details class="docstring" open="true"><summary id="Lie.add!"><a class="docstring-binding" href="#Lie.add!"><code>Lie.add!</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">add!(V::WeylCharacter{DT,R}, W::WeylCharacter{DT,R}) -&gt; WeylCharacter{DT,R}</code></pre><p>Add <code>W</code> into <code>V</code> in-place, modifying <code>V</code>. Returns <code>V</code>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; using Lie
+
+julia&gt; ω₁ = fundamental_weight(TypeA{2}, 1);
+
+julia&gt; V = WeylCharacter(ω₁); W = WeylCharacter(ω₁);
+
+julia&gt; add!(V, W) == 2 * WeylCharacter(ω₁)
+true</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/Characters.jl#L336-L352">source</a></section></details></article><article><details class="docstring" open="true"><summary id="Lie.addmul!"><a class="docstring-binding" href="#Lie.addmul!"><code>Lie.addmul!</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">addmul!(V::WeylCharacter{DT,R}, W::WeylCharacter{DT,R}, c::Integer) -&gt; WeylCharacter{DT,R}</code></pre><p>Add <code>c * W</code> into <code>V</code> in-place, modifying <code>V</code>. Returns <code>V</code>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; using Lie
+
+julia&gt; ω₁ = fundamental_weight(TypeA{2}, 1);
+
+julia&gt; V = WeylCharacter(TypeA{2}); W = WeylCharacter(ω₁);
+
+julia&gt; addmul!(V, W, 3) == 3 * WeylCharacter(ω₁)
+true</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/Characters.jl#L365-L381">source</a></section></details></article><h2 id="Character-polynomials"><a class="docs-heading-anchor" href="#Character-polynomials">Character polynomials</a><a id="Character-polynomials-1"></a><a class="docs-heading-anchor-permalink" href="#Character-polynomials" title="Permalink"></a></h2><p>A <strong>character polynomial</strong> of a finite-dimensional representation is a formal sum</p><p class="math-container">\[\chi(\lambda) = \sum_{\mu \in P} m_\lambda(\mu) e^\mu\]</p><p>where <span>$P$</span> is the weight lattice, <span>$m_\lambda(\mu)$</span> is the multiplicity of weight <span>$\mu$</span> in the representation with highest weight <span>$\lambda$</span>, and <span>$e^\mu$</span> is a formal exponential. This encodes the weight multiplicities in a single object that respects the representation ring structure (tensor product → multiplication of characters).</p><p>Since character polynomials are <strong>Weyl group invariant</strong> (i.e., <span>$\chi_\lambda(w \cdot \mu) = \chi_\lambda(\mu)$</span> for all <span>$w \in W$</span>), the full character is determined by its values on dominant weights. More precisely: each weight orbit under the Weyl group contains exactly one dominant weight, and all weights in an orbit have equal multiplicity.</p><pre><code class="language-julia-repl hljs">julia&gt; ω₁_a2 = fundamental_weight(TypeA{2}, 1);
+
+julia&gt; full_mults = freudenthal_formula(ω₁_a2);
+
+julia&gt; length(full_mults)   # includes all W-orbit members
+3
+
+julia&gt; dom_mults = dominant_character(ω₁_a2);
+
+julia&gt; length(dom_mults)   # only dominant weights
+1</code></pre><h2 id="Dominant-character-polynomials"><a class="docs-heading-anchor" href="#Dominant-character-polynomials">Dominant character polynomials</a><a id="Dominant-character-polynomials-1"></a><a class="docs-heading-anchor-permalink" href="#Dominant-character-polynomials" title="Permalink"></a></h2><p>The <strong>dominant character polynomial</strong> (or sometimes just &quot;dominant character&quot;) is a more compact representation:</p><p class="math-container">\[\chi_{\lambda, \text{dom}} = \sum_{\mu \in P^+ : m_\lambda(\mu) &gt; 0} m_\lambda(\mu) e^\mu\]</p><p>where <span>$P^+$</span> is the set of dominant weights. By W-invariance, this omits all non-dominant weights while retaining <em>all information</em> about the full character.</p><p>Explicitly: since each W-orbit contains a unique dominant representative, reconstructing the full character from the dominant character is straightforward — just apply the Weyl group orbit operator. This is what <a href="#Lie.freudenthal_formula"><code>freudenthal_formula</code></a> does internally.</p><p><code>dominant_character</code> computes this using Freudenthal&#39;s recursion formula and returns a <code>Dict{SVector{R,Int}, Int}</code> mapping dominant weight coordinates to multiplicities. This is the cached building block behind <a href="#Lie.freudenthal_formula"><code>freudenthal_formula</code></a>, <a href="#Lie.weight_multiplicity"><code>weight_multiplicity</code></a>, tensor products, Adams operators, and plethysms.</p><p>The relationship to the LiE computer algebra system: the &quot;dominant character polynomial&quot; used here corresponds to the output of the <code>domchar</code> command in LiE, which filters the full character to list only the dominant weights and uses the Weyl group orbit operator to go back and forth.</p><pre><code class="language-julia-repl hljs">julia&gt; ω₁_a2 = fundamental_weight(TypeA{2}, 1);
+
+julia&gt; dc = dominant_character(ω₁_a2);
+
+julia&gt; length(dc)   # only 1 dominant weight for V(ω₁) of A₂
+1
+
+julia&gt; dc[SVector(1, 0)]  # the highest weight itself
+1</code></pre><article><details class="docstring" open="true"><summary id="Lie.dominant_character"><a class="docstring-binding" href="#Lie.dominant_character"><code>Lie.dominant_character</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">dominant_character(λ::WeightLatticeElem{DT,R}) -&gt; Dict{SVector{R,Int}, Int}</code></pre><p>Compute the <strong>dominant character polynomial</strong> of the irreducible representation <span>$\mathrm{V}(λ)$</span> using Freudenthal&#39;s recursion.</p><p>A <strong>character polynomial</strong> of a representation is the formal sum <code>χ = ∑_μ m(μ) e^μ</code>, where m(μ) is the multiplicity of each weight μ. Since character polynomials are invariant under the Weyl group W (i.e., <code>χ(w·μ) = χ(μ)</code> for all w ∈ W), and each W-orbit of weights contains a unique dominant representative, the full character can be more compactly represented by listing only the dominant weights.</p><p>The <strong>dominant character polynomial</strong> is the restriction of the full character to dominant weights only. Formally, it is the mapping <code>μ ↦ m(μ)</code> for each dominant weight μ in the character, where m(μ) is the multiplicity (shared by all weights in the W-orbit of μ). This compact representation captures all information of the full character due to W-invariance.</p><p>This function computes the dominant character using Freudenthal&#39;s recursion formula and returns a <code>Dict{SVector{R,Int}, Int}</code> with dominant weight coordinates as keys and multiplicities as values. Results are cached per highest weight; clear with <a href="../details/#Lie.clear_all_caches!"><code>clear_all_caches!</code></a>.</p><p><strong>Expanding the dominant character:</strong></p><ul><li>Use <a href="#Lie.freudenthal_formula"><code>freudenthal_formula</code></a> to expand the dominant character into the full character polynomial (all W-orbit members listed with their multiplicities).</li><li>Use <a href="#Lie.weight_multiplicity"><code>weight_multiplicity</code></a> to query the multiplicity of a single weight without computing the entire W-orbit.</li></ul><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; using Lie; using StaticArrays
+
+julia&gt; ω₁ = fundamental_weight(TypeA{2}, 1);
+
+julia&gt; dc = dominant_character(ω₁);
+
+julia&gt; length(dc)   # V(ω₁) of A₂ has 1 dominant weight
+1
+
+julia&gt; dc[SVector(1, 0)]   # multiplicity of ω₁ itself
+1
+
+julia&gt; adj = ω₁ + fundamental_weight(TypeA{2}, 2);
+
+julia&gt; dc_adj = dominant_character(adj);
+
+julia&gt; dc_adj[SVector(0, 0)]   # zero weight multiplicity in adjoint
+2</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/Characters.jl#L522-L572">source</a></section></details></article><h2 id="Freudenthal&#39;s-formula"><a class="docs-heading-anchor" href="#Freudenthal&#39;s-formula">Freudenthal&#39;s formula</a><a id="Freudenthal&#39;s-formula-1"></a><a class="docs-heading-anchor-permalink" href="#Freudenthal&#39;s-formula" title="Permalink"></a></h2><p>Compute the full weight multiplicity dictionary of an irreducible representation <span>$\mathrm{V}(\lambda)$</span>. Returns a <code>Dict{SVector{R,Int}, Int}</code> mapping weight coordinates (in the fundamental weight basis) to their multiplicities:</p><pre><code class="language-julia-repl hljs">julia&gt; m = freudenthal_formula(ω₁);
+
+julia&gt; length(m)   # V(ω₁) of A₃ has 4 weights
+4
+
+julia&gt; sum(values(m)) == degree(ω₁)   # total = dimension
+true</code></pre><p>The convenience function <code>weight_multiplicity</code> returns the multiplicity of a single weight.  For example, the <span>$\mathrm{A}_2$</span> adjoint representation <span>$\mathrm{V}(\omega_1 + \omega_2)$</span> has dimension 8, and the zero weight has multiplicity 2:</p><pre><code class="language-julia-repl hljs">julia&gt; adj = fundamental_weight(TypeA{2}, 1) + fundamental_weight(TypeA{2}, 2);
+
+julia&gt; weight_multiplicity(adj, zero(adj))
+2</code></pre><article><details class="docstring" open="true"><summary id="Lie.freudenthal_formula"><a class="docstring-binding" href="#Lie.freudenthal_formula"><code>Lie.freudenthal_formula</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">freudenthal_formula(λ::WeightLatticeElem{DT,R}) -&gt; Dict{SVector{R,Int}, Int}</code></pre><p>Compute the full weight multiplicity dictionary of the irreducible representation <span>$\mathrm{V}(λ)$</span>.</p><p>Returns a dictionary mapping <em>every</em> weight (in fundamental weight coordinates) to its multiplicity. Only weights with non-zero multiplicity are included.</p><p>Internally, this calls <a href="#Lie.dominant_character"><code>dominant_character</code></a> to compute multiplicities of dominant weights via Freudenthal&#39;s recursion, then expands each dominant weight to its full Weyl orbit.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; using Lie; using StaticArrays
+
+julia&gt; ω₁ = fundamental_weight(TypeA{2}, 1);
+
+julia&gt; mults = freudenthal_formula(ω₁);
+
+julia&gt; mults[SVector(1, 0)]
+1
+
+julia&gt; sum(values(mults))  # = dim V(ω₁) = 3
+3
+
+julia&gt; ω₂ = fundamental_weight(TypeA{2}, 2);
+
+julia&gt; mults = freudenthal_formula(ω₁ + ω₂);  # adjoint of A₂
+
+julia&gt; length(mults)  # 7 distinct weights
+7
+
+julia&gt; sum(values(mults))  # dim = 8
+8</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/Characters.jl#L449-L486">source</a></section></details></article><article><details class="docstring" open="true"><summary id="Lie.weight_multiplicity"><a class="docstring-binding" href="#Lie.weight_multiplicity"><code>Lie.weight_multiplicity</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">weight_multiplicity(λ::WeightLatticeElem{DT,R}, μ::WeightLatticeElem{DT,R}) -&gt; Int</code></pre><p>Return the multiplicity of weight <code>μ</code> in the irreducible representation <span>$\mathrm{V}(λ)$</span>.  This is a convenience wrapper around <a href="#Lie.freudenthal_formula"><code>freudenthal_formula</code></a>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; using Lie
+
+julia&gt; ω₁ = fundamental_weight(TypeA{2}, 1); ω₂ = fundamental_weight(TypeA{2}, 2);
+
+julia&gt; weight_multiplicity(ω₁ + ω₂, zero(ω₁))   # zero weight of adjoint
+2</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/Characters.jl#L764-L780">source</a></section></details></article><h2 id="Tensor-products"><a class="docs-heading-anchor" href="#Tensor-products">Tensor products</a><a id="Tensor-products-1"></a><a class="docs-heading-anchor-permalink" href="#Tensor-products" title="Permalink"></a></h2><h3 id="Brauer–Klimyk-(general)"><a class="docs-heading-anchor" href="#Brauer–Klimyk-(general)">Brauer–Klimyk (general)</a><a id="Brauer–Klimyk-(general)-1"></a><a class="docs-heading-anchor-permalink" href="#Brauer–Klimyk-(general)" title="Permalink"></a></h3><p>The default tensor product algorithm works for all types:</p><pre><code class="language-julia-repl hljs">julia&gt; tensor_product(ω₁, ω₁)   # V ⊗ V = Sym²V ⊕ ⋀²V
+A3(2, 0, 0) + A3(0, 1, 0)
+
+julia&gt; tensor_product(ω₁, ω₂)
+A3(1, 1, 0) + A3(0, 0, 1)</code></pre><p>Tensor product of a weight with the trivial representation:</p><pre><code class="language-julia-repl hljs">julia&gt; ω₃ = fundamental_weight(TypeA{3}, 3);
+
+julia&gt; tensor_product(ω₁, ω₃)   # V(ω₁) ⊗ V(ω₃) contains trivial
+A3(1, 0, 1) + A3(0, 0, 0)</code></pre><h3 id="Littlewood–Richardson-(type-A)"><a class="docs-heading-anchor" href="#Littlewood–Richardson-(type-A)">Littlewood–Richardson (type A)</a><a id="Littlewood–Richardson-(type-A)-1"></a><a class="docs-heading-anchor-permalink" href="#Littlewood–Richardson-(type-A)" title="Permalink"></a></h3><p>For type A, the Littlewood–Richardson rule provides a faster tensor product algorithm.  It is used automatically by <code>tensor_product</code> for type A inputs:</p><pre><code class="language-julia-repl hljs">julia&gt; ω₁_a4 = fundamental_weight(TypeA{4}, 1);
+
+julia&gt; ω₂_a4 = fundamental_weight(TypeA{4}, 2);
+
+julia&gt; lr_tensor_product(ω₁_a4, ω₂_a4)
+A4(1, 1, 0, 0) + A4(0, 0, 1, 0)</code></pre><pre><code class="language-julia-repl hljs">julia&gt; λ = WeightLatticeElem(TypeA{4}, [2, 1, 0, 0]);
+
+julia&gt; r = tensor_product(λ, λ);
+
+julia&gt; length(r.terms)   # number of irreducible components
+11
+
+julia&gt; sum(m * degree(μ) for (μ, m) in r.terms) == degree(λ)^2
+true</code></pre><article><details class="docstring" open="true"><summary id="Lie.tensor_product"><a class="docstring-binding" href="#Lie.tensor_product"><code>Lie.tensor_product</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">tensor_product(V::WeylCharacter{DT,R}, W::WeylCharacter{DT,R}) -&gt; WeylCharacter{DT,R}</code></pre><p>Tensor product decomposition of two virtual characters. Iterates over all pairs <code>(λ, m)</code> in <code>V</code> and <code>(μ, n)</code> in <code>W</code>, computes <code>tensor_product(λ, μ)</code> via Brauer–Klimyk, and accumulates <code>m * n * result</code>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; using Lie
+
+julia&gt; ω₁ = fundamental_weight(TypeA{2}, 1);
+
+julia&gt; V = WeylCharacter(ω₁);
+
+julia&gt; V * V == Sym(2, ω₁) + ⋀(2, ω₁)
+true
+
+julia&gt; V^3  # right-to-left tensor power
+A2(3, 0) + 2*A2(1, 1) + A2(0, 0)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/Characters.jl#L407-L428">source</a></section><section><div><pre><code class="language-julia hljs">tensor_product(λ::WeightLatticeElem{DT,R}, μ::WeightLatticeElem{DT,R}) -&gt; WeylCharacter{DT,R}</code></pre><p>Decompose the tensor product <span>$\mathrm{V}(λ) \otimes \mathrm{V}(μ)$</span> into irreducibles using the Brauer–Klimyk algorithm. The Freudenthal formula is applied to whichever factor has smaller dimension, for efficiency.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; using Lie
+
+julia&gt; ω₁ = fundamental_weight(TypeA{2}, 1); ω₂ = fundamental_weight(TypeA{2}, 2);
+
+julia&gt; tensor_product(ω₁, ω₁)
+A2(2, 0) + A2(0, 1)
+
+julia&gt; ω₁ = fundamental_weight(TypeA{3}, 1); tensor_product(ω₁, ω₁)
+A3(2, 0, 0) + A3(0, 1, 0)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/Characters.jl#L1233-L1252">source</a></section><section><div><pre><code class="language-julia hljs">tensor_product(λ::WeightLatticeElem{TypeA{N},N}, μ::WeightLatticeElem{TypeA{N},N}) -&gt; WeylCharacter{TypeA{N},N}</code></pre><p>Specialization for type <span>$\mathrm{A}$</span>: uses the Littlewood–Richardson rule instead of Brauer–Klimyk, which is typically much faster.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/Characters.jl#L1278-L1283">source</a></section></details></article><article><details class="docstring" open="true"><summary id="Lie.lr_tensor_product"><a class="docstring-binding" href="#Lie.lr_tensor_product"><code>Lie.lr_tensor_product</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">lr_tensor_product(λ::WeightLatticeElem{TypeA{N},N}, μ::WeightLatticeElem{TypeA{N},N}) -&gt; WeylCharacter{TypeA{N},N}</code></pre><p>Decompose <span>$\mathrm{V}(λ) \otimes \mathrm{V}(μ)$</span> into irreducibles using the Littlewood–Richardson rule. This is specific to type <span>$\mathrm{A}$</span> and is typically much faster than the general Brauer–Klimyk algorithm.</p><p>The algorithm converts highest weights to partitions, enumerates LR skew tableaux of shape <span>$ν / α$</span> with content <span>$β$</span> (where <span>$α$</span> and <span>$β$</span> are the partitions for <span>$λ$</span> and <span>$μ$</span>), and reads off the multiplicities <span>$c^ν_{αβ}$</span>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; using Lie
+
+julia&gt; ω₁ = fundamental_weight(TypeA{2}, 1); ω₂ = fundamental_weight(TypeA{2}, 2);
+
+julia&gt; lr_tensor_product(ω₁, ω₁)
+A2(2, 0) + A2(0, 1)
+
+julia&gt; lr_tensor_product(ω₁, ω₂)
+A2(1, 1) + A2(0, 0)
+
+julia&gt; lr_tensor_product(ω₁ + ω₂, ω₁)  # 8 ⊗ 3 in A₂
+A2(2, 1) + A2(1, 0) + A2(0, 2)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/Characters.jl#L1169-L1196">source</a></section></details></article><h2 id="Duality"><a class="docs-heading-anchor" href="#Duality">Duality</a><a id="Duality-1"></a><a class="docs-heading-anchor-permalink" href="#Duality" title="Permalink"></a></h2><p>The dual (contragredient) representation:</p><pre><code class="language-julia-repl hljs">julia&gt; dual(WeylCharacter(ω₁))
+A3(0, 0, 1)
+
+julia&gt; dual(WeylCharacter(ω₃))
+A3(1, 0, 0)
+
+julia&gt; dual(WeylCharacter(ω₂))   # self-dual for A₃
+A3(0, 1, 0)</code></pre><article><details class="docstring" open="true"><summary id="Lie.dual"><a class="docstring-binding" href="#Lie.dual"><code>Lie.dual</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">dual(λ::WeightLatticeElem{DT,R}) -&gt; WeightLatticeElem{DT,R}</code></pre><p>Highest weight of the contragredient (dual) representation: <code>λ* = -w₀(λ)</code>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; using Lie
+
+julia&gt; ω₁ = fundamental_weight(TypeA{2}, 1); ω₂ = fundamental_weight(TypeA{2}, 2);
+
+julia&gt; dual(ω₁) == ω₂
+true
+
+julia&gt; [dual(fundamental_weight(TypeA{3}, i)) for i in 1:3]
+3-element Vector{WeightLatticeElem{TypeA{3}, 3}}:
+ ω3
+ ω2
+ ω1</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/Characters.jl#L1306-L1326">source</a></section><section><div><pre><code class="language-julia hljs">dual(V::WeylCharacter{DT,R}) -&gt; WeylCharacter{DT,R}</code></pre><p>Dual of a virtual character: each summand <span>$\mathrm{V}(λ)$</span> maps to <span>$\mathrm{V}(λ^*)$</span>.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/Characters.jl#L1333-L1337">source</a></section></details></article><h2 id="Adams-operators"><a class="docs-heading-anchor" href="#Adams-operators">Adams operators</a><a id="Adams-operators-1"></a><a class="docs-heading-anchor-permalink" href="#Adams-operators" title="Permalink"></a></h2><p>The Adams operator <span>$\psi^k$</span> scales every weight of <span>$\mathrm{V}(\lambda)$</span> by <span>$k$</span>. The result is a virtual character (element of the Grothendieck ring):</p><pre><code class="language-julia-repl hljs">julia&gt; ω₁_a2 = fundamental_weight(TypeA{2}, 1);
+
+julia&gt; ψ₂ = adams_operator(ω₁_a2, 2);
+
+julia&gt; length(ψ₂)   # number of distinct weights
+3</code></pre><p>The Newton identity connects Adams operators to symmetric/exterior powers: <span>$\psi^2(\mathrm{V}) = \mathrm{Sym}^2(\mathrm{V}) - \bigwedge^2(\mathrm{V})$</span>:</p><pre><code class="language-julia-repl hljs">julia&gt; ψ₂_char = character_from_weights(TypeA{2}, ψ₂);
+
+julia&gt; ψ₂_char == Sym(2, ω₁_a2) - ⋀(2, ω₁_a2)
+true</code></pre><article><details class="docstring" open="true"><summary id="Lie.adams_operator"><a class="docstring-binding" href="#Lie.adams_operator"><code>Lie.adams_operator</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">adams_operator(λ::WeightLatticeElem{DT,R}, k::Integer) -&gt; Dict{SVector{R,Int}, Int}</code></pre><p>Compute the <code>k</code>-th Adams operator <span>$ψ^k(\mathrm{V}(λ))$</span>, returned as a dictionary of weight multiplicities (not decomposed into irreducibles).</p><p>The Adams operator scales every weight by <code>k</code>: if <span>$\mathrm{V}(λ)$</span> has weight multiplicity <span>$m(μ)$</span>, then <span>$ψ^k(\mathrm{V}(λ))$</span> has <span>$m(μ)$</span> at weight <span>$kμ$</span>.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/Characters.jl#L1352-L1360">source</a></section></details></article><article><details class="docstring" open="true"><summary id="Lie.character_from_weights"><a class="docstring-binding" href="#Lie.character_from_weights"><code>Lie.character_from_weights</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">character_from_weights(::Type{DT}, multiplicities::Dict{SVector{R,Int}, Int}) -&gt; WeylCharacter{DT,R}</code></pre><p>Given a dictionary of weight multiplicities (as from Freudenthal), decompose the representation into a formal sum of irreducibles.</p><p>Supports both effective (non-negative) and virtual (mixed sign) characters.</p><p>Uses the &quot;peeling&quot; algorithm: find the highest dominant weight, subtract the Freudenthal multiplicities of that irreducible, repeat.</p></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/Characters.jl#L1931-L1941">source</a></section></details></article><h2 id="Exterior-powers"><a class="docs-heading-anchor" href="#Exterior-powers">Exterior powers</a><a id="Exterior-powers-1"></a><a class="docs-heading-anchor-permalink" href="#Exterior-powers" title="Permalink"></a></h2><p>The <span>$k$</span>-th exterior power <span>$\bigwedge^k \mathrm{V}(\lambda)$</span> is computed via the <strong>Newton–Girard recurrence</strong>, which relates exterior powers to Adams operators (power-sum symmetric functions):</p><p class="math-container">\[k \cdot \bigwedge\nolimits^k(\mathrm{V}) = \sum_{r=1}^{k} (-1)^{r-1}\, \psi^r(\mathrm{V}) \cdot \bigwedge\nolimits^{k-r}(\mathrm{V})\]</p><p>This is the representation-ring analogue of the classical identity <span>$k \, e_k = \sum_{r=1}^{k} (-1)^{r-1} p_r \, e_{k-r}$</span> relating elementary symmetric polynomials <span>$e_k$</span> to power-sum polynomials <span>$p_r$</span>.</p><pre><code class="language-julia-repl hljs">julia&gt; ⋀(2, ω₁)   # ⋀²V(ω₁) of A₃ = V(ω₂)
+A3(0, 1, 0)
+
+julia&gt; ⋀(3, ω₁)   # ⋀³V(ω₁) of A₃ = V(ω₃)
+A3(0, 0, 1)
+
+julia&gt; ⋀(4, ω₁)   # top exterior power = trivial (det)
+A3(0, 0, 0)
+
+julia&gt; ⋀(5, ω₁)   # exceeds dim = 0
+0</code></pre><h3 id="Dimension-identity"><a class="docs-heading-anchor" href="#Dimension-identity">Dimension identity</a><a id="Dimension-identity-1"></a><a class="docs-heading-anchor-permalink" href="#Dimension-identity" title="Permalink"></a></h3><p><span>$\dim \bigwedge^k \mathrm{V} = \binom{\dim \mathrm{V}}{k}$</span>:</p><pre><code class="language-julia-repl hljs">julia&gt; r = ⋀(2, ω₁);
+
+julia&gt; sum(m * degree(μ) for (μ, m) in r.terms) == binomial(4, 2)
+true</code></pre><h3 id="Type-A-fundamental-representations"><a class="docs-heading-anchor" href="#Type-A-fundamental-representations">Type A fundamental representations</a><a id="Type-A-fundamental-representations-1"></a><a class="docs-heading-anchor-permalink" href="#Type-A-fundamental-representations" title="Permalink"></a></h3><p>For <span>$\mathrm{A}_n$</span>, <span>$\bigwedge^k \mathrm{V}(\omega_1) = \mathrm{V}(\omega_k)$</span>:</p><pre><code class="language-julia-repl hljs">julia&gt; ω = [fundamental_weight(TypeA{5}, i) for i in 1:5];
+
+julia&gt; all(⋀(k, ω[1]) == WeylCharacter(ω[k]) for k in 1:5)
+true</code></pre><h3 id="Non-minuscule-exterior-powers"><a class="docs-heading-anchor" href="#Non-minuscule-exterior-powers">Non-minuscule exterior powers</a><a id="Non-minuscule-exterior-powers-1"></a><a class="docs-heading-anchor-permalink" href="#Non-minuscule-exterior-powers" title="Permalink"></a></h3><pre><code class="language-julia-repl hljs">julia&gt; adj = ω₁ + ω₃;   # adjoint of A₃ (15-dim)
+
+julia&gt; r = ⋀(2, adj);
+
+julia&gt; is_effective(r)
+true
+
+julia&gt; sum(m * degree(μ) for (μ, m) in r.terms) == binomial(15, 2)
+true</code></pre><article><details class="docstring" open="true"><summary id="Lie.exterior_power"><a class="docstring-binding" href="#Lie.exterior_power"><code>Lie.exterior_power</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">exterior_power(λ::WeightLatticeElem{DT,R}, k::Integer) -&gt; WeylCharacter{DT,R}</code></pre><p>Compute the <code>k</code>-th exterior power <span>$\bigwedge^k \mathrm{V}(λ)$</span> of the irreducible representation with highest weight <code>λ</code>, using the Newton–Girard recurrence:</p><p><span>$k \cdot \bigwedge\nolimits^k(\mathrm{V}) = \sum_{r=1}^{k} (-1)^{r-1} ψ^r(\mathrm{V}) \cdot \bigwedge\nolimits^{k-r}(\mathrm{V})$</span></p><p>This is the representation-ring analogue of the classical identity <span>$k \, e_k = \sum_{r=1}^{k} (-1)^{r-1} p_r \, e_{k-r}$</span> relating the elementary symmetric polynomials <span>$e_k$</span> to the power-sum polynomials <span>$p_r$</span>. Here the Adams operator <span>$ψ^r$</span> plays the role of <span>$p_r$</span>.</p><p>Results are memoized for efficiency in recursive calls.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; using Lie
+
+julia&gt; spin = fundamental_weight(TypeB{3}, 3);  # B₃ spin rep, dim 8
+
+julia&gt; ⋀(6, spin)
+B3(1, 0, 0) + B3(0, 1, 0)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/Characters.jl#L1475-L1499">source</a></section></details></article><article><details class="docstring" open="true"><summary id="Lie.⋀"><a class="docstring-binding" href="#Lie.⋀"><code>Lie.⋀</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">⋀(k::Integer, λ::WeightLatticeElem) -&gt; WeylCharacter</code></pre><p>Shorthand for <code>exterior_power(λ, k)</code>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; using Lie
+
+julia&gt; ω₁ = fundamental_weight(TypeA{3}, 1);
+
+julia&gt; ⋀(2, ω₁) == WeylCharacter(fundamental_weight(TypeA{3}, 2))
+true</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/Characters.jl#L1558-L1572">source</a></section></details></article><h2 id="Symmetric-powers"><a class="docs-heading-anchor" href="#Symmetric-powers">Symmetric powers</a><a id="Symmetric-powers-1"></a><a class="docs-heading-anchor-permalink" href="#Symmetric-powers" title="Permalink"></a></h2><p>The <span>$k$</span>-th symmetric power <span>$\mathrm{Sym}^k \mathrm{V}(\lambda)$</span> is likewise computed via the <strong>Newton–Girard recurrence</strong>:</p><p class="math-container">\[k \cdot \mathrm{Sym}^k(\mathrm{V}) = \sum_{r=1}^{k} \psi^r(\mathrm{V}) \cdot \mathrm{Sym}^{k-r}(\mathrm{V})\]</p><p>This is the representation-ring analogue of the identity <span>$k \, h_k = \sum_{r=1}^{k} p_r \, h_{k-r}$</span> for complete homogeneous symmetric polynomials <span>$h_k$</span>.</p><pre><code class="language-julia-repl hljs">julia&gt; Sym(2, ω₁)   # Sym² of std rep of A₃
+A3(2, 0, 0)
+
+julia&gt; Sym(0, ω₁)   # Sym⁰ = trivial
+A3(0, 0, 0)
+
+julia&gt; Sym(1, ω₁)   # Sym¹ = identity
+A3(1, 0, 0)</code></pre><h3 id="Type-A:-always-irreducible-for-ω"><a class="docs-heading-anchor" href="#Type-A:-always-irreducible-for-ω">Type A: always irreducible for ω₁</a><a id="Type-A:-always-irreducible-for-ω-1"></a><a class="docs-heading-anchor-permalink" href="#Type-A:-always-irreducible-for-ω" title="Permalink"></a></h3><p>For <span>$\mathrm{A}_n$</span>, <span>$\mathrm{Sym}^k \mathrm{V}(\omega_1) = \mathrm{V}(k\omega_1)$</span>:</p><pre><code class="language-julia-repl hljs">julia&gt; all(Sym(k, ω₁) == WeylCharacter(k * ω₁) for k in 1:5)
+true</code></pre><h3 id="Dimension-identity-2"><a class="docs-heading-anchor" href="#Dimension-identity-2">Dimension identity</a><a class="docs-heading-anchor-permalink" href="#Dimension-identity-2" title="Permalink"></a></h3><p><span>$\dim \mathrm{Sym}^k \mathrm{V} = \binom{\dim \mathrm{V} + k - 1}{k}$</span>:</p><pre><code class="language-julia-repl hljs">julia&gt; r = Sym(3, ω₁);
+
+julia&gt; sum(m * degree(μ) for (μ, m) in r.terms) == binomial(4 + 2, 3)
+true</code></pre><h3 id="Newton-identity:-V-V-SymV-V"><a class="docs-heading-anchor" href="#Newton-identity:-V-V-SymV-V">Newton identity: V ⊗ V = Sym²V ⊕ ⋀²V</a><a id="Newton-identity:-V-V-SymV-V-1"></a><a class="docs-heading-anchor-permalink" href="#Newton-identity:-V-V-SymV-V" title="Permalink"></a></h3><pre><code class="language-julia-repl hljs">julia&gt; tensor_product(ω₁, ω₁) == Sym(2, ω₁) + ⋀(2, ω₁)
+true
+
+julia&gt; ω₁_g2 = fundamental_weight(TypeG2, 1);
+
+julia&gt; tensor_product(ω₁_g2, ω₁_g2) == Sym(2, ω₁_g2) + ⋀(2, ω₁_g2)
+true</code></pre><article><details class="docstring" open="true"><summary id="Lie.symmetric_power"><a class="docstring-binding" href="#Lie.symmetric_power"><code>Lie.symmetric_power</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">symmetric_power(λ::WeightLatticeElem{DT,R}, k::Integer) -&gt; WeylCharacter{DT,R}</code></pre><p>Compute the <code>k</code>-th symmetric power <span>$\mathrm{Sym}^k \mathrm{V}(λ)$</span> of the irreducible representation with highest weight <code>λ</code>, using the Newton–Girard recurrence:</p><p><span>$k \cdot \mathrm{Sym}^k(\mathrm{V}) = \sum_{r=1}^{k} ψ^r(\mathrm{V}) \cdot \mathrm{Sym}^{k-r}(\mathrm{V})$</span></p><p>This is the representation-ring analogue of the classical identity <span>$k \, h_k = \sum_{r=1}^{k} p_r \, h_{k-r}$</span> relating the complete homogeneous symmetric polynomials <span>$h_k$</span> to the power-sum polynomials <span>$p_r$</span>. Here the Adams operator <span>$ψ^r$</span> plays the role of <span>$p_r$</span>.</p><p>Results are memoized for efficiency in recursive calls.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; using Lie
+
+julia&gt; spin = fundamental_weight(TypeB{3}, 3);  # B₃ spin rep, dim 8
+
+julia&gt; Sym(6, spin)
+B3(0, 0, 6) + B3(0, 0, 4) + B3(0, 0, 2) + B3(0, 0, 0)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/Characters.jl#L1406-L1430">source</a></section></details></article><article><details class="docstring" open="true"><summary id="Lie.Sym"><a class="docstring-binding" href="#Lie.Sym"><code>Lie.Sym</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">Sym(k::Integer, λ::WeightLatticeElem) -&gt; WeylCharacter</code></pre><p>Shorthand for <code>symmetric_power(λ, k)</code>.</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; using Lie
+
+julia&gt; ω₁ = fundamental_weight(TypeA{2}, 1);
+
+julia&gt; Sym(2, ω₁)
+A2(2, 0)
+
+julia&gt; degree(highest_weight(Sym(3, ω₁)))
+10</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/Characters.jl#L1538-L1555">source</a></section></details></article><h2 id="Plethysm-(Schur-functors)"><a class="docs-heading-anchor" href="#Plethysm-(Schur-functors)">Plethysm (Schur functors)</a><a id="Plethysm-(Schur-functors)-1"></a><a class="docs-heading-anchor-permalink" href="#Plethysm-(Schur-functors)" title="Permalink"></a></h2><p>The <strong>plethysm</strong> <span>$s_\lambda(\mathrm{V}(\mu))$</span> applies the Schur functor associated to a partition <span>$\lambda \vdash n$</span> to an irreducible representation <span>$\mathrm{V}(\mu)$</span>.  Symmetric and exterior powers are special cases:</p><ul><li><span>$s_{(n)} = \mathrm{Sym}^n$</span></li><li><span>$s_{(1^n)} = \bigwedge^n$</span></li></ul><p>The general formula uses the <strong>Murnaghan–Nakayama rule</strong> for <span>$S_n$</span> characters and <strong>Adams operators</strong> (power-sum symmetric functions):</p><p class="math-container">\[s_\lambda(\mathrm{V}) = \frac{1}{n!} \sum_{\kappa \vdash n}
+\chi^\lambda(\kappa) \cdot |\mathrm{Cl}(\kappa)| \cdot
+\psi^{\kappa_1}(\mathrm{V}) \otimes \cdots \otimes \psi^{\kappa_m}(\mathrm{V})\]</p><pre><code class="language-julia-repl hljs">julia&gt; plethysm([2], ω₁) == Sym(2, ω₁)   # one-row partition = Sym
+true
+
+julia&gt; plethysm([1, 1], ω₁) == ⋀(2, ω₁)  # one-column partition = ⋀
+true
+
+julia&gt; plethysm([2, 1], ω₁)               # mixed symmetry S_{(2,1)}
+A3(1, 1, 0)
+
+julia&gt; degree(plethysm([2, 1], ω₁))       # adjoint rep of A₃
+20</code></pre><h3 id="Plethysm-on-non-simply-laced-types"><a class="docs-heading-anchor" href="#Plethysm-on-non-simply-laced-types">Plethysm on non-simply-laced types</a><a id="Plethysm-on-non-simply-laced-types-1"></a><a class="docs-heading-anchor-permalink" href="#Plethysm-on-non-simply-laced-types" title="Permalink"></a></h3><pre><code class="language-julia-repl hljs">julia&gt; ω₁_g2 = fundamental_weight(TypeG2, 1);
+
+julia&gt; plethysm([2], ω₁_g2) == Sym(2, ω₁_g2)
+true
+
+julia&gt; plethysm([1, 1], ω₁_g2) == ⋀(2, ω₁_g2)
+true</code></pre><article><details class="docstring" open="true"><summary id="Lie.plethysm"><a class="docstring-binding" href="#Lie.plethysm"><code>Lie.plethysm</code></a> — <span class="docstring-category">Function</span></summary><section><div><pre><code class="language-julia hljs">plethysm(λ::Vector{&lt;:Integer}, μ::WeightLatticeElem{DT,R}) -&gt; WeylCharacter{DT,R}</code></pre><p>Compute the plethysm <span>$s_λ(\mathrm{V}(μ))$</span>, where <span>$λ$</span> is a partition of <span>$n$</span> (parts in weakly decreasing order) and <span>$\mathrm{V}(μ)$</span> is the irreducible representation with highest weight <span>$μ$</span>.</p><p>The Schur functor <span>$s_λ$</span> generalises symmetric and exterior powers:</p><ul><li><span>$s_{(n)} = \mathrm{Sym}^n$</span></li><li><span>$s_{(1,1,…,1)} = \bigwedge^n$</span></li></ul><p>Uses the Murnaghan–Nakayama rule for <span>$S_n$</span> characters and the formula:</p><p class="math-container">\[s_λ(\mathrm{V}) = \frac{1}{n!} \sum_{κ \vdash n} χ^λ(κ) \cdot |\mathrm{Cl}(κ)| \cdot ψ^{κ_1}(\mathrm{V}) \otimes \cdots \otimes ψ^{κ_m}(\mathrm{V})\]</p><p><strong>Examples</strong></p><pre><code class="language-julia-repl hljs">julia&gt; using Lie
+
+julia&gt; ω₁ = fundamental_weight(TypeA{3}, 1);
+
+julia&gt; plethysm([2], ω₁) == Sym(2, ω₁)
+true
+
+julia&gt; plethysm([1, 1], ω₁) == ⋀(2, ω₁)
+true
+
+julia&gt; plethysm([2, 1], ω₁)  # Mixed symmetry: S_{(2,1)} functor
+A3(1, 1, 0)</code></pre></div><a class="docs-sourcelink" target="_blank" href="https://github.com/HomogeneousTools/Lie.jl/blob/9e13f72a8463d5032c3bd304a633b85d01960ba9/src/Characters.jl#L1794-L1826">source</a></section></details></article><h2 id="Reconstructing-characters-from-weights"><a class="docs-heading-anchor" href="#Reconstructing-characters-from-weights">Reconstructing characters from weights</a><a id="Reconstructing-characters-from-weights-1"></a><a class="docs-heading-anchor-permalink" href="#Reconstructing-characters-from-weights" title="Permalink"></a></h2><p>Given a weight multiplicity dictionary (e.g. from an Adams operator), recover the Weyl character decomposition:</p><pre><code class="language-julia-repl hljs">julia&gt; m = Dict(SVector(1, 0, 0) =&gt; 1, SVector(-1, 1, 0) =&gt; 1,
+                SVector(0, -1, 1) =&gt; 1, SVector(0, 0, -1) =&gt; 1);
+
+julia&gt; V_rec = character_from_weights(TypeA{3}, m);
+
+julia&gt; is_irreducible(V_rec)
+true
+
+julia&gt; highest_weight(V_rec) == ω₁
+true</code></pre><h2 id="Cross-type-examples"><a class="docs-heading-anchor" href="#Cross-type-examples">Cross-type examples</a><a id="Cross-type-examples-1"></a><a class="docs-heading-anchor-permalink" href="#Cross-type-examples" title="Permalink"></a></h2><h3 id="B:-spin-representation"><a class="docs-heading-anchor" href="#B:-spin-representation">B₃: spin representation</a><a id="B:-spin-representation-1"></a><a class="docs-heading-anchor-permalink" href="#B:-spin-representation" title="Permalink"></a></h3><pre><code class="language-julia-repl hljs">julia&gt; ω₃_b3 = fundamental_weight(TypeB{3}, 3);
+
+julia&gt; degree(ω₃_b3)   # 8-dim spin rep
+8
+
+julia&gt; r = ⋀(2, ω₃_b3);
+
+julia&gt; sum(m * degree(μ) for (μ, m) in r.terms) == binomial(8, 2)
+true</code></pre><h3 id="G:-7-dimensional-representation"><a class="docs-heading-anchor" href="#G:-7-dimensional-representation">G₂: 7-dimensional representation</a><a id="G:-7-dimensional-representation-1"></a><a class="docs-heading-anchor-permalink" href="#G:-7-dimensional-representation" title="Permalink"></a></h3><pre><code class="language-julia-repl hljs">julia&gt; ω₁_g2 = fundamental_weight(TypeG2, 1);
+
+julia&gt; degree(ω₁_g2)
+7
+
+julia&gt; r = Sym(2, ω₁_g2);
+
+julia&gt; is_effective(r)
+true
+
+julia&gt; sum(m * degree(μ) for (μ, m) in r.terms) == binomial(7 + 1, 2)
+true</code></pre><h3 id="E:-adjoint-representation"><a class="docs-heading-anchor" href="#E:-adjoint-representation">E₈: adjoint representation</a><a id="E:-adjoint-representation-1"></a><a class="docs-heading-anchor-permalink" href="#E:-adjoint-representation" title="Permalink"></a></h3><pre><code class="language-julia-repl hljs">julia&gt; ω₈_e8 = fundamental_weight(TypeE{8}, 8);
+
+julia&gt; degree(ω₈_e8)   # 248-dim adjoint
+248
+
+julia&gt; r = ⋀(2, ω₈_e8);
+
+julia&gt; length(r.terms)   # 2 irreducible components
+2</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../weyl/">« Weyl groups</a><a class="docs-footer-nextpage" href="../details/">Implementation details »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Tuesday 10 March 2026 15:54">Tuesday 10 March 2026</span>. Using Julia version 1.12.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
