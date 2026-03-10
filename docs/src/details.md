@@ -150,6 +150,7 @@ The package precompiles the following operations for all simple Dynkin types up 
 - `_weyl_denominator`, `_weyl_dim_scaled_roots` (Weyl dimension formula internals)
 - `degree` (representation dimension)
 - `conjugate_dominant_weight` (dominant weight conjugation)
+- `conjugate_dominant_weight_with_length` (Borel–Weil–Bott hot path)
 - `weyl_orbit` (Weyl orbit generation)
 - Weyl group actions (`*` operator for roots and weights with Weyl elements)
 - `freudenthal_formula` (weight multiplicities)

@@ -110,6 +110,12 @@ export clear_all_caches!
     _ω₁ = fundamental_weight(_DT, 1)
     degree(_DT, _ω₁)
     conjugate_dominant_weight(_ω₁)
+    _minus_ω₁ = -_ω₁
+    degree(_DT, _ω₁)
+    conjugate_dominant_weight(_ω₁)
+    conjugate_dominant_weight(_minus_ω₁)
+    conjugate_dominant_weight_with_length(_ω₁)
+    conjugate_dominant_weight_with_length(_minus_ω₁)
     weyl_orbit(_DT, _ω₁)
 
     # WeylGroup actions on roots and weights
