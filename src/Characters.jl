@@ -197,12 +197,11 @@ function degree(V::WeylCharacter{DT,R}) where {DT,R}
     error("degree requires an effective character (non-negative multiplicities)")
 
   # Sum over all irreducible components: ∑ mᵢ dim(V(λᵢ))
-  result = 0
+  result = BigInt(0)
   for (λ, m) in V.terms
     # degree(λ) computes dim(V(λ)) using Weyl dimension formula
     dim_λ = degree(λ)
     # Multiply by multiplicity and accumulate
-    # Use + to let Julia handle Int → BigInt promotion automatically
     result = result + m * dim_λ
   end
 
