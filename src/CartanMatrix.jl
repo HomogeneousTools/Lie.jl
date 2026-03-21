@@ -338,12 +338,29 @@ cartan_symmetrizer(dt::DynkinType) = cartan_symmetrizer(typeof(dt))
 Return the symmetrized Cartan matrix `diag(d) * C`, which is a symmetric
 positive-definite matrix defining the inner product on the root space.
 """
-function cartan_bilinear_form(::Type{DT}) where {DT<:DynkinType}
-  C = cartan_matrix(DT)
-  d = cartan_symmetrizer(DT)
+@generated function cartan_bilinear_form(::Type{DT}) where {DT<:DynkinType}
   R = rank(DT)
-  # diag(d) * C
-  return SMatrix{R,R}(Tuple(d[i] * C[i, j] for j in 1:R for i in 1:R))
+  C = _cartan_matrix_data(DT)
+  d = _cartan_symmetrizer_data(DT)
+  entries = Tuple(d[i] * C[i, j] for j in 1:R for i in 1:R)
+  return :(SMatrix{$R,$R,Int,$(R * R)}($entries))
+end
+
+@generated function cartan_bilinear_form(::Type{ProductDynkinType{Ts}}) where {Ts}
+  types = Ts.parameters
+  R = sum(rank(T) for T in types)
+  C = zeros(Int, R, R)
+  d_all = Int[]
+  offset = 0
+  for T in types
+    r = rank(T)
+    C_block = _cartan_matrix_data(T)
+    C[(offset + 1):(offset + r), (offset + 1):(offset + r)] .= C_block
+    append!(d_all, _cartan_symmetrizer_data(T))
+    offset += r
+  end
+  entries = Tuple(d_all[i] * C[i, j] for j in 1:R for i in 1:R)
+  return :(SMatrix{$R,$R,Int,$(R * R)}($entries))
 end
 
 cartan_bilinear_form(dt::DynkinType) = cartan_bilinear_form(typeof(dt))
