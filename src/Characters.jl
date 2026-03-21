@@ -1449,8 +1449,13 @@ function _symmetric_power_newton_girard(λ::WeightLatticeElem{DT,R}, k::Integer)
   # Cache dominant character: all Adams operators for V(λ) use the same weights
   dom_mults = dominant_character(λ)
 
+  adams = Dict{SVector{R,Int},Int}()
+  sizehint!(adams, length(dom_mults))
   for r in 1:k
-    adams = Dict{SVector{R,Int},Int}(r * μ => m for (μ, m) in dom_mults)
+    empty!(adams)
+    for (μ, m) in dom_mults
+      adams[r * μ] = m
+    end
     prev = symmetric_power(λ, k - r)
 
     for (μ, m) in prev.terms
@@ -1519,8 +1524,13 @@ function _exterior_power_newton_girard(λ::WeightLatticeElem{DT,R}, k::Integer) 
   # Cache dominant character: all Adams operators for V(λ) use the same weights
   dom_mults = dominant_character(λ)
 
+  adams = Dict{SVector{R,Int},Int}()
+  sizehint!(adams, length(dom_mults))
   for r in 1:k
-    adams = Dict{SVector{R,Int},Int}(r * μ => m for (μ, m) in dom_mults)
+    empty!(adams)
+    for (μ, m) in dom_mults
+      adams[r * μ] = m
+    end
     prev = exterior_power(λ, k - r)
 
     sign = iseven(r) ? -1 : 1
