@@ -4,10 +4,24 @@
 
 module Lie
 
+using LRUCache
 using PrecompileTools
 using Preferences
 using StaticArrays
 using LinearAlgebra: dot as _dot, I as _I
+
+# ─── Cache budget (computed before any cache is created) ─────────────────────
+
+const _MIN_CACHE_BUDGET = 256 * 1024^2  # 256 MiB floor
+
+_default_cache_budget() = max(div(Int(Sys.total_memory()), 4), _MIN_CACHE_BUDGET)
+
+const _DEFAULT_DOMINANT_FRAC = 0.30
+const _DEFAULT_TENSOR_FRAC = 0.40
+const _DEFAULT_SYM_POWER_FRAC = 0.15
+const _DEFAULT_EXT_POWER_FRAC = 0.15
+
+_cache_maxsize(budget::Int, fraction::Float64) = max(1, round(Int, budget * fraction))
 
 # ─── Type-level Dynkin types ────────────────────────────────────────────────
 include("DynkinTypes.jl")
@@ -30,49 +44,19 @@ include("Weylloop.jl")
 # ─── Characters and representation ring ─────────────────────────────────────
 include("Characters.jl")
 
+# ─── Cache configuration (Preferences + runtime API) ────────────────────────
+include("CacheConfig.jl")
+
 # ─── Cache management ───────────────────────────────────────────────────────
 
 """
     clear_all_caches!()
 
-Clear all internal caches used by Lie.jl.
-
-This function empties the following caches:
-- Root system cache (singleton RootSystem instances per Dynkin type)
-- Longest Weyl element cache (cached per Dynkin type)
-- Dominant character cache (dominant weight multiplicities from Freudenthal's formula)
-- Tensor product cache (tensor product decompositions)
-- Symmetric power cache (symmetric power decompositions)
-- Exterior power cache (exterior power decompositions)
-
-Caches are automatically populated on demand. Clearing them can be useful for:
-- Benchmarking (to measure cold-start performance)
-- Memory management (to free memory after large computations)
-- Testing (to ensure reproducibility)
-
-# Examples
-```jldoctest
-julia> using Lie
-
-julia> ω₁ = fundamental_weight(TypeA{2}, 1);
-
-julia> tensor_product(ω₁, ω₁);  # populates caches
-
-julia> clear_all_caches!()      # clears all caches
-```
+Clear all internal caches used by Lie.jl.  Alias for [`clear_caches!`](@ref).
 """
-function clear_all_caches!()
-  empty!(_root_system_cache)
-  empty!(_longest_element_cache)
-  empty!(_coset_reps_cache)
-  empty!(_dominant_character_cache)
-  empty!(_tensor_cache)
-  empty!(_symmetric_power_cache)
-  empty!(_exterior_power_cache)
-  return nothing
-end
+clear_all_caches!() = clear_caches!()
 
-export clear_all_caches!
+export clear_all_caches!, clear_caches!, configure_caches!, cache_info
 
 # ─── Precompilation ─────────────────────────────────────────────────────────
 # @compile_workload executes real code during precompilation, so Julia
@@ -176,6 +160,7 @@ function _print_banner()
 end
 
 function __init__()
+  _apply_cache_preferences!()
   show_banner = @load_preference("show_banner", true)
   if show_banner && displaysize(stdout)[2] >= 60
     _print_banner()

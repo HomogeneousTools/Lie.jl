@@ -574,8 +574,8 @@ function dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
 
   # Check cache first
   cache_key = (DT, λ)
-  haskey(_dominant_character_cache, cache_key) &&
-    return _dominant_character_cache[cache_key]::Dict{SVector{R,Int},Int}
+  cached = get(_dominant_character_cache, cache_key, nothing)
+  cached !== nothing && return cached::Dict{SVector{R,Int},Int}
 
   # ─── Phase 1: compute dominant weights below λ ─────────────────────
   dom_weights = dominant_weights(DT, λ)
@@ -1222,12 +1222,22 @@ export lr_tensor_product
 # ═══════════════════════════════════════════════════════════════════════════════
 
 # Cache for tensor products of irreducibles.
-# Key: (DT, λ, μ), Value: WeylCharacter.
-const _tensor_cache = Dict{Tuple{Type,Any,Any},Any}()
+# Key: (DT, λ, μ), Value: WeylCharacter.  Uses canonical key ordering.
+const _tensor_cache = let b = _default_cache_budget()
+  LRU{Tuple{Type,Any,Any},Any}(
+    maxsize=_cache_maxsize(b, _DEFAULT_TENSOR_FRAC),
+    by=Base.summarysize,
+  )
+end
 
 # Cache for dominant character computations (Freudenthal recursion).
 # Key: (DT, λ), Value: Dict{SVector{R,Int}, Int} (dominant weights → multiplicities).
-const _dominant_character_cache = Dict{Tuple{Type,Any},Any}()
+const _dominant_character_cache = let b = _default_cache_budget()
+  LRU{Tuple{Type,Any},Any}(
+    maxsize=_cache_maxsize(b, _DEFAULT_DOMINANT_FRAC),
+    by=Base.summarysize,
+  )
+end
 
 """
     tensor_product(λ::WeightLatticeElem{DT,R}, μ::WeightLatticeElem{DT,R}) -> WeylCharacter{DT,R}
@@ -1253,13 +1263,11 @@ function tensor_product(λ::WeightLatticeElem{DT,R}, μ::WeightLatticeElem{DT,R}
   is_dominant(λ) || throw(ArgumentError("First weight must be dominant"))
   is_dominant(μ) || throw(ArgumentError("Second weight must be dominant"))
 
-  # Canonical ordering for cache: smaller dimension decomposes
-  key = (DT, λ, μ)
-  haskey(_tensor_cache, key) && return _tensor_cache[key]::WeylCharacter{DT,R}
-
-  # Try reversed key too
-  key_rev = (DT, μ, λ)
-  haskey(_tensor_cache, key_rev) && return _tensor_cache[key_rev]::WeylCharacter{DT,R}
+  # Canonical key: lexicographically smaller weight first (avoids double lookup)
+  a, b = λ.vec <= μ.vec ? (λ, μ) : (μ, λ)
+  key = (DT, a, b)
+  cached = get(_tensor_cache, key, nothing)
+  cached !== nothing && return cached::WeylCharacter{DT,R}
 
   # Brauer–Klimyk: decompose the smaller rep via Freudenthal (dominant only),
   # then expand orbits on-the-fly in BK. This avoids materializing the
@@ -1286,11 +1294,11 @@ function tensor_product(
   is_dominant(λ) || throw(ArgumentError("First weight must be dominant"))
   is_dominant(μ) || throw(ArgumentError("Second weight must be dominant"))
 
-  key = (TypeA{N}, λ, μ)
-  haskey(_tensor_cache, key) && return _tensor_cache[key]::WeylCharacter{TypeA{N},N}
-
-  key_rev = (TypeA{N}, μ, λ)
-  haskey(_tensor_cache, key_rev) && return _tensor_cache[key_rev]::WeylCharacter{TypeA{N},N}
+  # Canonical key: lexicographically smaller weight first
+  a, b = λ.vec <= μ.vec ? (λ, μ) : (μ, λ)
+  key = (TypeA{N}, a, b)
+  cached = get(_tensor_cache, key, nothing)
+  cached !== nothing && return cached::WeylCharacter{TypeA{N},N}
 
   result = lr_tensor_product(λ, μ)
 
@@ -1399,8 +1407,18 @@ end
 # ═══════════════════════════════════════════════════════════════════════════════
 
 # Caches: keyed by (DT, weight, power)
-const _symmetric_power_cache = Dict{Tuple{Type,Any,Int},Any}()
-const _exterior_power_cache = Dict{Tuple{Type,Any,Int},Any}()
+const _symmetric_power_cache = let b = _default_cache_budget()
+  LRU{Tuple{Type,Any,Int},Any}(
+    maxsize=_cache_maxsize(b, _DEFAULT_SYM_POWER_FRAC),
+    by=Base.summarysize,
+  )
+end
+const _exterior_power_cache = let b = _default_cache_budget()
+  LRU{Tuple{Type,Any,Int},Any}(
+    maxsize=_cache_maxsize(b, _DEFAULT_EXT_POWER_FRAC),
+    by=Base.summarysize,
+  )
+end
 
 """
     symmetric_power(λ::WeightLatticeElem{DT,R}, k::Integer) -> WeylCharacter{DT,R}
@@ -1434,8 +1452,8 @@ function symmetric_power(λ::WeightLatticeElem{DT,R}, k::Integer) where {DT,R}
   k == 1 && return WeylCharacter(λ)
 
   cache_key = (DT, λ, k)
-  haskey(_symmetric_power_cache, cache_key) &&
-    return _symmetric_power_cache[cache_key]::WeylCharacter{DT,R}
+  cached = get(_symmetric_power_cache, cache_key, nothing)
+  cached !== nothing && return cached::WeylCharacter{DT,R}
 
   result = _symmetric_power_newton_girard(λ, k)
 
@@ -1509,8 +1527,8 @@ function exterior_power(λ::WeightLatticeElem{DT,R}, k::Integer) where {DT,R}
   k > degree(λ) && return WeylCharacter(DT)
 
   cache_key = (DT, λ, k)
-  haskey(_exterior_power_cache, cache_key) &&
-    return _exterior_power_cache[cache_key]::WeylCharacter{DT,R}
+  cached = get(_exterior_power_cache, cache_key, nothing)
+  cached !== nothing && return cached::WeylCharacter{DT,R}
 
   result = _exterior_power_newton_girard(λ, k)
 
