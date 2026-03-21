@@ -141,7 +141,10 @@ const _root_system_cache = Dict{Type,Any}()
 
 function RootSystem(::Type{DT}) where {DT<:DynkinType}
   return get!(_root_system_cache, DT) do
-    _make_root_system(DT)
+    rs = _make_root_system(DT)
+    R = rank(DT)
+    _positive_roots_set_cache[DT] = Set{SVector{R,Int}}(rs.positive_roots_list)
+    rs
   end::RootSystem{DT,rank(DT),n_positive_roots(DT)}
 end
 
@@ -758,8 +761,10 @@ end
 
 Check whether `v` is a positive root.
 """
+const _positive_roots_set_cache = Dict{Type,Any}()
+
 function is_positive_root(RS::RootSystem{DT,R}, v::RootSpaceElem{DT,R}) where {DT,R}
-  return v.vec in RS.positive_roots_list
+  return v.vec in _positive_roots_set_cache[DT]::Set{SVector{R,Int}}
 end
 
 # ─── Inner product on root space ─────────────────────────────────────────────
