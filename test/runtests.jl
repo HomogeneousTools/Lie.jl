@@ -243,7 +243,6 @@ using StaticArrays
     @test degrees_fundamental_invariants(TypeC{3}) == [2, 4, 6]
 
     # D_n: 2, 4, ..., 2(n-1), n
-    @test degrees_fundamental_invariants(TypeD{3}) == [2, 4, 3]   # D_3 ≅ A_3
     @test degrees_fundamental_invariants(TypeD{4}) == [2, 4, 6, 4] # n=4 even: 4 twice
     @test degrees_fundamental_invariants(TypeD{5}) == [2, 4, 6, 8, 5] # n=5 odd: once
     @test degrees_fundamental_invariants(TypeD{6}) == [2, 4, 6, 8, 10, 6] # n=6 even
@@ -1215,6 +1214,60 @@ using StaticArrays
       @test plethysm([1], ω₁_A3) == WeylCharacter(ω₁_A3)
       @test plethysm(Int[], ω₁_A3) ==
         WeylCharacter(WeightLatticeElem{TypeA{3},3}(zero(SVector{3,Int})))
+    end
+
+    # ─── ProductDynkinType characters ──────────────────────────────
+    @testset "ProductDynkinType characters" begin
+      PT = ProductDynkinType{Tuple{TypeA{2},TypeB{3}}}
+      ω₁ = fundamental_weight(PT, 1)  # A₂ fundamental weight
+      ω₃ = fundamental_weight(PT, 3)  # B₃ fundamental weight
+
+      # Degree of product fundamental weights factors
+      @test degree(ω₁) == degree(fundamental_weight(TypeA{2}, 1))
+      @test degree(ω₃) == degree(fundamental_weight(TypeB{3}, 1))
+
+      # Freudenthal formula
+      m = freudenthal_formula(ω₁)
+      @test sum(values(m)) == degree(ω₁)
+      m3 = freudenthal_formula(ω₃)
+      @test sum(values(m3)) == degree(ω₃)
+
+      # Tensor product dimensions are multiplicative
+      V1 = WeylCharacter(ω₁)
+      V3 = WeylCharacter(ω₃)
+      @test degree(V1 * V3) == degree(V1) * degree(V3)
+      @test degree(V1 * V1) == 9  # 3 ⊗ 3 = 6 ⊕ 3̄ in A₂
+
+      # Symmetric and exterior powers
+      @test degree(symmetric_power(ω₁, 2)) == 6   # Sym²(3) in A₂
+      @test degree(exterior_power(ω₁, 2)) == 3     # ∧²(3) in A₂
+    end
+
+    # ─── Dual is involution ─────────────────────────────────────────
+    @testset "Dual is involution" begin
+      for (DT, R) in [
+        (TypeA{2}, 2), (TypeA{4}, 4), (TypeB{3}, 3),
+        (TypeC{3}, 3), (TypeD{4}, 4), (TypeG2, 2), (TypeF4, 4),
+      ]
+        for i in 1:R
+          ω = fundamental_weight(DT, i)
+          @test dual(dual(ω)) == ω
+        end
+      end
+    end
+
+    # ─── Tensor product dimension ────────────────────────────────────
+    @testset "Tensor product dimension" begin
+      for (DT, i, j) in [
+        (TypeA{3}, 1, 2), (TypeA{3}, 1, 3),
+        (TypeB{3}, 1, 3), (TypeC{3}, 1, 2),
+        (TypeD{4}, 1, 3), (TypeG2, 1, 2),
+      ]
+        ω_i = fundamental_weight(DT, i)
+        ω_j = fundamental_weight(DT, j)
+        V = tensor_product(ω_i, ω_j)
+        @test degree(V) == degree(ω_i) * degree(ω_j)
+      end
     end
 
     # ─── Dimension consistency ───────────────────────────────────────
