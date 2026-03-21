@@ -52,7 +52,7 @@ include("CacheConfig.jl")
 """
     clear_all_caches!()
 
-Clear all internal caches used by Lie.jl.  Alias for [`clear_caches!`](@ref).
+Clear all internal caches used by Lie.jl.  Alias for `clear_caches!`.
 """
 clear_all_caches!() = clear_caches!()
 

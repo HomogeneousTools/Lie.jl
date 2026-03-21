@@ -754,13 +754,13 @@ function is_root(RS::RootSystem{DT,R}, v::RootSpaceElem{DT,R}) where {DT,R}
   return is_positive_root(RS, v) || is_positive_root(RS, -v)
 end
 
+const _positive_roots_set_cache = Dict{Type,Any}()
+
 """
     is_positive_root(RS::RootSystem{DT,R}, v::RootSpaceElem{DT,R}) -> Bool
 
 Check whether `v` is a positive root.
 """
-const _positive_roots_set_cache = Dict{Type,Any}()
-
 function is_positive_root(RS::RootSystem{DT,R}, v::RootSpaceElem{DT,R}) where {DT,R}
   return v.vec in _positive_roots_set_cache[DT]::Set{SVector{R,Int}}
 end
