@@ -511,19 +511,17 @@ julia> coxeter_coefficients(TypeB{2})
 """
 coxeter_coefficients(::Type{TypeA{N}}) where {N} = SVector{N,Int}(ntuple(_ -> 1, N))
 
-function coxeter_coefficients(::Type{TypeB{N}}) where {N}
-  return SVector{N,Int}(Tuple(vcat([1], fill(2, N - 1))))
-end
+coxeter_coefficients(::Type{TypeB{N}}) where {N} =
+  SVector{N,Int}(ntuple(i -> i == 1 ? 1 : 2, Val(N)))
 
-function coxeter_coefficients(::Type{TypeC{N}}) where {N}
-  return SVector{N,Int}(Tuple(vcat(fill(2, N - 1), [1])))
-end
+coxeter_coefficients(::Type{TypeC{N}}) where {N} =
+  SVector{N,Int}(ntuple(i -> i == N ? 1 : 2, Val(N)))
 
 function coxeter_coefficients(::Type{TypeD{N}}) where {N}
   if N == 2
     return SVector{2,Int}((1, 1))
   else
-    return SVector{N,Int}(Tuple(vcat([1], fill(2, max(0, N - 3)), [1, 1])))
+    return SVector{N,Int}(ntuple(i -> (i == 1 || i >= N - 1) ? 1 : 2, Val(N)))
   end
 end
 
@@ -582,7 +580,7 @@ function dual_coxeter_coefficients(::Type{TypeB{N}}) where {N}
   elseif N == 2
     return SVector{2,Int}((1, 1))
   else
-    return SVector{N,Int}(Tuple(vcat([1], fill(2, N - 2), [1])))
+    return SVector{N,Int}(ntuple(i -> (i == 1 || i == N) ? 1 : 2, Val(N)))
   end
 end
 
