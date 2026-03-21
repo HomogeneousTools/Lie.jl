@@ -220,34 +220,26 @@ Reflect `w` by the root `β`:
 where `⟨β∨, λ⟩ = 2(β, λ)/(β, β)`.
 """
 function reflect(w::WeightLatticeElem{DT,R}, β::RootSpaceElem{DT,R}) where {DT,R}
-  # Convert w to root space, compute reflection, convert back
-  # Or: use the weight-root pairing directly
   C = cartan_matrix(DT)
-  # ⟨β∨, ωⱼ⟩ = 2(β, ωⱼ)/(β, β), and (β, ωⱼ) involves the bilinear form
-  # Simpler: ⟨β∨, λ⟩ = ∑ᵢ β∨ᵢ λᵢ where β∨ = 2β/(β,β) in coroot coordinates
-  # β∨ᵢ as simple coroot coords: β∨ = 2β/(β,β), but in weight pairing:
-  # ⟨β∨, λ⟩ = ∑ᵢ βᵢ (Cλ)ᵢ ... no.
-  # Actually: β = ∑ βᵢ αᵢ and λ = ∑ λⱼ ωⱼ, then
-  # ⟨αᵢ∨, ωⱼ⟩ = δᵢⱼ, so ⟨β∨, λ⟩ = ∑ᵢ βᵢ^∨ λᵢ
-  # where β∨ = (2/(β,β)) * diag(d) * β in simple coroot coords.
-  # But for simple roots, this reduces to: ⟨αₛ∨, λ⟩ = λₛ.
-  # For general β, we need: ⟨β∨, λ⟩ = ∑ β_coroot_i * λ_i.
-  # Coroot coordinates: if β = ∑ bᵢαᵢ, then β∨ has coroot coords
-  # β∨ᵢ = (d_i/d_β) bᵢ  where d_β relates to the root length.
-  # This is simpler to compute via dot product.
-  B = cartan_bilinear_form(DT)
+  d = cartan_symmetrizer(DT)
   β_vec = β.vec
-  Cinv_tr = cartan_matrix_inverse(DT)'
-  w_root = Cinv_tr * SVector{R,Rational{Int}}(w.vec)
-  β_dot_β = β_vec' * B * β_vec
-  β_dot_w = β_vec' * B * w_root
-  coeff = 2 * β_dot_w//β_dot_β
-  # s_β(λ) = λ - coeff * β  (in root coords → convert to weight coords)
-  new_root = w_root - Rational{Int}(coeff) .* SVector{R,Rational{Int}}(β_vec)
-  # Convert back to weight coords
-  C = cartan_matrix(DT)
-  new_weight = SMatrix{R,R,Rational{Int}}(C)' * new_root
-  return WeightLatticeElem{DT,R}(SVector{R,Int}(round.(Int, new_weight)))
+  # (β, λ) = Σᵢ dᵢ βᵢ λᵢ  and  (β, β) = β' diag(d) C β
+  numer = 0
+  denom = 0
+  @inbounds for i in 1:R
+    numer += d[i] * β_vec[i] * w.vec[i]
+    s = 0
+    for j in 1:R
+      s += C[i, j] * β_vec[j]
+    end
+    denom += d[i] * β_vec[i] * s
+  end
+  # β in weight coords = C * β
+  Cβ = C * β_vec
+  # ⟨β∨, λ⟩ = 2 * numer / denom, must be integer
+  coeff = div(2 * numer, denom)
+  new_vec = SVector{R,Int}(ntuple(j -> @inbounds(w.vec[j] - coeff * Cβ[j]), R))
+  return WeightLatticeElem{DT,R}(new_vec)
 end
 
 # ─── Conjugation to dominant chamber ────────────────────────────────────────
