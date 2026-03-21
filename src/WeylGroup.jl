@@ -133,7 +133,7 @@ Base.one(W::WeylGroup{DT,R}) where {DT,R} = WeylGroupElem{DT,R}(W, UInt8[])
 Return the `i`-th simple reflection.
 """
 function gen(W::WeylGroup{DT,R}, i::Integer) where {DT,R}
-  @assert 1 <= i <= R
+  1 <= i <= R || throw(ArgumentError("Generator index $i out of range 1:$R"))
   return WeylGroupElem{DT,R}(W, UInt8[i])
 end
 
@@ -208,7 +208,7 @@ end
 # ─── Group operations ───────────────────────────────────────────────────────
 
 function Base.:*(x::WeylGroupElem{DT,R}, y::WeylGroupElem{DT,R}) where {DT,R}
-  @assert parent(x) === parent(y)
+  parent(x) === parent(y) || throw(ArgumentError("Cannot multiply elements from different Weyl groups"))
   result = WeylGroupElem{DT,R}(parent(x), copy(x.word))
   for s in y.word
     rmul!(result, s)
@@ -408,7 +408,7 @@ The level of `μ` below `hw` is the root-lattice height of `hw - μ`,
 i.e. the sum of coefficients when `hw - μ` is written in the simple root basis.
 """
 function dominant_weights(::Type{DT}, hw::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R}
-  @assert is_dominant(hw) "Highest weight must be dominant"
+  is_dominant(hw) || throw(ArgumentError("Highest weight must be dominant"))
   RS = RootSystem(DT)
   C = cartan_matrix(DT)
 
@@ -531,7 +531,7 @@ julia> [degree(fundamental_weight(TypeB{3}, i)) for i in 1:3]
 ```
 """
 function degree(::Type{DT}, hw::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R}
-  @assert is_dominant(hw) "Highest weight must be dominant"
+  is_dominant(hw) || throw(ArgumentError("Highest weight must be dominant"))
 
   denom = _weyl_denominator(DT)
   dα_all = _weyl_dim_scaled_roots(DT)
@@ -548,7 +548,7 @@ function degree(::Type{DT}, hw::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R
   end
 
   result, rem = divrem(numer, denom)
-  @assert iszero(rem) "Weyl dimension formula gave non-integer result"
+  iszero(rem) || error("Weyl dimension formula gave non-integer result")
   return result
 end
 

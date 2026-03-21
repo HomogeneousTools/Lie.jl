@@ -84,7 +84,7 @@ end
 Irreducible character ``m \\cdot \\mathrm{V}(λ)``. Requires `λ` to be dominant.
 """
 function WeylCharacter(λ::WeightLatticeElem{DT,R}, m::Integer=1) where {DT,R}
-  @assert is_dominant(λ) "Weight must be dominant"
+  is_dominant(λ) || throw(ArgumentError("Weight must be dominant"))
   d = Dict{WeightLatticeElem{DT,R},Int}()
   iszero(m) || (d[λ] = Int(m))
   return WeylCharacter{DT,R}(d)
@@ -571,7 +571,7 @@ julia> dc_adj[SVector(0, 0)]   # zero weight multiplicity in adjoint
 ```
 """
 function dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
-  @assert is_dominant(λ) "Weight must be dominant"
+  is_dominant(λ) || throw(ArgumentError("Weight must be dominant"))
 
   # Check cache first
   cache_key = (DT, λ)
@@ -740,11 +740,11 @@ function dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
       end
 
       denom_S = first_term_S - second_term_S
-      @assert denom_S != 0 "Denominator in Freudenthal's formula is zero"
+      iszero(denom_S) && error("Denominator in Freudenthal's formula is zero")
 
       numerator = 2 * S * Σ
       mult, rem = divrem(numerator, denom_S)
-      @assert iszero(rem) "Freudenthal formula gave non-integer multiplicity for μ=$(μ_vec)"
+      iszero(rem) || error("Freudenthal formula gave non-integer multiplicity for μ=$(μ_vec)")
       dom_mults[idx] = mult
     end
   end
@@ -871,7 +871,7 @@ where `(ε, ν) = dot_reduce(μ + λ)`.
 function brauer_klimyk(
   char::Dict{SVector{R,Int},Int}, μ::WeightLatticeElem{DT,R}
 ) where {DT,R}
-  @assert is_dominant(μ) "Weight μ must be dominant"
+  is_dominant(μ) || throw(ArgumentError("Weight μ must be dominant"))
 
   result = Dict{WeightLatticeElem{DT,R},Int}()
 
@@ -906,7 +906,7 @@ The Brauer–Klimyk formula is:
 function _brauer_klimyk_dominant(
   dom_char::Dict{SVector{R,Int},Int}, μ::WeightLatticeElem{DT,R}
 ) where {DT,R}
-  @assert is_dominant(μ) "Weight μ must be dominant"
+  is_dominant(μ) || throw(ArgumentError("Weight μ must be dominant"))
 
   C = cartan_matrix(DT)
   result = Dict{WeightLatticeElem{DT,R},Int}()
@@ -1197,8 +1197,8 @@ A2(2, 1) + A2(1, 0) + A2(0, 2)
 function lr_tensor_product(
   λ::WeightLatticeElem{TypeA{N},N}, μ::WeightLatticeElem{TypeA{N},N}
 ) where {N}
-  @assert is_dominant(λ) "First weight must be dominant"
-  @assert is_dominant(μ) "Second weight must be dominant"
+  is_dominant(λ) || throw(ArgumentError("First weight must be dominant"))
+  is_dominant(μ) || throw(ArgumentError("Second weight must be dominant"))
 
   α = _weight_to_partition(λ)
   β = _weight_to_partition(μ)
@@ -1251,8 +1251,8 @@ A3(2, 0, 0) + A3(0, 1, 0)
 ```
 """
 function tensor_product(λ::WeightLatticeElem{DT,R}, μ::WeightLatticeElem{DT,R}) where {DT,R}
-  @assert is_dominant(λ) "First weight must be dominant"
-  @assert is_dominant(μ) "Second weight must be dominant"
+  is_dominant(λ) || throw(ArgumentError("First weight must be dominant"))
+  is_dominant(μ) || throw(ArgumentError("Second weight must be dominant"))
 
   # Canonical ordering for cache: smaller dimension decomposes
   key = (DT, λ, μ)
@@ -1284,8 +1284,8 @@ instead of Brauer–Klimyk, which is typically much faster.
 function tensor_product(
   λ::WeightLatticeElem{TypeA{N},N}, μ::WeightLatticeElem{TypeA{N},N}
 ) where {N}
-  @assert is_dominant(λ) "First weight must be dominant"
-  @assert is_dominant(μ) "Second weight must be dominant"
+  is_dominant(λ) || throw(ArgumentError("First weight must be dominant"))
+  is_dominant(μ) || throw(ArgumentError("Second weight must be dominant"))
 
   key = (TypeA{N}, λ, μ)
   haskey(_tensor_cache, key) && return _tensor_cache[key]::WeylCharacter{TypeA{N},N}
@@ -1359,7 +1359,7 @@ The Adams operator scales every weight by `k`: if ``\\mathrm{V}(λ)`` has weight
 multiplicity ``m(μ)``, then ``ψ^k(\\mathrm{V}(λ))`` has ``m(μ)`` at weight ``kμ``.
 """
 function adams_operator(λ::WeightLatticeElem{DT,R}, k::Integer) where {DT,R}
-  @assert k != 0 "Adams operator index must be non-zero"
+  k != 0 || throw(ArgumentError("Adams operator index must be non-zero"))
 
   # Use dominant_character + direct orbit expansion (avoids building
   # the full unscaled weight dict).
@@ -1429,7 +1429,7 @@ B3(0, 0, 6) + B3(0, 0, 4) + B3(0, 0, 2) + B3(0, 0, 0)
 ```
 """
 function symmetric_power(λ::WeightLatticeElem{DT,R}, k::Integer) where {DT,R}
-  @assert is_dominant(λ) "Weight must be dominant"
+  is_dominant(λ) || throw(ArgumentError("Weight must be dominant"))
   k < 0 && return WeylCharacter(DT)
   k == 0 && return WeylCharacter(WeightLatticeElem{DT,R}(zero(SVector{R,Int})))
   k == 1 && return WeylCharacter(λ)
@@ -1467,7 +1467,7 @@ end
 function _newton_girard_divide!(result::WeylCharacter, k::Integer)
   for λv in keys(result.terms)
     q, r = divrem(result.terms[λv], k)
-    @assert iszero(r) "Newton–Girard: non-integer coefficient after division by k=$k"
+    iszero(r) || error("Newton–Girard: non-integer coefficient after division by k=$k")
     result.terms[λv] = q
   end
 end
@@ -1498,7 +1498,7 @@ B3(1, 0, 0) + B3(0, 1, 0)
 ```
 """
 function exterior_power(λ::WeightLatticeElem{DT,R}, k::Integer) where {DT,R}
-  @assert is_dominant(λ) "Weight must be dominant"
+  is_dominant(λ) || throw(ArgumentError("Weight must be dominant"))
   k < 0 && return WeylCharacter(DT)
   k == 0 && return WeylCharacter(WeightLatticeElem{DT,R}(zero(SVector{R,Int})))
   k == 1 && return WeylCharacter(λ)
@@ -1825,9 +1825,9 @@ A3(1, 1, 0)
 ```
 """
 function plethysm(λ::Vector{<:Integer}, μ::WeightLatticeElem{DT,R}) where {DT,R}
-  @assert is_dominant(μ) "Weight must be dominant"
-  @assert all(>=(0), λ) "Partition parts must be non-negative"
-  @assert issorted(λ; rev=true) "Partition must be in weakly decreasing order"
+  is_dominant(μ) || throw(ArgumentError("Weight must be dominant"))
+  all(>=(0), λ) || throw(ArgumentError("Partition parts must be non-negative"))
+  issorted(λ; rev=true) || throw(ArgumentError("Partition must be in weakly decreasing order"))
 
   n = sum(λ)
   n == 0 && return WeylCharacter(WeightLatticeElem{DT,R}(zero(SVector{R,Int})))

@@ -30,7 +30,7 @@ struct WeightLatticeElem{DT<:DynkinType,R}
 end
 
 function WeightLatticeElem(::Type{DT}, v::SVector{R,Int}) where {DT<:DynkinType,R}
-  @assert R == rank(DT) "Vector length $R does not match rank $(rank(DT))"
+  R == rank(DT) || throw(ArgumentError("Vector length $R does not match rank $(rank(DT))"))
   return WeightLatticeElem{DT,R}(v)
 end
 
