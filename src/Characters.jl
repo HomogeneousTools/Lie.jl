@@ -1874,7 +1874,7 @@ function plethysm(λ::Vector{<:Integer}, μ::WeightLatticeElem{DT,R}) where {DT,
   n_fac = factorial(big(n))
   for ν in keys(result.terms)
     q, r = divrem(BigInt(result.terms[ν]), n_fac)
-    @assert iszero(r) "Plethysm: non-integer coefficient after division by $n!"
+    iszero(r) || error("Plethysm: non-integer coefficient after division by $n!")
     result.terms[ν] = Int(q)
   end
 
@@ -1951,7 +1951,7 @@ function character_from_weights(
     # Find the highest weight: maximize ⟨λ, ρ⟩ = ∑ dᵢ λᵢ
     best = argmax(λ -> sum(d[i] * λ[i] for i in 1:R), keys(mults))
 
-    @assert all(>=(0), best) "Highest remaining weight is not dominant — input is not Weyl-group invariant"
+    all(>=(0), best) || error("Highest remaining weight is not dominant — input is not Weyl-group invariant")
 
     coeff = mults[best]
     best_wt = WeightLatticeElem{DT,R}(best)
