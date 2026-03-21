@@ -698,11 +698,11 @@ function dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
       n = 1
       while true
         # Fold ν to dominant chamber
-        for i in 1:R
+        @inbounds for i in 1:R
           v_work[i] = ν_vec[i]
         end
         s = 1
-        while s <= R
+        @inbounds while s <= R
           if v_work[s] < 0
             pairing = v_work[s]
             for jj in 1:R
@@ -734,7 +734,7 @@ function dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
     if !iszero(Σ)
       μρ_vec = μ_vec + ρ_vec
       second_term_S = 0
-      for j in 1:R, i in 1:R
+      @inbounds for j in 1:R, i in 1:R
         second_term_S += μρ_vec[i] * B_omega_S[i, j] * μρ_vec[j]
       end
 
