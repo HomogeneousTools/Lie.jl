@@ -691,7 +691,7 @@ function dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
 
       # (μ, α_k) = Σ μ_i * d_i * α_root_i
       μ_dot_α = 0
-      for i in 1:R
+      @inbounds for i in 1:R
         μ_dot_α += μ_vec[i] * dα[k][i]
       end
 

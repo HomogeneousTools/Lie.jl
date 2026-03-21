@@ -541,7 +541,7 @@ function degree(::Type{DT}, hw::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R
   numer = BigInt(1)
   for dα in dα_all
     ip = zero(Int)
-    for i in 1:R
+    @inbounds for i in 1:R
       ip += λ_ρ.vec[i] * dα[i]
     end
     Base.GMP.MPZ.mul_si!(numer, numer, ip)

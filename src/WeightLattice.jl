@@ -272,7 +272,7 @@ function conjugate_dominant_weight(w::WeightLatticeElem{DT,R}) where {DT,R}
   v = MVector{R,Int}(w.vec)
   C = cartan_matrix(DT)
   s = 1
-  while s <= R
+  @inbounds while s <= R
     if v[s] < 0
       pairing = v[s]
       for j in 1:R
