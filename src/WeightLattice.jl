@@ -240,9 +240,7 @@ function reflect(w::WeightLatticeElem{DT,R}, β::RootSpaceElem{DT,R}) where {DT,
   end
   # β in weight coords = C * β
   Cβ = C * β_vec
-  # ⟨β∨, λ⟩ = 2 * numer / denom, must be integer
-  coeff, rem = divrem(2 * numer, denom)
-  iszero(rem) || throw(ArgumentError("Non-integral coroot pairing for β"))
+  coeff = div(2 * numer, denom)
   new_vec = SVector{R,Int}(ntuple(j -> @inbounds(w.vec[j] - coeff * Cβ[j]), R))
   return WeightLatticeElem{DT,R}(new_vec)
 end
