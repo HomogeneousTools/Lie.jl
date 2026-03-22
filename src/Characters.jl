@@ -1898,8 +1898,9 @@ function plethysm(λ::Vector{<:Integer}, μ::WeightLatticeElem{DT,R}) where {DT,
   # Enumerate all partitions κ ⊢ n
   partitions = _partitions(n)
 
-  # Accumulate: sum over κ of χ^λ(κ) * |Cl(κ)| * p_κ(V)
-  result = WeylCharacter(DT)
+  # Accumulate in BigInt to avoid integer overflow.
+  # Intermediate values (before division by n!) can exceed typemax(Int).
+  big_result = Dict{WeightLatticeElem{DT,R},BigInt}()
 
   for κ in partitions
     # Compute S_n character value
@@ -1921,20 +1922,22 @@ function plethysm(λ::Vector{<:Integer}, μ::WeightLatticeElem{DT,R}) where {DT,
       prod = _tensor_characters(prod, adams_j)
     end
 
-    # Add coeff * prod to result
-    addmul!(result, prod, Int(coeff))
+    # Add coeff * prod to big_result (BigInt arithmetic throughout)
+    for (ν, m) in prod.terms
+      big_result[ν] = get(big_result, ν, BigInt(0)) + coeff * m
+    end
   end
 
-  # Divide by n!
+  # Divide by n! and convert back to Int
   n_fac = factorial(big(n))
-  for ν in keys(result.terms)
-    q, r = divrem(BigInt(result.terms[ν]), n_fac)
+  result = WeylCharacter(DT)
+  for (ν, val) in big_result
+    q, r = divrem(val, n_fac)
     iszero(r) || error("Plethysm: non-integer coefficient after division by $n!")
+    iszero(q) && continue
     result.terms[ν] = Int(q)
   end
 
-  # Prune zeros
-  filter!(p -> !iszero(p.second), result.terms)
   return result
 end
 

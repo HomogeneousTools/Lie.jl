@@ -47,6 +47,24 @@ jobs:
       - name: Run doctests
         run: julia --project=docs -e 'using Documenter, Lie; doctest(Lie; manual="docs/src")'
 
+  format:
+    name: Formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1'
+      - uses: julia-actions/cache@v2
+      - name: Check formatting
+        run: |
+          julia -e 'using Pkg; Pkg.add("JuliaFormatter")'
+          julia -e '
+            using JuliaFormatter
+            ok = format("src", overwrite=false) && format("test", overwrite=false)
+            exit(ok ? 0 : 1)
+          '
+
   benchmark:
     name: Benchmarks
     runs-on: ubuntu-latest
