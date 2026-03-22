@@ -95,6 +95,7 @@ function clear_caches!()
   empty!(_positive_roots_set_cache)
   empty!(_longest_element_cache)
   empty!(_coset_reps_cache)
+  empty!(_dominant_character_type_cache)
   # LRU caches
   empty!(_dominant_character_cache)
   empty!(_tensor_cache)
@@ -126,6 +127,7 @@ function cache_info()
     positive_roots_set=(length=length(_positive_roots_set_cache),),
     longest_element=(length=length(_longest_element_cache),),
     coset_reps=(length=length(_coset_reps_cache),),
+    dominant_character_type=(length=length(_dominant_character_type_cache),),
     dominant_character=(
       length=length(_dominant_character_cache), maxsize=_dominant_character_cache.maxsize
     ),

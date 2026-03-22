@@ -76,6 +76,13 @@ struct WeylCharacter{DT<:DynkinType,R}
   terms::Dict{WeightLatticeElem{DT,R},Int}
 end
 
+struct DominantCharacterTypeData{DT<:DynkinType,R,N}
+  α_w::NTuple{N,SVector{R,Int}}
+  α_dot_α::SVector{N,Int}
+  dα::NTuple{N,SVector{R,Int}}
+  max_level::Int
+end
+
 # ─── Constructors ────────────────────────────────────────────────────────────
 
 """
@@ -518,6 +525,41 @@ function freudenthal_formula(λ::WeightLatticeElem{DT,R}) where {DT,R}
   return multiplicities
 end
 
+function _dominant_character_type_data(::Type{DT}) where {DT<:DynkinType}
+  return get!(_dominant_character_type_cache, DT) do
+    R = rank(DT)
+    RS = RootSystem(DT)
+    C = cartan_matrix(DT)
+    B = cartan_bilinear_form(DT)
+    d = cartan_symmetrizer(DT)
+    n_pos = n_positive_roots(RS)
+
+    # These arrays depend only on the root system type, not on the highest weight.
+    # Caching them avoids rebuilding the same root-coordinate transforms for every
+    # dominant_character call and benefits all downstream algorithms that rely on it.
+    α_w = ntuple(k -> begin
+      α_root = RS.positive_roots_list[k]
+      SVector{R,Int}(ntuple(j -> sum(C[j, i] * α_root[i] for i in 1:R), R))
+    end, n_pos)
+
+    α_dot_α = SVector{n_pos,Int}(ntuple(k -> begin
+      v = RS.positive_roots_list[k]
+      s = 0
+      for j in 1:R, i in 1:R
+        s += v[i] * B[i, j] * v[j]
+      end
+      s
+    end, n_pos))
+
+    dα = ntuple(k -> begin
+      v = RS.positive_roots_list[k]
+      SVector{R,Int}(ntuple(i -> d[i] * v[i], R))
+    end, n_pos)
+
+    DominantCharacterTypeData{DT,R,n_pos}(α_w, α_dot_α, dα, sum(RS.positive_roots_list[end]))
+  end::DominantCharacterTypeData{DT,rank(DT),n_positive_roots(DT)}
+end
+
 """
     dominant_character(λ::WeightLatticeElem{DT,R}) -> Dict{SVector{R,Int}, Int}
 
@@ -595,35 +637,11 @@ function dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
   # ─── Precompute root data ──────────────────────────────────────────
   RS = RootSystem(DT)
   C = cartan_matrix(DT)
-  B = cartan_bilinear_form(DT)
-  d = cartan_symmetrizer(DT)
-
   n_pos = n_positive_roots(RS)
-
-  # Positive roots in weight coords: α_ω = C · α_root
-  α_w = Vector{SVector{R,Int}}(undef, n_pos)
-  for k in 1:n_pos
-    α_root = RS.positive_roots_list[k]
-    α_w[k] = SVector{R,Int}(ntuple(j -> sum(C[j, i] * α_root[i] for i in 1:R), R))
-  end
-
-  # (α, α) in root-space bilinear form
-  α_dot_α = Vector{Int}(undef, n_pos)
-  for k in 1:n_pos
-    v = RS.positive_roots_list[k]
-    s = 0
-    for j in 1:R, i in 1:R
-      s += v[i] * B[i, j] * v[j]
-    end
-    α_dot_α[k] = s
-  end
-
-  # d_i * α_i for inner product (μ, α) = Σ μ_i * d_i * α_root_i
-  dα = Vector{SVector{R,Int}}(undef, n_pos)
-  for k in 1:n_pos
-    v = RS.positive_roots_list[k]
-    dα[k] = SVector{R,Int}(ntuple(i -> d[i] * v[i], R))
-  end
+  type_data = _dominant_character_type_data(DT)
+  α_w = type_data.α_w
+  α_dot_α = type_data.α_dot_α
+  dα = type_data.dα
 
   ρ_vec = weyl_vector(DT).vec
 
@@ -664,7 +682,7 @@ function dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
     end
     if has_zero
       # Group roots by level (height = sum of root coords)
-      max_level = sum(RS.positive_roots_list[n_pos])
+      max_level = type_data.max_level
       for lev in 1:max_level
         for j in 1:R
           μ_vec[j] == 0 || continue
@@ -1239,6 +1257,9 @@ const _dominant_character_cache = let b = _default_cache_budget()
     by=Base.summarysize,
   )
 end
+
+# Cache for type-only Freudenthal data reused across dominant_character calls.
+const _dominant_character_type_cache = Dict{Type,Any}()
 
 """
     tensor_product(λ::WeightLatticeElem{DT,R}, μ::WeightLatticeElem{DT,R}) -> WeylCharacter{DT,R}
