@@ -179,17 +179,18 @@ end
 """
     RootSpaceElem(w::WeightLatticeElem{DT,R}) -> RootSpaceElem{DT,R}
 
-Convert a weight to root coordinates (may be rational; this function
-rounds to Int which is valid only for weights in the root lattice).
+Convert a weight to root coordinates.
+
+Throws an `ArgumentError` when the weight does not lie in the root lattice,
+since the inverse Cartan-matrix coordinates are then non-integral.
 
 ``v = C^{-1} w``
 """
 function RootSpaceElem(w::WeightLatticeElem{DT,R}) where {DT,R}
   Cinv = cartan_matrix_inverse(DT)
   v = Cinv * SVector{R,Rational{Int}}(w.vec)
-  # Check integrality
-  v_int = SVector{R,Int}(round.(Int, v))
-  return RootSpaceElem{DT,R}(v_int)
+  all(isinteger, v) || throw(ArgumentError("Weight does not lie in the root lattice"))
+  return RootSpaceElem{DT,R}(SVector{R,Int}(Int.(v)))
 end
 
 # ─── Reflect a weight by a simple reflection ────────────────────────────────
