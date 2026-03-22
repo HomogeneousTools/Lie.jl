@@ -758,11 +758,18 @@ using StaticArrays
       @test dc_e8[SVector(0, 0, 0, 0, 0, 0, 0, 1)] == 1  # highest weight
       @test haskey(dc_e8, SVector(0, 0, 0, 0, 0, 0, 0, 0))  # zero weight
 
-      # Caching: calling twice returns same object
+      # Caching: repeated calls should reuse the cached value without relying
+      # on Dict object identity.
+      clear_all_caches!()
+      info0 = cache_info()
       λ = fundamental_weight(TypeA{3}, 1)
       dc1 = dominant_character(λ)
+      info1 = cache_info()
       dc2 = dominant_character(λ)
-      @test dc1 === dc2  # same Dict instance from cache
+      info2 = cache_info()
+      @test dc1 == dc2
+      @test info1.dominant_character.length == info0.dominant_character.length + 1
+      @test info2.dominant_character.length == info1.dominant_character.length
 
       # Higher weight: A₃ V(ρ) dim 20
       ρ = weyl_vector(TypeA{3})
