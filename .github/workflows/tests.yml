@@ -13,7 +13,7 @@ concurrency:
 jobs:
   test:
     name: Julia ${{ matrix.version }} — ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    runs-on: self-hosted
     strategy:
       fail-fast: false
       matrix:
@@ -34,7 +34,7 @@ jobs:
 
   doctest:
     name: Doctests
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
@@ -49,7 +49,7 @@ jobs:
 
   benchmark:
     name: Benchmarks
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
