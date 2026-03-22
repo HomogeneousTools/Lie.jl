@@ -1393,7 +1393,7 @@ The Adams operator scales every weight by `k`: if ``\\mathrm{V}(λ)`` has weight
 multiplicity ``m(μ)``, then ``ψ^k(\\mathrm{V}(λ))`` has ``m(μ)`` at weight ``kμ``.
 """
 function adams_operator(λ::WeightLatticeElem{DT,R}, k::Integer) where {DT,R}
-  k != 0 || throw(ArgumentError("Adams operator index must be non-zero"))
+  k >= 1 || throw(ArgumentError("Adams operator index must be a positive integer, got k=$k"))
 
   # Use dominant_character + direct orbit expansion (avoids building
   # the full unscaled weight dict).
