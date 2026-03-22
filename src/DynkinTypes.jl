@@ -170,8 +170,8 @@ rank(::Type{TypeE{N}}) where {N} = N
 rank(::Type{TypeF4}) = 4
 rank(::Type{TypeG2}) = 2
 
-@generated function rank(::Type{ProductDynkinType{Ts}}) where {Ts}
-  return sum(rank(T) for T in Ts.parameters)
+function rank(::Type{ProductDynkinType{Ts}}) where {Ts}
+  return sum(rank, fieldtypes(Ts))
 end
 
 # Instance versions
@@ -205,8 +205,8 @@ n_positive_roots(::Type{TypeE{8}}) = 120
 n_positive_roots(::Type{TypeF4}) = 24
 n_positive_roots(::Type{TypeG2}) = 6
 
-@generated function n_positive_roots(::Type{ProductDynkinType{Ts}}) where {Ts}
-  return sum(n_positive_roots(T) for T in Ts.parameters)
+function n_positive_roots(::Type{ProductDynkinType{Ts}}) where {Ts}
+  return sum(n_positive_roots, fieldtypes(Ts))
 end
 
 n_positive_roots(dt::DynkinType) = n_positive_roots(typeof(dt))
@@ -245,8 +245,8 @@ dimension(dt::DynkinType) = dimension(typeof(dt))
 
 Number of simple factors in a product type.
 """
-@generated function n_components(::Type{ProductDynkinType{Ts}}) where {Ts}
-  return length(Ts.parameters)
+function n_components(::Type{ProductDynkinType{Ts}}) where {Ts}
+  return length(fieldtypes(Ts))
 end
 
 n_components(::Type{<:SimpleDynkinType}) = 1
@@ -257,8 +257,8 @@ n_components(dt::DynkinType) = n_components(typeof(dt))
 
 Return the i-th simple Dynkin type in a product.
 """
-@generated function component_type(::Type{ProductDynkinType{Ts}}, ::Val{I}) where {Ts,I}
-  return Ts.parameters[I]
+function component_type(::Type{ProductDynkinType{Ts}}, ::Val{I}) where {Ts,I}
+  return fieldtypes(Ts)[I]
 end
 
 """
@@ -266,8 +266,8 @@ end
 
 Return a tuple of ranks of the components.
 """
-@generated function component_ranks(::Type{ProductDynkinType{Ts}}) where {Ts}
-  return Tuple(rank(T) for T in Ts.parameters)
+function component_ranks(::Type{ProductDynkinType{Ts}}) where {Ts}
+  return map(rank, fieldtypes(Ts))
 end
 
 """
@@ -276,10 +276,9 @@ end
 Return a tuple of starting index offsets for each component in the product type.
 The i-th component occupies indices offset[i]+1 : offset[i]+rank(component_i).
 """
-@generated function component_offsets(::Type{ProductDynkinType{Ts}}) where {Ts}
-  ranks = [rank(T) for T in Ts.parameters]
-  offsets = cumsum([0; ranks[1:(end - 1)]])
-  return Tuple(offsets)
+function component_offsets(::Type{ProductDynkinType{Ts}}) where {Ts}
+  rs = map(rank, fieldtypes(Ts))
+  return ntuple(i -> i == 1 ? 0 : sum(rs[j] for j in 1:(i - 1)), length(rs))
 end
 
 # ─── Display ─────────────────────────────────────────────────────────────────

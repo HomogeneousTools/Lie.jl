@@ -526,7 +526,9 @@ function freudenthal_formula(λ::WeightLatticeElem{DT,R}) where {DT,R}
 end
 
 function _dominant_character_type_data(::Type{DT}) where {DT<:DynkinType}
-  return get!(_dominant_character_type_cache, DT) do
+  return get!(
+    _dominant_character_type_cache, DT
+  ) do
     R = rank(DT)
     RS = RootSystem(DT)
     C = cartan_matrix(DT)
@@ -537,26 +539,29 @@ function _dominant_character_type_data(::Type{DT}) where {DT<:DynkinType}
     # These arrays depend only on the root system type, not on the highest weight.
     # Caching them avoids rebuilding the same root-coordinate transforms for every
     # dominant_character call and benefits all downstream algorithms that rely on it.
-    α_w = ntuple(k -> begin
-      α_root = RS.positive_roots_list[k]
-      SVector{R,Int}(ntuple(j -> sum(C[j, i] * α_root[i] for i in 1:R), R))
-    end, n_pos)
+    α_w = ntuple(
+      k -> begin
+        α_root = RS.positive_roots_list[k]
+        SVector{R,Int}(ntuple(j -> sum(C[j, i] * α_root[i] for i in 1:R), R))
+      end, n_pos)
 
     α_dot_α = SVector{n_pos,Int}(ntuple(k -> begin
-      v = RS.positive_roots_list[k]
-      s = 0
-      for j in 1:R, i in 1:R
-        s += v[i] * B[i, j] * v[j]
-      end
-      s
-    end, n_pos))
+        v = RS.positive_roots_list[k]
+        s = 0
+        for j in 1:R, i in 1:R
+          s += v[i] * B[i, j] * v[j]
+        end
+        s
+      end, n_pos))
 
     dα = ntuple(k -> begin
-      v = RS.positive_roots_list[k]
-      SVector{R,Int}(ntuple(i -> d[i] * v[i], R))
-    end, n_pos)
+        v = RS.positive_roots_list[k]
+        SVector{R,Int}(ntuple(i -> d[i] * v[i], R))
+      end, n_pos)
 
-    DominantCharacterTypeData{DT,R,n_pos}(α_w, α_dot_α, dα, sum(RS.positive_roots_list[end]))
+    DominantCharacterTypeData{DT,R,n_pos}(
+      α_w, α_dot_α, dα, sum(RS.positive_roots_list[end])
+    )
   end::DominantCharacterTypeData{DT,rank(DT),n_positive_roots(DT)}
 end
 

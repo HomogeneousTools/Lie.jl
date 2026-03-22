@@ -472,13 +472,8 @@ cartan_determinant(::Type{TypeE{8}}) = 1
 cartan_determinant(::Type{TypeF4}) = 1
 cartan_determinant(::Type{TypeG2}) = 1
 
-@generated function cartan_determinant(::Type{ProductDynkinType{Ts}}) where {Ts}
-  types = Ts.parameters
-  det_product = 1
-  for T in types
-    det_product *= cartan_determinant(T)
-  end
-  return :($det_product)
+function cartan_determinant(::Type{ProductDynkinType{Ts}}) where {Ts}
+  return prod(cartan_determinant, fieldtypes(Ts))
 end
 
 function cartan_determinant(dt::DynkinType)

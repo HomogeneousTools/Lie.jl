@@ -531,12 +531,8 @@ coxeter_coefficients(::Type{TypeE{8}}) = SVector{8,Int}((2, 3, 4, 6, 5, 4, 3, 2)
 coxeter_coefficients(::Type{TypeF4}) = SVector{4,Int}((2, 3, 4, 2))
 coxeter_coefficients(::Type{TypeG2}) = SVector{2,Int}((3, 2))
 
-@generated function coxeter_coefficients(::Type{ProductDynkinType{Ts}}) where {Ts}
-  types = Ts.parameters
-  all_coeffs = vcat([coxeter_coefficients(T) for T in types]...)
-  R = length(all_coeffs)
-  entries = Tuple(all_coeffs)
-  return :(SVector{$R,Int}($entries))
+function coxeter_coefficients(::Type{ProductDynkinType{Ts}}) where {Ts}
+  return vcat(map(coxeter_coefficients, fieldtypes(Ts))...)
 end
 
 function coxeter_coefficients(dt::DynkinType)
