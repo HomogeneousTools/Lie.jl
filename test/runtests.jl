@@ -298,12 +298,14 @@ using StaticArrays
     α1 = simple_root(RS, 1)
     w_α1 = WeightLatticeElem(α1)
     @test w_α1 == WeightLatticeElem(DT, [2, -1])  # α₁ = 2ω₁ - ω₂
+    @test_throws ArgumentError RootSpaceElem(ω1)
 
     # Reflection
     w = WeightLatticeElem(DT, [2, 1])
     w_reflected = reflect(w, 1)
     @test w_reflected == WeightLatticeElem(DT, [-2, 3])
     # s₁(2ω₁ + ω₂) = (2ω₁ + ω₂) - 2*(α₁) = (2ω₁ + ω₂) - 2*(2ω₁ - ω₂) = -2ω₁ + 3ω₂
+    @test_throws ArgumentError reflect(w, RootSpaceElem(DT, [2, 0]))
 
     # Conjugation to dominant chamber
     w_neg = WeightLatticeElem(DT, [-1, 2])
