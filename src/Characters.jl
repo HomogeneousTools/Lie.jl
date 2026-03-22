@@ -154,7 +154,7 @@ function highest_weight(V::WeylCharacter{DT,R}) where {DT,R}
 end
 
 """
-    degree(V::WeylCharacter) -> Int or BigInt
+    degree(V::WeylCharacter) -> BigInt
 
 Return the dimension of an effective character (actual representation).
 
@@ -166,7 +166,7 @@ deg(V) = ∑ mᵢ dim(V(λᵢ))
 This is the total dimension of the representation as a direct sum of irreducibles.
 If `V` is not effective (has negative multiplicities), this function will error.
 
-Returns `Int` for small dimensions, automatically promotes to `BigInt` when needed.
+Returns a `BigInt`.
 
 # Examples
 ```jldoctest
