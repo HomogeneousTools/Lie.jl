@@ -1,4 +1,4 @@
 *.sw*
 benchmark/results
 docs/build
-
+Manifest.toml
