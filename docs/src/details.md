@@ -1,4 +1,4 @@
-# Implementation Details
+# Implementation details
 
 This page covers performance considerations, caching mechanisms, precompilation,
 and other implementation details of Lie.jl.
@@ -8,20 +8,29 @@ and other implementation details of Lie.jl.
 Lie.jl uses several internal caches to avoid recomputing expensive results. Understanding
 these caches is important for benchmarking and memory management.
 
-### Available Caches
+### Available caches
 
-Lie.jl maintains six internal caches:
+Lie.jl maintains nine internal caches. Five are unbounded `Dict` caches for
+small singletons and lookup tables; four are bounded `LRU` caches (from
+[LRUCache.jl](https://github.com/JuliaCollections/LRUCache.jl)) whose total
+memory budget is configurable at runtime via [`configure_caches!`](@ref).
 
-| Cache | Module Variable | Purpose |
-|-------|----------------|---------|
-| Root system cache | `Lie._root_system_cache` | Singleton `RootSystem` instances per Dynkin type |
-| Longest Weyl element cache | `Lie._longest_element_cache` | Cached longest element `w₀` per Dynkin type |
-| Dominant character cache | `Lie._dominant_character_cache` | Dominant weight multiplicities from Freudenthal's formula |
-| Tensor product cache | `Lie._tensor_cache` | Tensor product decompositions |
-| Symmetric power cache | `Lie._symmetric_power_cache` | Symmetric power decompositions |
-| Exterior power cache | `Lie._exterior_power_cache` | Exterior power decompositions |
+| Cache | Variable | Type | Purpose |
+|-------|----------|------|--------|
+| Root system | `Lie._root_system_cache` | `Dict` | Singleton `RootSystem` instances per Dynkin type |
+| Positive roots set | `Lie._positive_roots_set_cache` | `Dict` | Fast `is_positive_root` lookup sets |
+| Longest Weyl element | `Lie._longest_element_cache` | `Dict` | Cached longest element `w₀` per Dynkin type |
+| Coset representatives | `Lie._coset_reps_cache` | `Dict` | Weyl orbit coset reps for exceptional types |
+| Dominant character (type) | `Lie._dominant_character_type_cache` | `Dict` | Type-level Freudenthal intermediates |
+| Dominant character | `Lie._dominant_character_cache` | `LRU` | Dominant weight multiplicities from Freudenthal's formula |
+| Tensor product | `Lie._tensor_cache` | `LRU` | Tensor product decompositions |
+| Symmetric power | `Lie._symmetric_power_cache` | `LRU` | Symmetric power decompositions |
+| Exterior power | `Lie._exterior_power_cache` | `LRU` | Exterior power decompositions |
 
-All caches are global `Dict` objects that persist for the lifetime of the Julia session.
+The five `Dict` caches are unbounded and persist for the lifetime of the Julia
+session.  The four `LRU` caches have a configurable memory budget (default:
+25 % of system RAM, minimum 256 MiB) and automatically evict least-recently-used
+entries when the budget is exceeded.
 
 !!! note "Why the dominant character cache matters"
     Benchmarks show that the dominant character cache (formerly called the
@@ -31,37 +40,32 @@ All caches are global `Dict` objects that persist for the lifetime of the Julia 
     recurrence, Brauer–Klimyk, plethysm) call [`dominant_character`](@ref)
     repeatedly for the same highest weights.
 
-### Inspecting Caches
+### Inspecting caches
 
-You can inspect cache contents and sizes at any time:
+Use [`cache_info`](@ref) to get a snapshot of cache occupancy:
 
 ```julia
 using Lie
 
-# Check cache sizes
-println("Dominant character cache: ", length(Lie._dominant_character_cache), " entries")
-println("Tensor cache: ", length(Lie._tensor_cache), " entries")
+# Snapshot before any work
+info = cache_info()
+println("Tensor cache: ", info.tensor.length, " entries (max ", info.tensor.maxsize, " bytes)")
 
 # Populate some caches by doing computations
 ω₁ = fundamental_weight(TypeE{8}, 1)
 freudenthal_formula(ω₁)
 tensor_product(ω₁, ω₁)
 
-# Check again
-println("Dominant character cache: ", length(Lie._dominant_character_cache), " entries")
-println("Tensor cache: ", length(Lie._tensor_cache), " entries")
-
-# Inspect cache keys (to see what's cached)
-for key in keys(Lie._tensor_cache)
-    println("Cached tensor product: ", key)
-end
+# Snapshot after
+info = cache_info()
+println("Dominant character cache: ", info.dominant_character.length, " entries")
+println("Tensor cache: ", info.tensor.length, " entries")
 ```
 
-### Clearing Caches
+### Clearing caches
 
-#### Clearing All Caches
-
-Use [`clear_all_caches!`](@ref) to empty all caches at once:
+Use [`clear_caches!`](@ref) (or its alias [`clear_all_caches!`](@ref)) to
+empty every cache at once:
 
 ```julia
 using Lie
@@ -73,7 +77,7 @@ freudenthal_formula(ω₁)
 symmetric_power(ω₁, 3)
 
 # Clear everything
-clear_all_caches!()
+clear_caches!()
 ```
 
 This is particularly useful for:
@@ -81,56 +85,73 @@ This is particularly useful for:
 - **Memory management** — free memory after large computations (e.g., after computing many E₈ tensor products)
 - **Reproducible testing** — ensure tests start from a clean state
 
-#### Clearing Individual Caches
+You can also clear individual caches with `empty!`:
 
-You can also clear caches individually using `empty!`:
+```julia
+empty!(Lie._tensor_cache)               # LRU cache
+empty!(Lie._dominant_character_cache)    # LRU cache
+empty!(Lie._root_system_cache)           # Dict cache (rarely needed)
+```
+
+!!! tip "When to clear individual caches"
+    The `Dict` caches (root system, positive roots set, longest element, coset
+    reps, dominant character type) are typically small and cheap to populate.
+    The four `LRU` caches (dominant character, tensor, symmetric/exterior power)
+    can grow large and may benefit from selective clearing between different
+    computation phases.
+
+### Configuring cache budgets
+
+Use [`configure_caches!`](@ref) to resize the LRU caches at runtime.  The
+`budget` (in bytes) controls the total memory envelope; the four fraction
+arguments determine how it is divided:
 
 ```julia
 using Lie
 
-# Clear only the Freudenthal cache
-empty!(Lie._dominant_character_cache)
+# Give caches 512 MiB total
+configure_caches!(budget = 512 * 1024^2)
 
-# Clear only the tensor product cache
-empty!(Lie._tensor_cache)
-
-# Clear only the symmetric power cache
-empty!(Lie._symmetric_power_cache)
-
-# Clear only the exterior power cache
-empty!(Lie._exterior_power_cache)
-
-# Clear only the root system cache (rarely needed)
-empty!(Lie._root_system_cache)
-
-# Clear only the longest element cache (rarely needed)
-empty!(Lie._longest_element_cache)
+# Custom split: 50 % tensor, 30 % dominant, 10 % each for Sym/⋀
+configure_caches!(
+  budget = 512 * 1024^2,
+  dominant_frac = 0.30,
+  tensor_frac = 0.50,
+  sym_power_frac = 0.10,
+  ext_power_frac = 0.10,
+)
 ```
 
-!!! tip "When to clear individual caches"
-    The root system and longest element caches are typically small and cheap to populate,
-    so there's rarely a reason to clear them. The character-related caches
-    (dominant character, tensor, symmetric/exterior power) can grow large and may
-    benefit from selective clearing between different computation phases.
+Default fractions: dominant 30 %, tensor 40 %, symmetric 15 %, exterior 15 %.
+The default total budget is 25 % of system RAM (minimum 256 MiB).  These
+defaults can also be set persistently via Julia's `Preferences.jl`
+(keys: `cache_budget`, `dominant_frac`, `tensor_frac`, `sym_power_frac`,
+`ext_power_frac`).
 
-### Cache Invalidation
+### Cache invalidation
 
-Caches are **never automatically invalidated**. Once a result is computed and cached,
-it persists until:
-- You explicitly clear the cache (via `clear_all_caches!()` or `empty!(...)`)
+Caches are **never invalidated by code changes** — all cached functions are
+pure (same inputs always produce same outputs).  However, cached entries can
+disappear in three ways:
+
+- You explicitly clear a cache (via [`clear_caches!`](@ref) or `empty!(...)`)
+- An LRU cache evicts least-recently-used entries when its memory budget is exceeded
 - Your Julia session ends
 
-This is safe because:
+Automatic eviction only affects the four bounded LRU caches.  The five
+unbounded `Dict` caches persist until cleared or session end.
+
+This design is safe because:
 - Dynkin types are immutable compile-time constants
 - Weights are immutable `SVector` objects
-- All cached functions are pure (same inputs always produce same outputs)
+- All cached functions are pure — re-computing an evicted entry always gives the same result
 
 ## Precompilation
 
 Lie.jl precompiles many commonly-used methods to reduce first-call latency. When you
 load the package with `using Lie`, the precompilation work has already been done.
 
-### What Gets Precompiled
+### What gets precompiled
 
 The package precompiles the following operations for all simple Dynkin types up to rank 9
 (plus the exceptional types):
@@ -157,7 +178,7 @@ The package precompiles the following operations for all simple Dynkin types up 
 - `dot_reduce` (weight normalization)
 - `lr_tensor_product` (Littlewood–Richardson rule for Type A)
 
-### Why Precompilation Matters
+### Why precompilation matters
 
 Without precompilation, the first call to a method triggers just-in-time (JIT) compilation,
 which can take hundreds of milliseconds. With precompilation, these methods are ready to use
@@ -172,7 +193,7 @@ using Lie
 # Without precompilation, this would take ~0.5s for the first call
 ```
 
-### What Is NOT Precompiled
+### What is NOT precompiled
 
 Operations involving:
 - **Product Dynkin types** (e.g., `ProductDynkinType{Tuple{TypeA{2}, TypeB{3}}}`)
@@ -181,9 +202,9 @@ Operations involving:
 
 These will experience first-call latency but will be fast on subsequent calls (after JIT compilation).
 
-## Performance Characteristics
+## Performance characteristics
 
-### Compile-Time vs. Run-Time
+### Compile-time vs. run-time
 
 Lie.jl leverages Julia's type system and `@generated` functions to move many computations
 to compile time:
@@ -199,21 +220,22 @@ to compile time:
 This means that `cartan_matrix(TypeE{8})` produces a compile-time constant `SMatrix`
 that is embedded directly into your compiled code — there's no matrix allocation at runtime.
 
-### Memory Usage
+### Memory usage
 
 | Operation | Memory Footprint | Notes |
 |-----------|-----------------|-------|
 | `RootSystem{TypeE{8}}` | ~15 KB | Singleton, cached per type |
 | `WeightLatticeElem` | 8R bytes | R = rank; stored as `SVector{R,Int}` |
-| `WeylGroupElem` | 8L bytes | L = length of reduced word |
+| `WeylGroupElem` | ~40 + L bytes | Word stored as `Vector{UInt8}`; L = word length |
 | `WeylCharacter` | ~24 + 40N bytes | N = number of terms in the character |
 | Freudenthal cache (E₈ adjoint) | ~40 KB | 3,875 weight multiplicities |
 
-For large-scale computations (e.g., thousands of E₈ tensor products), the character-related
-caches can grow to hundreds of megabytes. Use [`clear_all_caches!`](@ref) periodically
-if memory becomes a concern.
+For large-scale computations (e.g., thousands of E₈ tensor products), the
+character-related LRU caches will automatically evict old entries once their
+memory budget is reached.  Use [`configure_caches!`](@ref) to increase the
+budget, or [`clear_caches!`](@ref) to free memory immediately.
 
-### Asymptotic Complexity
+### Asymptotic complexity
 
 | Operation | Time Complexity | Notes |
 |-----------|----------------|-------|
@@ -231,7 +253,7 @@ For E₈:
 - Hot tensor product (both weights small): 0.0001–0.1s
 - Cold tensor product (one large): 1–100s
 
-## Type Stability
+## Type stability
 
 Lie.jl is designed for **complete type stability**:
 
@@ -251,7 +273,7 @@ typeof(result)  # WeylCharacter{TypeE{8}, 8} — concrete type
 All public APIs return concrete types, enabling aggressive compiler optimizations.
 There are **no type instabilities** in hot paths.
 
-## Numerical Precision
+## Numerical precision
 
 All computations use **exact integer arithmetic** — there are no floating-point operations:
 
@@ -275,11 +297,12 @@ julia> typeof(degree(ω₇))
 BigInt
 ```
 
-## Thread Safety
+## Thread safety
 
 !!! warning "Caches are NOT thread-safe"
-    The internal caches are ordinary `Dict` objects without synchronization.
-    Concurrent writes from multiple threads can lead to race conditions.
+    The internal caches — both the unbounded `Dict` caches and the bounded
+    `LRU` caches — have no synchronization.  Concurrent writes from multiple
+    threads can lead to race conditions.
 
     **Safe:** Using Lie.jl from a single thread (the default)
 
@@ -301,14 +324,14 @@ Key differences:
 | **Language** | C (CWEB literate programming) | Julia (pure Julia) |
 | **Type system** | Runtime `group` structs | Compile-time Dynkin type parameters |
 | **Cartan matrices** | Runtime matrix allocation | Compile-time `SMatrix` constants |
-| **Caching** | Permanent "long-life" objects | `Dict` caches |
+| **Caching** | Permanent "long-life" objects | Bounded `LRU` caches + `Dict` singletons |
 | **Hot performance** | Fast (compiled C) | Fast (JIT-compiled, with caching) |
 | **Cold performance** | Instant (no compilation) | Slow first call (JIT overhead) |
 
 For hot operations (cached, precompiled), Lie.jl matches or exceeds LiE's performance.
 For cold operations, LiE is faster due to no JIT compilation delay.
 
-## Implementation Philosophy
+## Implementation philosophy
 
 Lie.jl follows these design principles:
 
@@ -316,13 +339,83 @@ Lie.jl follows these design principles:
 2. **Compile-time constants** — Leverage `@generated` functions to embed mathematical data
 3. **Immutability** — All core types are immutable for thread safety and optimization
 4. **Caching** — Trade memory for speed by memoizing expensive computations
-5. **Zero dependencies** — Only StaticArrays.jl and LinearAlgebra stdlib
+5. **Minimal dependencies** — StaticArrays.jl, LRUCache.jl, PrecompileTools.jl, Preferences.jl, and LinearAlgebra (stdlib)
 6. **Pure Julia** — No C/Fortran, enabling introspection and compilation to other targets
 
 These principles enable aggressive compiler optimizations while maintaining mathematical rigor.
 
-## API Reference
+### Weyl orbit traversal
+
+Weyl orbits are computed by the internal module `Weylloop.jl`, which
+implements LiE-style systematic orbit traversal.  Rather than a hash-set BFS
+that scales with orbit size, it converts weight coordinates to the **ε-basis**
+where classical Weyl subgroups act as permutations (type A) or
+permutations + sign flips (types B/C/D).  Orbits are enumerated via
+lexicographic permutation generation and Gray-code sign flips, eliminating
+the ``O(|\text{orbit}|)`` hash-set overhead that would otherwise dominate for
+large orbits (e.g., E₈ orbits with millions of elements).  For exceptional
+types, precomputed coset representatives reduce the problem to the classical
+case.
+
+## API reference
 
 ```@docs
 clear_all_caches!
+clear_caches!
+configure_caches!
+cache_info
+```
+## Internals reference
+
+These are internal functions not part of the public API.  They are
+documented here for contributors and advanced users.
+
+### Root system internals
+
+```@docs
+Lie._root_system_cache
+Lie._compute_positive_roots_and_reflections
+```
+
+### Weyl group internals
+
+```@docs
+Lie._weyl_denominator
+Lie._weyl_dim_scaled_roots
+Lie._explain_rmul
+Lie.weylloop
+```
+
+### Cache internals
+
+```@docs
+Lie._apply_cache_preferences!
+```
+
+### Character internals
+
+```@docs
+Lie.dot_reduce
+Lie.brauer_klimyk
+Lie._brauer_klimyk_dominant
+Lie._vdecomp
+Lie._tensor_characters
+```
+
+### Littlewood–Richardson internals (type A)
+
+```@docs
+Lie._weight_to_partition
+Lie._partition_to_weight
+Lie._lr_coefficients
+Lie._n_tableaux
+```
+
+### Plethysm internals (Murnaghan–Nakayama)
+
+```@docs
+Lie._partitions
+Lie._classord
+Lie._mn_char_val
+Lie._mn_recurse!
 ```

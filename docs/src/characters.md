@@ -54,6 +54,22 @@ julia> V + V == 2 * V
 true
 ```
 
+Characters also support multiplication (tensor product) and exponentiation
+(tensor power):
+
+```jldoctest chars
+julia> V * V₂ == tensor_product(V, V₂)
+true
+
+julia> V^3 == V * V * V
+true
+```
+
+```@docs
+Base.:*(::WeylCharacter{DT,R}, ::WeylCharacter{DT,R}) where {DT,R}
+Base.:^(::WeylCharacter{DT,R}, ::Integer) where {DT,R}
+```
+
 ### In-place mutation
 
 For performance-critical loops, use `add!` and `addmul!`:
@@ -244,7 +260,9 @@ dual
 ## Adams operators
 
 The Adams operator ``\psi^k`` scales every weight of ``\mathrm{V}(\lambda)``
-by ``k``. The result is a virtual character (element of the Grothendieck ring):
+by ``k``. The result is returned as a `Dict{SVector{R,Int}, Int}` mapping
+weight coordinates to multiplicities (not decomposed into irreducibles).
+Use [`character_from_weights`](@ref) to convert it to a `WeylCharacter`:
 
 ```jldoctest chars
 julia> ω₁_a2 = fundamental_weight(TypeA{2}, 1);

@@ -198,6 +198,35 @@ cartan_matrix_inverse
 cartan_determinant
 ```
 
+## Dimension
+
+The dimension of the Lie algebra (or Lie group) equals
+``r + 2n`` where ``r`` is the rank and ``n`` is the number of positive roots:
+
+```jldoctest types
+julia> dimension(TypeA{3})   # dim(SL₄) = 15
+15
+
+julia> dimension(TypeE{8})   # dim(E₈) = 248
+248
+
+julia> dimension(ProductDynkinType{Tuple{TypeA{1}, TypeA{1}}}())   # dim(SL₂ × SL₂) = 6
+6
+```
+
+```@docs
+dimension
+```
+
+### Scaled bilinear form
+
+The scaled bilinear form on the fundamental weight basis, used internally
+by Freudenthal's formula:
+
+```@docs
+omega_bilinear_form_scaled
+```
+
 ### Connection index
 
 The determinant of the Cartan matrix is the **connection index**, which gives the index

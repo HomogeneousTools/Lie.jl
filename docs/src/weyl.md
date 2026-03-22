@@ -62,6 +62,9 @@ gens
 gen
 longest_element
 word
+Base.one(::WeylGroup)
+Base.length(::WeylGroupElem)
+Lie.rmul!
 ```
 
 ## Action on weights
@@ -79,6 +82,10 @@ julia> ω₁ * s₂   # s₂(ω₁) = ω₁ (orthogonal)
 ω1
 ```
 
+```@docs
+Base.:*(::WeightLatticeElem{DT,R}, ::WeylGroupElem{DT,R}) where {DT,R}
+```
+
 ## Action on roots
 
 ```jldoctest weyl
@@ -91,6 +98,10 @@ julia> α₁ * s₁   # s₁(α₁) = -α₁
 
 julia> α₁ * s₂   # s₂(α₁) = α₁ + α₂
 α1 + α2
+```
+
+```@docs
+Base.:*(::RootSpaceElem{DT,R}, ::WeylGroupElem{DT,R}) where {DT,R}
 ```
 
 ## Weyl orbits
@@ -189,6 +200,21 @@ julia> borel_weil_bott(ω₁)   # dominant weight → degree 0
 
 julia> borel_weil_bott(WeightLatticeElem(TypeA{3}, [-3, 2, 1]))
 (1, ω1 + ω3)
+```
+
+Singular weights give zero cohomology, and `borel_weil_bott` returns `nothing`:
+
+```jldoctest weyl
+julia> borel_weil_bott(-weyl_vector(TypeA{3})) === nothing
+true
+```
+
+!!! note
+    `borel_weil_bott` is not exported. Use `import Lie: borel_weil_bott`
+    to access it.
+
+```@docs
+Lie.borel_weil_bott
 ```
 
 ### Singular weights
