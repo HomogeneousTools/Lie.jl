@@ -219,8 +219,11 @@ end
 Reflect `w` by the root `β`:
 ``s_β(λ) = λ - ⟨β∨, λ⟩ β``
 where `⟨β∨, λ⟩ = 2(β, λ)/(β, β)`.
+
+The argument `β` must be an actual root of the root system.
 """
 function reflect(w::WeightLatticeElem{DT,R}, β::RootSpaceElem{DT,R}) where {DT,R}
+  is_root(RootSystem(DT), β) || throw(ArgumentError("β must be a root"))
   C = cartan_matrix(DT)
   d = cartan_symmetrizer(DT)
   β_vec = β.vec
@@ -238,7 +241,8 @@ function reflect(w::WeightLatticeElem{DT,R}, β::RootSpaceElem{DT,R}) where {DT,
   # β in weight coords = C * β
   Cβ = C * β_vec
   # ⟨β∨, λ⟩ = 2 * numer / denom, must be integer
-  coeff = div(2 * numer, denom)
+  coeff, rem = divrem(2 * numer, denom)
+  iszero(rem) || throw(ArgumentError("Non-integral coroot pairing for β"))
   new_vec = SVector{R,Int}(ntuple(j -> @inbounds(w.vec[j] - coeff * Cβ[j]), R))
   return WeightLatticeElem{DT,R}(new_vec)
 end
