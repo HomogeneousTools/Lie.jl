@@ -324,7 +324,9 @@ julia> conjugate_dominant_weight_with_length(fundamental_weight(TypeA{3}, 1))
 (ω1, 0)
 ```
 """
-@inline function conjugate_dominant_weight_with_length(w::WeightLatticeElem{DT,R}) where {DT,R}
+@inline function conjugate_dominant_weight_with_length(
+  w::WeightLatticeElem{DT,R}
+) where {DT,R}
   v = MVector{R,Int}(w.vec)
   C = cartan_matrix(DT)
   len = 0

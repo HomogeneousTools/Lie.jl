@@ -208,7 +208,8 @@ end
 # ─── Group operations ───────────────────────────────────────────────────────
 
 function Base.:*(x::WeylGroupElem{DT,R}, y::WeylGroupElem{DT,R}) where {DT,R}
-  parent(x) === parent(y) || throw(ArgumentError("Cannot multiply elements from different Weyl groups"))
+  parent(x) === parent(y) ||
+    throw(ArgumentError("Cannot multiply elements from different Weyl groups"))
   result = WeylGroupElem{DT,R}(parent(x), copy(x.word))
   for s in y.word
     rmul!(result, s)

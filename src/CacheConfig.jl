@@ -126,9 +126,15 @@ function cache_info()
     positive_roots_set=(length=length(_positive_roots_set_cache),),
     longest_element=(length=length(_longest_element_cache),),
     coset_reps=(length=length(_coset_reps_cache),),
-    dominant_character=(length=length(_dominant_character_cache), maxsize=_dominant_character_cache.maxsize),
+    dominant_character=(
+      length=length(_dominant_character_cache), maxsize=_dominant_character_cache.maxsize
+    ),
     tensor=(length=length(_tensor_cache), maxsize=_tensor_cache.maxsize),
-    symmetric_power=(length=length(_symmetric_power_cache), maxsize=_symmetric_power_cache.maxsize),
-    exterior_power=(length=length(_exterior_power_cache), maxsize=_exterior_power_cache.maxsize),
+    symmetric_power=(
+      length=length(_symmetric_power_cache), maxsize=_symmetric_power_cache.maxsize
+    ),
+    exterior_power=(
+      length=length(_exterior_power_cache), maxsize=_exterior_power_cache.maxsize
+    ),
   )
 end

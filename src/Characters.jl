@@ -743,7 +743,8 @@ function dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
 
       numerator = 2 * S * Σ
       mult, rem = divrem(numerator, denom_S)
-      iszero(rem) || error("Freudenthal formula gave non-integer multiplicity for μ=$(μ_vec)")
+      iszero(rem) ||
+        error("Freudenthal formula gave non-integer multiplicity for μ=$(μ_vec)")
       dom_mults[idx] = mult
     end
   end
@@ -1224,7 +1225,7 @@ export lr_tensor_product
 # Cache for tensor products of irreducibles.
 # Key: (DT, λ, μ), Value: WeylCharacter.  Uses canonical key ordering.
 const _tensor_cache = let b = _default_cache_budget()
-  LRU{Tuple{Type,Any,Any},Any}(
+  LRU{Tuple{Type,Any,Any},Any}(;
     maxsize=_cache_maxsize(b, _DEFAULT_TENSOR_FRAC),
     by=Base.summarysize,
   )
@@ -1233,7 +1234,7 @@ end
 # Cache for dominant character computations (Freudenthal recursion).
 # Key: (DT, λ), Value: Dict{SVector{R,Int}, Int} (dominant weights → multiplicities).
 const _dominant_character_cache = let b = _default_cache_budget()
-  LRU{Tuple{Type,Any},Any}(
+  LRU{Tuple{Type,Any},Any}(;
     maxsize=_cache_maxsize(b, _DEFAULT_DOMINANT_FRAC),
     by=Base.summarysize,
   )
@@ -1408,13 +1409,13 @@ end
 
 # Caches: keyed by (DT, weight, power)
 const _symmetric_power_cache = let b = _default_cache_budget()
-  LRU{Tuple{Type,Any,Int},Any}(
+  LRU{Tuple{Type,Any,Int},Any}(;
     maxsize=_cache_maxsize(b, _DEFAULT_SYM_POWER_FRAC),
     by=Base.summarysize,
   )
 end
 const _exterior_power_cache = let b = _default_cache_budget()
-  LRU{Tuple{Type,Any,Int},Any}(
+  LRU{Tuple{Type,Any,Int},Any}(;
     maxsize=_cache_maxsize(b, _DEFAULT_EXT_POWER_FRAC),
     by=Base.summarysize,
   )
@@ -1854,7 +1855,8 @@ A3(1, 1, 0)
 function plethysm(λ::Vector{<:Integer}, μ::WeightLatticeElem{DT,R}) where {DT,R}
   is_dominant(μ) || throw(ArgumentError("Weight must be dominant"))
   all(>=(0), λ) || throw(ArgumentError("Partition parts must be non-negative"))
-  issorted(λ; rev=true) || throw(ArgumentError("Partition must be in weakly decreasing order"))
+  issorted(λ; rev=true) ||
+    throw(ArgumentError("Partition must be in weakly decreasing order"))
 
   n = sum(λ)
   n == 0 && return WeylCharacter(WeightLatticeElem{DT,R}(zero(SVector{R,Int})))
@@ -1978,7 +1980,8 @@ function character_from_weights(
     # Find the highest weight: maximize ⟨λ, ρ⟩ = ∑ dᵢ λᵢ
     best = argmax(λ -> sum(d[i] * λ[i] for i in 1:R), keys(mults))
 
-    all(>=(0), best) || error("Highest remaining weight is not dominant — input is not Weyl-group invariant")
+    all(>=(0), best) ||
+      error("Highest remaining weight is not dominant — input is not Weyl-group invariant")
 
     coeff = mults[best]
     best_wt = WeightLatticeElem{DT,R}(best)
