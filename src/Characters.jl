@@ -81,6 +81,7 @@ struct DominantCharacterTypeData{DT<:DynkinType,R,N}
   α_dot_α::SVector{N,Int}
   dα::NTuple{N,SVector{R,Int}}
   max_level::Int
+  roots_by_level::Vector{Vector{Int}}
 end
 
 # ─── Constructors ────────────────────────────────────────────────────────────
@@ -493,25 +494,10 @@ julia> sum(values(mults))  # dim = 8
 function freudenthal_formula(λ::WeightLatticeElem{DT,R}) where {DT,R}
   dom_mults = dominant_character(λ)
 
-  # Count total orbit sizes for pre-allocation (avoids Dict resizing)
-  v_buf = Vector{Int}(undef, R)
-  total_weights = 0
-  for (μ_vec, m) in dom_mults
-    m == 0 && continue
-    for i in 1:R
-      v_buf[i] = μ_vec[i]
-    end
-    count = Ref(0)
-    weylloop(DT, v_buf) do _
-      count[] += 1
-    end
-    total_weights += count[]
-  end
-
   # Expand dominant multiplicities to full weight system.
   # Use weylloop directly to avoid materialising intermediate orbit vectors.
+  v_buf = Vector{Int}(undef, R)
   multiplicities = Dict{SVector{R,Int},Int}()
-  sizehint!(multiplicities, total_weights)
   for (μ_vec, m) in dom_mults
     m == 0 && continue
     for i in 1:R
@@ -559,8 +545,15 @@ function _dominant_character_type_data(::Type{DT}) where {DT<:DynkinType}
         SVector{R,Int}(ntuple(i -> d[i] * v[i], R))
       end, n_pos)
 
+    max_level = sum(RS.positive_roots_list[end])
+    rbl = [Int[] for _ in 1:max_level]
+    for k in 1:n_pos
+      lev = sum(RS.positive_roots_list[k])
+      push!(rbl[lev], k)
+    end
+
     DominantCharacterTypeData{DT,R,n_pos}(
-      α_w, α_dot_α, dα, sum(RS.positive_roots_list[end])
+      α_w, α_dot_α, dα, max_level, rbl
     )
   end::DominantCharacterTypeData{DT,rank(DT),n_positive_roots(DT)}
 end
@@ -688,12 +681,12 @@ function dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
     if has_zero
       # Group roots by level (height = sum of root coords)
       max_level = type_data.max_level
+      rbl = type_data.roots_by_level
       for lev in 1:max_level
         for j in 1:R
           μ_vec[j] == 0 || continue
-          for k in 1:n_pos
+          for k in rbl[lev]
             root_mults[k] == 0 && continue
-            sum(RS.positive_roots_list[k]) != lev && continue
             e = -α_w[k][j]
             if e > 0
               target = RS.refl[j, k]
@@ -934,12 +927,14 @@ function _brauer_klimyk_dominant(
   C = cartan_matrix(DT)
   result = Dict{WeightLatticeElem{DT,R},Int}()
   dr = MVector{R,Int}(undef)      # workspace for dot_reduce
+  v_buf = Vector{Int}(undef, R)   # reusable buffer for weylloop input
 
   for (λ_dom_vec, m) in dom_char
     m == 0 && continue
 
     # Traverse the Weyl orbit of λ_dom, applying dot_reduce(μ + w) inline.
-    weylloop(DT, Vector{Int}(λ_dom_vec)) do orbit_wt
+    copyto!(v_buf, λ_dom_vec)
+    weylloop(DT, v_buf) do orbit_wt
       # Inline dot_reduce(μ + orbit_wt)
       for j in 1:R
         dr[j] = μ.vec[j] + orbit_wt[j]
@@ -1399,23 +1394,8 @@ function adams_operator(λ::WeightLatticeElem{DT,R}, k::Integer) where {DT,R}
   # the full unscaled weight dict).
   dom_mults = dominant_character(λ)
 
-  # Count total weights for pre-sizing
   v_buf = Vector{Int}(undef, R)
-  total_weights = 0
-  for (μ_vec, m) in dom_mults
-    m == 0 && continue
-    for i in 1:R
-      v_buf[i] = μ_vec[i]
-    end
-    cnt = Ref(0)
-    weylloop(DT, v_buf) do _
-      cnt[] += 1
-    end
-    total_weights += cnt[]
-  end
-
   result = Dict{SVector{R,Int},Int}()
-  sizehint!(result, total_weights)
   for (μ_vec, m) in dom_mults
     m == 0 && continue
     for i in 1:R
