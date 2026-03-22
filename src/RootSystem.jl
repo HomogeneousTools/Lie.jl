@@ -52,19 +52,21 @@ or of a weight lattice element (in the fundamental weight basis).
 """
 coefficients(r::RootSpaceElem) = r.vec
 
-Base.:+(a::RootSpaceElem{DT,R}, b::RootSpaceElem{DT,R}) where {DT,R} =
-  RootSpaceElem{DT,R}(a.vec + b.vec)
-Base.:-(a::RootSpaceElem{DT,R}, b::RootSpaceElem{DT,R}) where {DT,R} =
-  RootSpaceElem{DT,R}(a.vec - b.vec)
+Base.:+(a::RootSpaceElem{DT,R}, b::RootSpaceElem{DT,R}) where {DT,R} = RootSpaceElem{DT,R}(
+  a.vec + b.vec
+)
+Base.:-(a::RootSpaceElem{DT,R}, b::RootSpaceElem{DT,R}) where {DT,R} = RootSpaceElem{DT,R}(
+  a.vec - b.vec
+)
 Base.:-(a::RootSpaceElem{DT,R}) where {DT,R} = RootSpaceElem{DT,R}(-a.vec)
-Base.:*(n::Integer, a::RootSpaceElem{DT,R}) where {DT,R} =
-  RootSpaceElem{DT,R}(n * a.vec)
+Base.:*(n::Integer, a::RootSpaceElem{DT,R}) where {DT,R} = RootSpaceElem{DT,R}(n * a.vec)
 Base.:*(a::RootSpaceElem, n::Integer) = n * a
 Base.:(==)(a::RootSpaceElem{DT,R}, b::RootSpaceElem{DT,R}) where {DT,R} =
   a.vec == b.vec
 Base.hash(a::RootSpaceElem, h::UInt) = hash(a.vec, h)
-Base.zero(::Type{RootSpaceElem{DT,R}}) where {DT,R} =
-  RootSpaceElem{DT,R}(zero(SVector{R,Int}))
+Base.zero(::Type{RootSpaceElem{DT,R}}) where {DT,R} = RootSpaceElem{DT,R}(
+  zero(SVector{R,Int})
+)
 Base.iszero(a::RootSpaceElem) = iszero(a.vec)
 
 """
@@ -340,8 +342,9 @@ end
 
 Return all simple roots.
 """
-simple_roots(RS::RootSystem{DT,R}) where {DT,R} =
-  [RootSpaceElem{DT,R}(RS.positive_roots_list[i]) for i in 1:R]
+simple_roots(RS::RootSystem{DT,R}) where {DT,R} = [
+  RootSpaceElem{DT,R}(RS.positive_roots_list[i]) for i in 1:R
+]
 
 """
     positive_root(RS::RootSystem{DT,R}, i) -> RootSpaceElem
@@ -357,24 +360,27 @@ end
 
 Return all positive roots.
 """
-positive_roots(RS::RootSystem{DT,R}) where {DT,R} =
-  [RootSpaceElem{DT,R}(v) for v in RS.positive_roots_list]
+positive_roots(RS::RootSystem{DT,R}) where {DT,R} = [
+  RootSpaceElem{DT,R}(v) for v in RS.positive_roots_list
+]
 
 """
     negative_root(RS::RootSystem{DT,R}, i) -> RootSpaceElem
 
 Return the `i`-th negative root (negative of the `i`-th positive root).
 """
-negative_root(RS::RootSystem{DT,R}, i::Integer) where {DT,R} =
-  RootSpaceElem{DT,R}(-RS.positive_roots_list[i])
+negative_root(RS::RootSystem{DT,R}, i::Integer) where {DT,R} = RootSpaceElem{DT,R}(
+  -RS.positive_roots_list[i]
+)
 
 """
     negative_roots(RS::RootSystem{DT,R}) -> Vector{RootSpaceElem}
 
 Return all negative roots.
 """
-negative_roots(RS::RootSystem{DT,R}) where {DT,R} =
-  [RootSpaceElem{DT,R}(-v) for v in RS.positive_roots_list]
+negative_roots(RS::RootSystem{DT,R}) where {DT,R} = [
+  RootSpaceElem{DT,R}(-v) for v in RS.positive_roots_list
+]
 
 """
     roots(RS::RootSystem) -> Vector{RootSpaceElem}
@@ -407,16 +413,18 @@ end
 
 Return the simple coroots.
 """
-simple_coroots(RS::RootSystem{DT,R}) where {DT,R} =
-  [RootSpaceElem{DT,R}(RS.positive_coroots_list[i]) for i in 1:R]
+simple_coroots(RS::RootSystem{DT,R}) where {DT,R} = [
+  RootSpaceElem{DT,R}(RS.positive_coroots_list[i]) for i in 1:R
+]
 
 """
     positive_coroots(RS::RootSystem{DT,R}) -> Vector{RootSpaceElem}
 
 Return all positive coroots.
 """
-positive_coroots(RS::RootSystem{DT,R}) where {DT,R} =
-  [RootSpaceElem{DT,R}(v) for v in RS.positive_coroots_list]
+positive_coroots(RS::RootSystem{DT,R}) where {DT,R} = [
+  RootSpaceElem{DT,R}(v) for v in RS.positive_coroots_list
+]
 
 # ─── Highest root ────────────────────────────────────────────────────────────
 
@@ -511,11 +519,13 @@ julia> coxeter_coefficients(TypeB{2})
 """
 coxeter_coefficients(::Type{TypeA{N}}) where {N} = SVector{N,Int}(ntuple(_ -> 1, N))
 
-coxeter_coefficients(::Type{TypeB{N}}) where {N} =
-  SVector{N,Int}(ntuple(i -> i == 1 ? 1 : 2, Val(N)))
+coxeter_coefficients(::Type{TypeB{N}}) where {N} = SVector{N,Int}(
+  ntuple(i -> i == 1 ? 1 : 2, Val(N))
+)
 
-coxeter_coefficients(::Type{TypeC{N}}) where {N} =
-  SVector{N,Int}(ntuple(i -> i == N ? 1 : 2, Val(N)))
+coxeter_coefficients(::Type{TypeC{N}}) where {N} = SVector{N,Int}(
+  ntuple(i -> i == N ? 1 : 2, Val(N))
+)
 
 function coxeter_coefficients(::Type{TypeD{N}}) where {N}
   if N == 2
@@ -702,8 +712,9 @@ julia> degrees_fundamental_invariants(TypeG2)
  6
 ```
 """
-degrees_fundamental_invariants(::Type{TypeA{N}}) where {N} =
-  SVector{N,Int}(Tuple(2:(N + 1)))
+degrees_fundamental_invariants(::Type{TypeA{N}}) where {N} = SVector{N,Int}(
+  Tuple(2:(N + 1))
+)
 
 # B_n and C_n: 2, 4, 6, ..., 2n
 function degrees_fundamental_invariants(::Type{TypeB{N}}) where {N}
@@ -720,10 +731,10 @@ function degrees_fundamental_invariants(::Type{TypeD{N}}) where {N}
 end
 
 degrees_fundamental_invariants(::Type{TypeE{6}}) = SVector{6,Int}((2, 5, 6, 8, 9, 12))
-degrees_fundamental_invariants(::Type{TypeE{7}}) =
-  SVector{7,Int}((2, 6, 8, 10, 12, 14, 18))
-degrees_fundamental_invariants(::Type{TypeE{8}}) =
-  SVector{8,Int}((2, 8, 12, 14, 18, 20, 24, 30))
+degrees_fundamental_invariants(::Type{TypeE{7}}) = SVector{7,Int}((2, 6, 8, 10, 12, 14, 18))
+degrees_fundamental_invariants(::Type{TypeE{8}}) = SVector{8,Int}((
+  2, 8, 12, 14, 18, 20, 24, 30
+))
 degrees_fundamental_invariants(::Type{TypeF4}) = SVector{4,Int}((2, 6, 8, 12))
 degrees_fundamental_invariants(::Type{TypeG2}) = SVector{2,Int}((2, 6))
 

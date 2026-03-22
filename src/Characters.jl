@@ -287,8 +287,9 @@ function Base.:-(V::WeylCharacter{DT,R}, W::WeylCharacter{DT,R}) where {DT,R}
   return WeylCharacter{DT,R}(result)
 end
 
-Base.:-(V::WeylCharacter{DT,R}) where {DT,R} =
-  WeylCharacter{DT,R}(Dict(λ => -m for (λ, m) in V.terms))
+Base.:-(V::WeylCharacter{DT,R}) where {DT,R} = WeylCharacter{DT,R}(
+  Dict(λ => -m for (λ, m) in V.terms)
+)
 
 function Base.:*(a::Integer, V::WeylCharacter{DT,R}) where {DT,R}
   iszero(a) && return WeylCharacter(DT)
@@ -1388,7 +1389,8 @@ The Adams operator scales every weight by `k`: if ``\\mathrm{V}(λ)`` has weight
 multiplicity ``m(μ)``, then ``ψ^k(\\mathrm{V}(λ))`` has ``m(μ)`` at weight ``kμ``.
 """
 function adams_operator(λ::WeightLatticeElem{DT,R}, k::Integer) where {DT,R}
-  k >= 1 || throw(ArgumentError("Adams operator index must be a positive integer, got k=$k"))
+  k >= 1 ||
+    throw(ArgumentError("Adams operator index must be a positive integer, got k=$k"))
 
   # Use dominant_character + direct orbit expansion (avoids building
   # the full unscaled weight dict).

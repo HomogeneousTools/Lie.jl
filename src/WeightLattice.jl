@@ -46,21 +46,30 @@ end
 coefficients(w::WeightLatticeElem) = w.vec
 Base.getindex(w::WeightLatticeElem, i::Integer) = w.vec[i]
 
-Base.:+(a::WeightLatticeElem{DT,R}, b::WeightLatticeElem{DT,R}) where {DT,R} =
-  WeightLatticeElem{DT,R}(a.vec + b.vec)
-Base.:-(a::WeightLatticeElem{DT,R}, b::WeightLatticeElem{DT,R}) where {DT,R} =
-  WeightLatticeElem{DT,R}(a.vec - b.vec)
+Base.:+(a::WeightLatticeElem{DT,R}, b::WeightLatticeElem{DT,R}) where {DT,R} = WeightLatticeElem{
+  DT,R
+}(
+  a.vec + b.vec
+)
+Base.:-(a::WeightLatticeElem{DT,R}, b::WeightLatticeElem{DT,R}) where {DT,R} = WeightLatticeElem{
+  DT,R
+}(
+  a.vec - b.vec
+)
 Base.:-(a::WeightLatticeElem{DT,R}) where {DT,R} = WeightLatticeElem{DT,R}(-a.vec)
-Base.:*(n::Integer, a::WeightLatticeElem{DT,R}) where {DT,R} =
-  WeightLatticeElem{DT,R}(n * a.vec)
+Base.:*(n::Integer, a::WeightLatticeElem{DT,R}) where {DT,R} = WeightLatticeElem{DT,R}(
+  n * a.vec
+)
 Base.:*(a::WeightLatticeElem, n::Integer) = n * a
 Base.:(==)(a::WeightLatticeElem{DT,R}, b::WeightLatticeElem{DT,R}) where {DT,R} =
   a.vec == b.vec
 Base.hash(a::WeightLatticeElem, h::UInt) = hash(a.vec, h)
-Base.zero(::Type{WeightLatticeElem{DT,R}}) where {DT,R} =
-  WeightLatticeElem{DT,R}(zero(SVector{R,Int}))
-Base.zero(::WeightLatticeElem{DT,R}) where {DT,R} =
-  WeightLatticeElem{DT,R}(zero(SVector{R,Int}))
+Base.zero(::Type{WeightLatticeElem{DT,R}}) where {DT,R} = WeightLatticeElem{DT,R}(
+  zero(SVector{R,Int})
+)
+Base.zero(::WeightLatticeElem{DT,R}) where {DT,R} = WeightLatticeElem{DT,R}(
+  zero(SVector{R,Int})
+)
 Base.iszero(a::WeightLatticeElem) = iszero(a.vec)
 
 function Base.show(io::IO, w::WeightLatticeElem{DT,R}) where {DT,R}
