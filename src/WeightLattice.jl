@@ -396,8 +396,8 @@ Both in fundamental weight coords, convert to root coords and use the bilinear f
 """
 function dot(w1::WeightLatticeElem{DT,R}, w2::WeightLatticeElem{DT,R}) where {DT,R}
   Cinv = cartan_matrix_inverse(DT)
-  w1_root = Cinv' * SVector{R,Rational{Int}}(w1.vec)
-  w2_root = Cinv' * SVector{R,Rational{Int}}(w2.vec)
+  w1_root = Cinv * SVector{R,Rational{Int}}(w1.vec)
+  w2_root = Cinv * SVector{R,Rational{Int}}(w2.vec)
   B = cartan_bilinear_form(DT)
   return w1_root' * SVector{R,Rational{Int}}(B * SVector{R,Rational{Int}}(w2_root))
 end
