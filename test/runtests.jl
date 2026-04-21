@@ -1401,4 +1401,255 @@ using StaticArrays
       end
     end
   end
+
+  # ═══════════════════════════════════════════════════════════════════════
+  #  Representation invariants (Phase 1)
+  # ═══════════════════════════════════════════════════════════════════════
+  @testset "Representation invariants" begin
+
+    # ─── Dynkin index ──────────────────────────────────────────────────
+    @testset "Dynkin index" begin
+      # Fundamental reps of A_n have index 1/2
+      for n in 1:6
+        DT = TypeA{n}
+        for i in 1:n
+          @test dynkin_index(fundamental_weight(DT, i)) ==
+            Rational{BigInt}(1, 2) * degree(fundamental_weight(DT, i)) *
+                dot(
+                  fundamental_weight(DT, i), fundamental_weight(DT, i) + 2 * weyl_vector(DT)
+                ) /
+                dimension(DT)
+        end
+      end
+
+      # Adjoint representation has index = dual Coxeter number
+      for DT in (
+        TypeA{2},
+        TypeA{3},
+        TypeB{3},
+        TypeC{3},
+        TypeD{4},
+        TypeE{6},
+        TypeE{7},
+        TypeE{8},
+        TypeF4,
+        TypeG2,
+      )
+        RS = RootSystem(DT)
+        R = rank(DT)
+        θ = highest_root(RS)
+        C = cartan_matrix(DT)
+        θ_w = WeightLatticeElem{DT,R}(C * θ.vec)
+        @test dynkin_index(θ_w) == dual_coxeter_number(DT)
+      end
+
+      # Zero weight has index 0
+      @test dynkin_index(zero(WeightLatticeElem{TypeA{2},2})) == 0
+
+      # Index additivity for tensor products: ℓ(V⊗W) = ℓ(V)dim(W) + dim(V)ℓ(W)
+      ω₁ = fundamental_weight(TypeA{3}, 1)
+      ω₂ = fundamental_weight(TypeA{3}, 2)
+      V = tensor_product(ω₁, ω₂)
+      idx_sum = Rational{BigInt}(0)
+      for (λ, m) in V
+        idx_sum += m * dynkin_index(λ)
+      end
+      @test idx_sum == dynkin_index(ω₁) * degree(ω₂) + degree(ω₁) * dynkin_index(ω₂)
+    end
+
+    # ─── Casimir eigenvalue ────────────────────────────────────────────
+    @testset "Casimir eigenvalue" begin
+      ρ = weyl_vector(TypeA{2})
+      ω₁ = fundamental_weight(TypeA{2}, 1)
+      @test casimir_eigenvalue(ω₁) == dot(ω₁, ω₁ + 2 * ρ)
+
+      # C₂(0) = 0
+      z = zero(WeightLatticeElem{TypeA{2},2})
+      @test casimir_eigenvalue(z) == 0
+    end
+
+    # ─── Congruency class ──────────────────────────────────────────────
+    @testset "Congruency class" begin
+      # A₂: Σ i·λᵢ mod 3
+      @test congruency_class(fundamental_weight(TypeA{2}, 1)) == 1
+      @test congruency_class(fundamental_weight(TypeA{2}, 2)) == 2
+      @test congruency_class(WeightLatticeElem(TypeA{2}, [1, 1])) == 0  # adjoint
+
+      # B₃: λ₃ mod 2
+      @test congruency_class(fundamental_weight(TypeB{3}, 1)) == 0
+      @test congruency_class(fundamental_weight(TypeB{3}, 3)) == 1
+
+      # C₃: Σ λᵢ for odd i mod 2
+      @test congruency_class(fundamental_weight(TypeC{3}, 1)) == 1
+      @test congruency_class(fundamental_weight(TypeC{3}, 2)) == 0
+      @test congruency_class(fundamental_weight(TypeC{3}, 3)) == 1
+
+      # D₄: Z/2 × Z/2 center
+      @test congruency_class(fundamental_weight(TypeD{4}, 1)) == (1, 1)
+      @test congruency_class(fundamental_weight(TypeD{4}, 2)) == (0, 0)
+      @test congruency_class(fundamental_weight(TypeD{4}, 3)) == (1, 0)
+      @test congruency_class(fundamental_weight(TypeD{4}, 4)) == (0, 1)
+
+      # E₆: λ₁ - λ₂ + λ₄ - λ₅ mod 3
+      @test congruency_class(fundamental_weight(TypeE{6}, 1)) == 1
+      @test congruency_class(fundamental_weight(TypeE{6}, 6)) == 2
+
+      # E₇: λ₂ + λ₅ + λ₇ mod 2
+      @test congruency_class(fundamental_weight(TypeE{7}, 1)) == 0
+      @test congruency_class(fundamental_weight(TypeE{7}, 7)) == 1
+
+      # Trivial center types always return 0
+      @test congruency_class(fundamental_weight(TypeE{8}, 1)) == 0
+      @test congruency_class(fundamental_weight(TypeF4, 1)) == 0
+      @test congruency_class(fundamental_weight(TypeG2, 1)) == 0
+
+      # Weights in same congruency class differ by root lattice element
+      # A₃: class = Σ i·λᵢ mod 4; [1,0,1] and [0,2,0] both have class 0
+      @test congruency_class(WeightLatticeElem(TypeA{3}, [1, 0, 1])) ==
+        congruency_class(WeightLatticeElem(TypeA{3}, [0, 2, 0]))
+    end
+
+    # ─── Self-dual and Frobenius–Schur ─────────────────────────────────
+    @testset "Self-dual and Frobenius-Schur" begin
+      # A_n: ωᵢ is self-dual iff 2i = n+1 (i.e., middle weight for odd n)
+      @test !is_self_dual(fundamental_weight(TypeA{2}, 1))
+      @test is_self_dual(WeightLatticeElem(TypeA{2}, [1, 1]))
+      @test !is_self_dual(fundamental_weight(TypeA{3}, 1))
+      @test is_self_dual(fundamental_weight(TypeA{3}, 2))  # A₃: ω₂ is self-dual (4×4 antisymmetric)
+
+      # B, C, G₂, F₄, E₇, E₈: all fundamental reps are self-dual
+      for DT in (TypeB{3}, TypeC{3}, TypeG2, TypeF4, TypeE{7}, TypeE{8})
+        R = rank(DT)
+        for i in 1:R
+          @test is_self_dual(fundamental_weight(DT, i))
+        end
+      end
+
+      # E₆: ω₁ and ω₆ are NOT self-dual (conjugate to each other)
+      @test !is_self_dual(fundamental_weight(TypeE{6}, 1))
+      @test !is_self_dual(fundamental_weight(TypeE{6}, 6))
+      @test is_self_dual(fundamental_weight(TypeE{6}, 2))
+
+      # Frobenius-Schur indicator
+      @test frobenius_schur_indicator(fundamental_weight(TypeA{2}, 1)) == 0
+      @test frobenius_schur_indicator(WeightLatticeElem(TypeA{2}, [1, 1])) == 1
+
+      # B₃ vector is real, spinor of SO(7) is real (7 = 8k-1 pattern)
+      @test frobenius_schur_indicator(fundamental_weight(TypeB{3}, 1)) == 1
+      @test frobenius_schur_indicator(fundamental_weight(TypeB{3}, 3)) == 1
+
+      # B₂ spinor (SO(5)) is pseudoreal (5 = 8k+5 pattern)
+      @test frobenius_schur_indicator(fundamental_weight(TypeB{2}, 2)) == -1
+
+      # C₂ standard rep is pseudoreal (symplectic form)
+      @test frobenius_schur_indicator(fundamental_weight(TypeC{2}, 1)) == -1
+      @test frobenius_schur_indicator(fundamental_weight(TypeC{2}, 2)) == 1
+
+      # D₄ spinors are real (8 = 8·1)
+      @test frobenius_schur_indicator(fundamental_weight(TypeD{4}, 1)) == 1
+      @test frobenius_schur_indicator(fundamental_weight(TypeD{4}, 3)) == 1
+      @test frobenius_schur_indicator(fundamental_weight(TypeD{4}, 4)) == 1
+
+      # G₂ 7-dim is real
+      @test frobenius_schur_indicator(fundamental_weight(TypeG2, 1)) == 1
+    end
+
+    # ─── Adjoint representation ────────────────────────────────────────
+    @testset "Adjoint representation" begin
+      # Adjoint has dimension = dim(g)
+      for DT in (
+        TypeA{2},
+        TypeA{3},
+        TypeB{3},
+        TypeC{3},
+        TypeD{4},
+        TypeE{6},
+        TypeE{7},
+        TypeE{8},
+        TypeF4,
+        TypeG2,
+      )
+        adj = adjoint_representation(DT)
+        @test is_irreducible(adj)
+        @test degree(adj) == dimension(DT)
+      end
+
+      # Instance dispatch
+      @test degree(adjoint_representation(TypeA{3}())) == 15
+    end
+  end
+end
+
+@testset "Weyl group enhancements (Phase 2)" begin
+  @testset "Descent sets" begin
+    W = weyl_group(TypeA{2})
+    e = one(W)
+    s1 = gen(W, 1)
+    s2 = gen(W, 2)
+    w0 = longest_element(W)
+
+    @test right_descent_set(e) == Int[]
+    @test left_descent_set(e) == Int[]
+    @test right_descent_set(s1) == [1]
+    @test left_descent_set(s2) == [2]
+    @test sort(right_descent_set(w0)) == [1, 2]
+    @test sort(left_descent_set(w0)) == [1, 2]
+  end
+
+  @testset "Bruhat order" begin
+    W = weyl_group(TypeA{2})
+    e = one(W)
+    s1 = gen(W, 1)
+    s2 = gen(W, 2)
+    w0 = longest_element(W)
+
+    @test bruhat_leq(e, s1)
+    @test bruhat_leq(e, s2)
+    @test bruhat_leq(e, w0)
+    @test bruhat_leq(s1, w0)
+    @test bruhat_leq(s2, w0)
+    @test !bruhat_leq(s1, s2)
+    @test !bruhat_leq(s2, s1)
+    @test !bruhat_leq(w0, s1)
+
+    # Reflexive and transitive sanity checks
+    elems = [e, s1, s2, s1 * s2, s2 * s1, w0]
+    for x in elems
+      @test bruhat_leq(x, x)
+    end
+    for x in elems, y in elems, z in elems
+      if bruhat_leq(x, y) && bruhat_leq(y, z)
+        @test bruhat_leq(x, z)
+      end
+    end
+  end
+
+  @testset "Bruhat descendants" begin
+    W = weyl_group(TypeA{2})
+    w0 = longest_element(W)
+    desc = bruhat_descendants(w0)
+    @test length(desc) == 2
+    @test sort(length.(desc)) == [2, 2]
+    for v in desc
+      @test bruhat_leq(v, w0)
+      @test length(v) == length(w0) - 1
+    end
+  end
+
+  @testset "Parabolic coset representatives" begin
+    W = weyl_group(TypeA{2})
+
+    # |W| = 6, |W_{\{1\}}| = 2, so |W/W_{\{1\}}| = 3
+    reps_right = right_coset_reps(W, [1])
+    @test length(reps_right) == 3
+    for w in reps_right
+      @test !(1 in right_descent_set(w))
+    end
+
+    reps_left = left_coset_reps(W, [2])
+    @test length(reps_left) == 3
+    for w in reps_left
+      @test !(2 in left_descent_set(w))
+    end
+  end
 end

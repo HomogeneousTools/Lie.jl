@@ -21,6 +21,9 @@ export plethysm
 export is_effective, is_irreducible, highest_weight
 export character_from_weights
 export add!, addmul!
+export dynkin_index, casimir_eigenvalue, congruency_class
+export frobenius_schur_indicator, is_self_dual
+export adjoint_representation
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  WeylCharacter{DT,R} — element of the representation ring
@@ -2009,3 +2012,279 @@ function character_from_weights(
   filter!(p -> !iszero(p.second), weights)
   return WeylCharacter{DT,R}(weights)
 end
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  Representation invariants
+# ═══════════════════════════════════════════════════════════════════════════════
+
+"""
+    dynkin_index(λ::WeightLatticeElem{DT,R}) -> Rational{BigInt}
+
+Compute the Dynkin index of the irreducible representation ``\\mathrm{V}(λ)``:
+
+```math
+\\ell(λ) = \\frac{\\dim \\mathrm{V}(λ)}{2 \\dim \\mathfrak{g}} \\cdot (λ,\\, λ + 2ρ)
+```
+
+where `ρ` is the Weyl vector and `\\dim \\mathfrak{g}` is the dimension of
+the Lie algebra.
+
+For the adjoint representation, the Dynkin index equals the dual Coxeter number.
+The result is always a non-negative half-integer.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> dynkin_index(fundamental_weight(TypeA{2}, 1))
+1//2
+
+julia> dynkin_index(fundamental_weight(TypeE{8}, 8))
+30//1
+```
+"""
+function dynkin_index(λ::WeightLatticeElem{DT,R}) where {DT,R}
+  is_dominant(λ) || throw(ArgumentError("Weight must be dominant"))
+  iszero(λ) && return Rational{BigInt}(0)
+
+  ρ = weyl_vector(DT)
+  dim_λ = degree(DT, λ)
+  dim_g = dimension(DT)
+  λ_plus_2ρ = λ + 2 * ρ
+  # Normalize so long roots have (θ,θ)=2 (standard Killing form convention)
+  RS = RootSystem(DT)
+  θ = highest_root(RS)
+  θ_w = WeightLatticeElem{DT,R}(cartan_matrix(DT) * θ.vec)
+  θ_sq = dot(θ_w, θ_w)
+  numer = Rational{BigInt}(dim_λ) * dot(λ, λ_plus_2ρ)
+  denom = Rational{BigInt}(dim_g) * θ_sq
+  return numer//denom
+end
+
+"""
+    casimir_eigenvalue(λ::WeightLatticeElem{DT,R}) -> Rational{Int}
+
+Compute the eigenvalue of the quadratic Casimir operator on the irreducible
+representation ``\\mathrm{V}(λ)``:
+
+```math
+c(λ) = \\frac{2\\,(λ,\\, λ + 2ρ)}{(θ, θ)}
+```
+
+where ``(\\cdot,\\cdot)`` is the Cartan bilinear form and ``θ`` is the
+highest root. The normalization ensures long roots have squared length 2.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> casimir_eigenvalue(fundamental_weight(TypeA{2}, 1))
+8//3
+
+julia> casimir_eigenvalue(fundamental_weight(TypeB{3}, 3))
+21//2
+```
+"""
+function casimir_eigenvalue(λ::WeightLatticeElem{DT,R}) where {DT,R}
+  is_dominant(λ) || throw(ArgumentError("Weight must be dominant"))
+  ρ = weyl_vector(DT)
+  return dot(λ, λ + 2 * ρ)
+end
+
+"""
+    congruency_class(λ::WeightLatticeElem{DT,R}) -> Union{Int, Tuple{Int,Int}}
+
+Compute the congruency class of the irreducible representation
+``\\mathrm{V}(λ)``. Two representations belong to the same congruency class
+if and only if their difference of highest weights lies in the root lattice.
+
+The return value depends on the Lie algebra type:
+- ``\\mathrm{A}_N``: an integer in ``0, 1, \\ldots, N`` (mod ``N+1``)
+- ``\\mathrm{B}_N``: an integer in ``\\{0, 1\\}`` (mod 2)
+- ``\\mathrm{C}_N``: an integer in ``\\{0, 1\\}`` (mod 2)
+- ``\\mathrm{D}_N`` (``N`` even): a tuple ``(a, b)`` with ``a, b \\in \\{0,1\\}`` (center ``\\mathbb{Z}/2 \\times \\mathbb{Z}/2``)
+- ``\\mathrm{D}_N`` (``N`` odd): an integer in ``\\{0, 1, 2, 3\\}`` (center ``\\mathbb{Z}/4``)
+- ``\\mathrm{E}_6``: an integer in ``\\{0, 1, 2\\}`` (mod 3)
+- ``\\mathrm{E}_7``: an integer in ``\\{0, 1\\}`` (mod 2)
+- ``\\mathrm{E}_8, \\mathrm{F}_4, \\mathrm{G}_2``: always ``0`` (trivial center)
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> congruency_class(fundamental_weight(TypeA{2}, 1))
+1
+
+julia> congruency_class(fundamental_weight(TypeD{4}, 1))
+(1, 1)
+```
+"""
+function congruency_class end
+
+function congruency_class(λ::WeightLatticeElem{TypeA{N},N}) where {N}
+  # Σ i·λᵢ mod (N+1)
+  s = 0
+  for i in 1:N
+    s += i * λ.vec[i]
+  end
+  return mod(s, N + 1)
+end
+
+function congruency_class(λ::WeightLatticeElem{TypeB{N},N}) where {N}
+  # λ_N mod 2
+  return mod(λ.vec[N], 2)
+end
+
+function congruency_class(λ::WeightLatticeElem{TypeC{N},N}) where {N}
+  # Σ λᵢ for odd i, mod 2
+  s = 0
+  for i in 1:2:N
+    s += λ.vec[i]
+  end
+  return mod(s, 2)
+end
+
+function congruency_class(λ::WeightLatticeElem{TypeD{N},N}) where {N}
+  if iseven(N)
+    # Z/2 × Z/2 center
+    # First component: (Σ_{i odd, 1≤i≤N-1} λ_i) mod 2
+    # Second component: (Σ_{i odd, 1≤i≤N-3} λ_i + λ_N) mod 2
+    a = 0
+    b = 0
+    for i in 1:2:(N - 1)
+      a += λ.vec[i]
+    end
+    for i in 1:2:(N - 3)
+      b += λ.vec[i]
+    end
+    b += λ.vec[N]
+    return (mod(a, 2), mod(b, 2))
+  else
+    # Z/4 center
+    # class(ω_i) = 2i mod 4 for i < N-1, ω_{N-1} → 1, ω_N → 3
+    s = 0
+    for i in 1:(N - 2)
+      s += mod(2 * i, 4) * λ.vec[i]
+    end
+    s += λ.vec[N - 1] + 3 * λ.vec[N]
+    return mod(s, 4)
+  end
+end
+
+function congruency_class(λ::WeightLatticeElem{TypeE{6},6})
+  # Classes: ω₁→1, ω₂→0, ω₃→2, ω₄→0, ω₅→1, ω₆→2
+  return mod(λ.vec[1] + 2 * λ.vec[3] + λ.vec[5] + 2 * λ.vec[6], 3)
+end
+
+function congruency_class(λ::WeightLatticeElem{TypeE{7},7})
+  # λ₂ + λ₅ + λ₇ mod 2
+  return mod(λ.vec[2] + λ.vec[5] + λ.vec[7], 2)
+end
+
+function congruency_class(λ::WeightLatticeElem{TypeE{8},8})
+  return 0
+end
+
+function congruency_class(λ::WeightLatticeElem{TypeF4,4})
+  return 0
+end
+
+function congruency_class(λ::WeightLatticeElem{TypeG2,2})
+  return 0
+end
+
+"""
+    is_self_dual(λ::WeightLatticeElem{DT,R}) -> Bool
+
+Return `true` if the irreducible representation ``\\mathrm{V}(λ)`` is
+isomorphic to its dual ``\\mathrm{V}(λ)^*``, i.e. if ``λ = -w_0(λ)``.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> is_self_dual(fundamental_weight(TypeA{2}, 1))
+false
+
+julia> is_self_dual(WeightLatticeElem(TypeA{2}, [1, 1]))
+true
+
+julia> is_self_dual(fundamental_weight(TypeB{3}, 1))
+true
+```
+"""
+function is_self_dual(λ::WeightLatticeElem{DT,R}) where {DT,R}
+  return dual(λ) == λ
+end
+
+"""
+    frobenius_schur_indicator(λ::WeightLatticeElem{DT,R}) -> Int
+
+Compute the Frobenius–Schur indicator of the irreducible representation
+``\\mathrm{V}(λ)``:
+
+- `1` if ``\\mathrm{V}(λ)`` is **real** (orthogonal): admits an invariant symmetric bilinear form
+- `-1` if ``\\mathrm{V}(λ)`` is **pseudoreal** (quaternionic/symplectic): admits an invariant skew-symmetric bilinear form
+- `0` if ``\\mathrm{V}(λ)`` is **complex**: not self-dual
+
+For a self-dual representation, the indicator is ``(-1)^{⟨δ, λ⟩}``
+where ``δ = ∑_{α > 0} α^∨`` is twice the dual Weyl vector and
+``⟨α_i^∨, λ⟩ = λ_i`` is the natural pairing.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> frobenius_schur_indicator(fundamental_weight(TypeA{2}, 1))
+0
+
+julia> frobenius_schur_indicator(WeightLatticeElem(TypeA{2}, [1, 1]))
+1
+
+julia> frobenius_schur_indicator(fundamental_weight(TypeC{2}, 1))
+-1
+```
+"""
+function frobenius_schur_indicator(λ::WeightLatticeElem{DT,R}) where {DT,R}
+  is_self_dual(λ) || return 0
+
+  RS = RootSystem(DT)
+  # Compute ⟨δ, λ⟩ where δ = Σ_{α>0} α∨
+  # ⟨α∨, λ⟩ = Σ_i c_i λ_i where α∨ = Σ c_i α_i∨
+  s = 0
+  for cr in RS.positive_coroots_list
+    for i in 1:R
+      s += cr[i] * λ.vec[i]
+    end
+  end
+  return iseven(s) ? 1 : -1
+end
+
+"""
+    adjoint_representation(::Type{DT}) -> WeylCharacter{DT}
+
+Return the irreducible character of the adjoint representation of the
+Lie algebra of type `DT`. The highest weight is the highest root `θ`.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> degree(adjoint_representation(TypeA{3}))
+15
+
+julia> degree(adjoint_representation(TypeE{8}))
+248
+```
+"""
+function adjoint_representation(::Type{DT}) where {DT<:SimpleDynkinType}
+  RS = RootSystem(DT)
+  R = rank(DT)
+  θ = highest_root(RS)
+  # Convert θ from root coords to weight coords: λ = Cθ where C is Cartan matrix
+  C = cartan_matrix(DT)
+  θ_w = C * θ.vec
+  return WeylCharacter(WeightLatticeElem{DT,R}(SVector{R,Int}(θ_w)))
+end
+
+adjoint_representation(dt::DynkinType) = adjoint_representation(typeof(dt))
