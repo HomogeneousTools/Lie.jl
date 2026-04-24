@@ -96,6 +96,7 @@ function clear_caches!()
   empty!(_longest_element_cache)
   empty!(_coset_reps_cache)
   empty!(_dominant_character_type_cache)
+  empty!(_weyl_dimension_data_cache)
   # LRU caches
   empty!(_dominant_character_cache)
   empty!(_tensor_cache)
@@ -128,6 +129,7 @@ function cache_info()
     longest_element=(length=length(_longest_element_cache),),
     coset_reps=(length=length(_coset_reps_cache),),
     dominant_character_type=(length=length(_dominant_character_type_cache),),
+    weyl_dimension_data=(length=length(_weyl_dimension_data_cache),),
     dominant_character=(
       length=length(_dominant_character_cache), maxsize=_dominant_character_cache.maxsize
     ),

@@ -10,7 +10,15 @@ export omega_bilinear_form_scaled, cartan_determinant
 # ─── Type A ──────────────────────────────────────────────────────────────────
 # A_n: tridiagonal, 2 on diagonal, -1 on super/sub-diagonal
 
+# Runtime fallback for any DynkinType with rank ≥ 17 — avoids @generated stall
+function _cartan_matrix_runtime(::Type{DT}) where {DT<:DynkinType}
+  R = rank(DT)
+  C = _cartan_matrix_data(DT)
+  return SMatrix{R,R,Int,R*R}(Tuple(C[i, j] for j in 1:R for i in 1:R))
+end
+
 @generated function cartan_matrix(::Type{TypeA{N}}) where {N}
+  N >= 17 && return :(_cartan_matrix_runtime($(TypeA{N})))
   entries = Int[]
   for j in 1:N, i in 1:N
     if i == j
@@ -28,6 +36,7 @@ end
 # B_n: like A but C[n, n-1] = -2
 
 @generated function cartan_matrix(::Type{TypeB{N}}) where {N}
+  N >= 17 && return :(_cartan_matrix_runtime($(TypeB{N})))
   entries = Int[]
   for j in 1:N, i in 1:N
     if i == j
@@ -47,6 +56,7 @@ end
 # C_n: like A but C[n-1, n] = -2
 
 @generated function cartan_matrix(::Type{TypeC{N}}) where {N}
+  N >= 17 && return :(_cartan_matrix_runtime($(TypeC{N})))
   entries = Int[]
   for j in 1:N, i in 1:N
     if i == j
@@ -71,6 +81,7 @@ end
 #   C[n-1,n] = C[n,n-1] = 0
 
 @generated function cartan_matrix(::Type{TypeD{N}}) where {N}
+  N >= 17 && return :(_cartan_matrix_runtime($(TypeD{N})))
   entries = Int[]
   for j in 1:N, i in 1:N
     if i == j
@@ -235,6 +246,7 @@ true
 @generated function cartan_matrix(::Type{ProductDynkinType{Ts}}) where {Ts}
   types = Ts.parameters
   R = sum(rank(T) for T in types)
+  R >= 17 && return :(_cartan_matrix_runtime($(ProductDynkinType{Ts})))
   C = zeros(Int, R, R)
   offset = 0
   for T in types
@@ -310,8 +322,14 @@ true
 ```
 """
 @generated function cartan_symmetrizer(::Type{DT}) where {DT<:SimpleDynkinType}
-  d = _cartan_symmetrizer_data(DT)
   N = rank(DT)
+  if N >= 17
+    return quote
+      d = _cartan_symmetrizer_data($DT)
+      SVector{$N,Int}(Tuple(d))
+    end
+  end
+  d = _cartan_symmetrizer_data(DT)
   entries = Tuple(d)
   return :(SVector{$N,Int}($entries))
 end
@@ -319,6 +337,15 @@ end
 @generated function cartan_symmetrizer(::Type{ProductDynkinType{Ts}}) where {Ts}
   types = Ts.parameters
   R = sum(rank(T) for T in types)
+  if R >= 17
+    return quote
+      d = Int[]
+      for T in $(Tuple(types...))
+        append!(d, _cartan_symmetrizer_data(T))
+      end
+      SVector{$R,Int}(Tuple(d))
+    end
+  end
   d = Int[]
   for T in types
     d_T = _cartan_symmetrizer_data(T)
@@ -338,8 +365,42 @@ cartan_symmetrizer(dt::DynkinType) = cartan_symmetrizer(typeof(dt))
 Return the symmetrized Cartan matrix `diag(d) * C`, which is a symmetric
 positive-definite matrix defining the inner product on the root space.
 """
+function _cartan_bilinear_form_runtime(::Type{DT}) where {DT<:DynkinType}
+  R = rank(DT)
+  C = _cartan_matrix_data_full(DT)
+  d = collect(_cartan_symmetrizer_data(DT))
+  result = [d[i] * C[i, j] for i in 1:R, j in 1:R]
+  return SMatrix{R,R,Int,R*R}(Tuple(result[i, j] for j in 1:R for i in 1:R))
+end
+
+function _cartan_matrix_inverse_runtime(::Type{DT}) where {DT<:DynkinType}
+  R = rank(DT)
+  C = Rational{Int}.(_cartan_matrix_data_full(DT))
+  Cinv = inv(C)
+  return SMatrix{R,R,Rational{Int},R*R}(Tuple(Cinv[i, j] for j in 1:R for i in 1:R))
+end
+
+function _omega_bilinear_form_scaled_runtime(::Type{DT}) where {DT<:DynkinType}
+  R = rank(DT)
+  C = Rational{Int}.(_cartan_matrix_data_full(DT))
+  Cinv = inv(C)
+  d_data = collect(_cartan_symmetrizer_data(DT))
+  B = zeros(Rational{Int}, R, R)
+  for j in 1:R, i in 1:R
+    B[i, j] = d_data[i] * C[i, j]
+  end
+  B_omega = transpose(Cinv) * B * Cinv
+  S = 1
+  for j in 1:R, i in 1:R
+    S = lcm(S, denominator(B_omega[i, j]))
+  end
+  B_omega_S = Int.(B_omega * S)
+  return (S, SMatrix{R,R,Int,R*R}(Tuple(B_omega_S[i, j] for j in 1:R for i in 1:R)))
+end
+
 @generated function cartan_bilinear_form(::Type{DT}) where {DT<:DynkinType}
   R = rank(DT)
+  R >= 17 && return :(_cartan_bilinear_form_runtime($DT))
   C = _cartan_matrix_data(DT)
   d = _cartan_symmetrizer_data(DT)
   entries = Tuple(d[i] * C[i, j] for j in 1:R for i in 1:R)
@@ -349,6 +410,7 @@ end
 @generated function cartan_bilinear_form(::Type{ProductDynkinType{Ts}}) where {Ts}
   types = Ts.parameters
   R = sum(rank(T) for T in types)
+  R >= 17 && return :(_cartan_bilinear_form_runtime($(ProductDynkinType{Ts})))
   C = zeros(Int, R, R)
   d_all = Int[]
   offset = 0
@@ -393,6 +455,7 @@ Return the inverse of the Cartan matrix over the rationals.
 """
 @generated function cartan_matrix_inverse(::Type{DT}) where {DT<:DynkinType}
   R = rank(DT)
+  R >= 17 && return :(_cartan_matrix_inverse_runtime($DT))
   C = _cartan_matrix_data_full(DT)
   # Compute inverse over Rational
   Crat = Rational{Int}.(C)
@@ -414,6 +477,7 @@ that makes all entries integral.  This is a compile-time constant.
 """
 @generated function omega_bilinear_form_scaled(::Type{DT}) where {DT<:DynkinType}
   R = rank(DT)
+  R >= 17 && return :(_omega_bilinear_form_scaled_runtime($DT))
   C = Rational{Int}.(_cartan_matrix_data_full(DT))
   Cinv = inv(C)
   d_data = _cartan_symmetrizer_data(DT)

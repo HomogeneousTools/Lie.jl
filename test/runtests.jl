@@ -123,6 +123,14 @@ using StaticArrays
       @test n_simple_roots(RS) == rank(DT)
     end
 
+    RS_A10 = RootSystem(TypeA{10})
+    RS_A17 = RootSystem(TypeA{17})
+    @test n_positive_roots(RS_A10) == 55
+    @test n_positive_roots(RS_A17) == 153
+    @test coefficients(highest_root(RS_A10)) == SVector{10,Int}(ntuple(_ -> 1, Val(10)))
+    @test coefficients(highest_root(RS_A17)) == SVector{17,Int}(ntuple(_ -> 1, Val(17)))
+    @test RootSystem(TypeA{17}) === RS_A17
+
     # Simple roots are standard basis vectors
     RS_A3 = RootSystem(TypeA{3})
     @test coefficients(simple_root(RS_A3, 1)) == [1, 0, 0]
@@ -450,6 +458,10 @@ using StaticArrays
 
     # D₄: dim V(ω₁) = 8 (standard rep of SO(8))
     @test degree(fundamental_weight(TypeD{4}, 1)) == 8
+
+    # Higher-rank cached Weyl-dimension data still uses the same public formula.
+    @test degree(fundamental_weight(TypeA{10}, 1)) == 11
+    @test degree(fundamental_weight(TypeA{17}, 1)) == 18
 
     # E₈: all fundamental representations
     @testset "E₈ fundamental representations" begin

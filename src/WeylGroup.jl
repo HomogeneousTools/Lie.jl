@@ -571,44 +571,69 @@ end
 
 # ─── Dimension of simple module (Weyl dimension formula) ────────────────────
 
-"""
-    _weyl_denominator(::Type{DT}) -> BigInt
+const _weyl_dimension_data_cache = Dict{Type,Any}()
 
-Compute the Weyl dimension denominator `∏_{α>0} ⟨ρ, α⟩` at compile time.
-The inner product uses the Cartan symmetrizer: `⟨ρ, α⟩ = ∑ᵢ dᵢ αᵢ` since
-`ρ` has all-ones coordinates in the fundamental weight basis.
-"""
-@generated function _weyl_denominator(::Type{DT}) where {DT<:DynkinType}
+function _weyl_dimension_data_from_roots(d, pos_roots, ::Val{R}) where {R}
+  denom = BigInt(1)
+  scaled = Vector{SVector{R,Int}}(undef, length(pos_roots))
+  for idx in eachindex(pos_roots)
+    α = pos_roots[idx]
+    dα = SVector{R,Int}(ntuple(i -> d[i] * α[i], Val(R)))
+    scaled[idx] = dα
+    ip = zero(Int)
+    @inbounds for i in 1:R
+      ip += dα[i]
+    end
+    Base.GMP.MPZ.mul_si!(denom, denom, ip)
+  end
+  return denom, Tuple(scaled)
+end
+
+function _weyl_dimension_data_compiletime(::Type{DT}) where {DT<:DynkinType}
   R = rank(DT)
   d = _cartan_symmetrizer_data(DT)
   C = _cartan_matrix_data(DT)
   C_sm = SMatrix{R,R,Int,R * R}(Tuple(C))
   pos_roots, _, _ = _compute_positive_roots_and_reflections(C_sm, R)
-  denom = BigInt(1)
-  for α in pos_roots
-    ip = sum(d[i] * α[i] for i in 1:R)
-    denom *= ip
+  denom, scaled = _weyl_dimension_data_from_roots(d, pos_roots, Val(R))
+  return denom, Tuple(Tuple(v) for v in scaled)
+end
+
+function _weyl_dimension_data_cached(::Type{DT}, ::Val{R}, ::Val{N}) where {DT<:DynkinType,R,N}
+  return get!(_weyl_dimension_data_cache, DT) do
+    d = _cartan_symmetrizer_data(DT)
+    C = _cartan_matrix_data(DT)
+    pos_roots = _positive_roots_runtime(C, R)
+    _weyl_dimension_data_from_roots(d, pos_roots, Val(R))
+  end::Tuple{BigInt,NTuple{N,SVector{R,Int}}}
+end
+
+@generated function _weyl_dimension_data(::Type{DT}) where {DT<:DynkinType}
+  R = rank(DT)
+  N = n_positive_roots(DT)
+  if R > 9
+    return :(_weyl_dimension_data_cached($DT, Val{$R}(), Val{$N}()))
   end
-  return :($denom)
+  denom, scaled = _weyl_dimension_data_compiletime(DT)
+  return :(($denom, NTuple{$N,SVector{$R,Int}}($scaled)))
+end
+
+"""
+    _weyl_denominator(::Type{DT}) -> BigInt
+
+Compute the Weyl dimension denominator `∏_{α>0} ⟨ρ, α⟩`.
+"""
+function _weyl_denominator(::Type{DT}) where {DT<:DynkinType}
+  return first(_weyl_dimension_data(DT))
 end
 
 """
     _weyl_dim_scaled_roots(::Type{DT}) -> NTuple{N, SVector{R,Int}}
 
-Return the symmetrizer-scaled positive root vectors `d .* α` for Dynkin type `DT`,
-precomputed at compile time. The inner product `⟨w, α⟩ = ∑ᵢ wᵢ dᵢ αᵢ = w ⋅ (d.*α)`.
+Return the symmetrizer-scaled positive root vectors `d .* α` for Dynkin type `DT`.
 """
-@generated function _weyl_dim_scaled_roots(::Type{DT}) where {DT<:DynkinType}
-  R = rank(DT)
-  d = _cartan_symmetrizer_data(DT)
-  C = _cartan_matrix_data(DT)
-  C_sm = SMatrix{R,R,Int,R * R}(Tuple(C))
-  pos_roots, _, _ = _compute_positive_roots_and_reflections(C_sm, R)
-  N = length(pos_roots)
-
-  # d-scaled roots as tuple of tuples
-  scaled = Tuple(Tuple(d[i] * α[i] for i in 1:R) for α in pos_roots)
-  return :(NTuple{$N,SVector{$R,Int}}($scaled))
+function _weyl_dim_scaled_roots(::Type{DT}) where {DT<:DynkinType}
+  return last(_weyl_dimension_data(DT))
 end
 
 """
@@ -621,7 +646,7 @@ computed via the Weyl dimension formula:
 ``\\dim \\mathrm{V}(λ) = \\prod_{α > 0} \\frac{⟨λ + ρ, α⟩}{⟨ρ, α⟩}``
 
 The denominator `∏ ⟨ρ, α⟩` and the symmetrizer-scaled root vectors are
-precomputed at compile time. The numerator `∏ ⟨λ+ρ, α⟩` is computed as
+precomputed once per Dynkin type. The numerator `∏ ⟨λ+ρ, α⟩` is computed as
 a `BigInt` product of `Int`-valued inner products via in-place GMP arithmetic.
 
 # Examples
@@ -647,8 +672,7 @@ julia> [degree(fundamental_weight(TypeB{3}, i)) for i in 1:3]
 function degree(::Type{DT}, hw::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R}
   is_dominant(hw) || throw(ArgumentError("Highest weight must be dominant"))
 
-  denom = _weyl_denominator(DT)
-  dα_all = _weyl_dim_scaled_roots(DT)
+  denom, dα_all = _weyl_dimension_data(DT)
   λ_ρ = hw + weyl_vector(DT)
 
   # Numerator: ∏_{α>0} ⟨λ+ρ, α⟩, computed in-place with GMP mul_si!
@@ -664,6 +688,45 @@ function degree(::Type{DT}, hw::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R
   result, rem = divrem(numer, denom)
   iszero(rem) || error("Weyl dimension formula gave non-integer result")
   return result
+end
+
+function _degree_runtime(::Type{DT}, hw::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R}
+  return degree(DT, hw)
+end
+
+"""
+    _positive_roots_runtime(C, R) -> Vector{Vector{Int}}
+
+Compute positive roots using plain arrays (no StaticArrays).
+"""
+function _positive_roots_runtime(C::AbstractMatrix{Int}, R::Int)
+  # Simple roots = standard basis vectors
+  pos_roots = [zeros(Int, R) for _ in 1:R]
+  for i in 1:R
+    pos_roots[i][i] = 1
+  end
+  root_set = Set{Vector{Int}}(pos_roots)
+
+  i = 1
+  while i <= length(pos_roots)
+    α = pos_roots[i]
+    for s in 1:R
+      pairing = zero(Int)
+      @inbounds for j in 1:R
+        pairing += C[s, j] * α[j]
+      end
+      # s_s(α) = α - pairing * eₛ
+      new_root = copy(α)
+      new_root[s] -= pairing
+      if _is_nonnegative(new_root) && !(new_root in root_set)
+        push!(pos_roots, new_root)
+        push!(root_set, new_root)
+      end
+    end
+    i += 1
+  end
+  sort!(pos_roots; by=_root_height)
+  return pos_roots
 end
 
 function degree(hw::WeightLatticeElem{DT,R}) where {DT,R}
