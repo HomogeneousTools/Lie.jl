@@ -532,3 +532,85 @@ julia> r = ⋀(2, ω₈_e8);
 julia> length(r.terms)   # 2 irreducible components
 2
 ```
+
+## Representation invariants
+
+Lie.jl provides several classical invariants attached to irreducible
+representations.
+
+### Dynkin index
+
+The **Dynkin index** of ``\mathrm{V}(λ)`` is the proportionality constant
+between the trace form on ``\mathrm{V}(λ)`` and the Killing form:
+
+```math
+I(λ) = \frac{\dim \mathrm{V}(λ) \cdot (λ,\, λ + 2ρ)}{2\,\dim \mathfrak{g}}
+```
+
+where the inner product is normalized so that long roots have squared
+length&nbsp;2. For the adjoint representation, ``I(θ) = h^∨`` (the dual
+Coxeter number).
+
+```jldoctest chars
+julia> dynkin_index(fundamental_weight(TypeA{3}, 1))
+1//2
+
+julia> adj = adjoint_representation(TypeA{3});
+
+julia> dynkin_index(highest_weight(adj)) == dual_coxeter_number(TypeA{3})
+true
+```
+
+### Casimir eigenvalue
+
+The eigenvalue of the quadratic Casimir element on ``\mathrm{V}(λ)`` is
+``c(λ) = (λ, λ + 2ρ)``:
+
+```jldoctest chars
+julia> casimir_eigenvalue(fundamental_weight(TypeA{3}, 1))
+15//4
+```
+
+### Congruency class
+
+```jldoctest chars
+julia> congruency_class(fundamental_weight(TypeA{3}, 1))
+1
+
+julia> congruency_class(fundamental_weight(TypeD{4}, 3))
+(1, 0)
+```
+
+### Self-duality and Frobenius–Schur indicator
+
+```jldoctest chars
+julia> is_self_dual(fundamental_weight(TypeB{3}, 1))
+true
+
+julia> frobenius_schur_indicator(fundamental_weight(TypeB{3}, 1))
+1
+
+julia> frobenius_schur_indicator(fundamental_weight(TypeC{2}, 1))
+-1
+
+julia> frobenius_schur_indicator(fundamental_weight(TypeA{2}, 1))
+0
+```
+
+### Adjoint representation
+
+```jldoctest chars
+julia> adj = adjoint_representation(TypeE{8});
+
+julia> degree(adj)
+248
+```
+
+```@docs
+dynkin_index
+casimir_eigenvalue
+congruency_class
+is_self_dual
+frobenius_schur_indicator
+adjoint_representation
+```
