@@ -359,12 +359,6 @@ cartan_symmetrizer(dt::DynkinType) = cartan_symmetrizer(typeof(dt))
 
 # ─── Symmetric bilinear form ────────────────────────────────────────────────
 
-"""
-    cartan_bilinear_form(::Type{DT}) -> SMatrix
-
-Return the symmetrized Cartan matrix `diag(d) * C`, which is a symmetric
-positive-definite matrix defining the inner product on the root space.
-"""
 function _cartan_bilinear_form_runtime(::Type{DT}) where {DT<:DynkinType}
   R = rank(DT)
   C = _cartan_matrix_data_full(DT)
@@ -398,6 +392,12 @@ function _omega_bilinear_form_scaled_runtime(::Type{DT}) where {DT<:DynkinType}
   return (S, SMatrix{R,R,Int,R*R}(Tuple(B_omega_S[i, j] for j in 1:R for i in 1:R)))
 end
 
+"""
+    cartan_bilinear_form(::Type{DT}) -> SMatrix
+
+Return the symmetrized Cartan matrix `diag(d) * C`, which is a symmetric
+positive-definite matrix defining the inner product on the root space.
+"""
 @generated function cartan_bilinear_form(::Type{DT}) where {DT<:DynkinType}
   R = rank(DT)
   R >= 17 && return :(_cartan_bilinear_form_runtime($DT))
