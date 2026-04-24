@@ -599,12 +599,16 @@ function _weyl_dimension_data_compiletime(::Type{DT}) where {DT<:DynkinType}
   return denom, Tuple(Tuple(v) for v in scaled)
 end
 
-function _weyl_dimension_data_cached(::Type{DT}, ::Val{R}, ::Val{N}) where {DT<:DynkinType,R,N}
+function _weyl_dimension_data_cached(
+  ::Type{DT}, ::Val{R}, ::Val{N}
+) where {DT<:DynkinType,R,N}
   return get!(_weyl_dimension_data_cache, DT) do
     d = _cartan_symmetrizer_data(DT)
     C = _cartan_matrix_data(DT)
     pos_roots = _positive_roots_runtime(C, R)
-    _weyl_dimension_data_from_roots(d, pos_roots, Val(R))
+    _weyl_dimension_data_from_roots(
+      d, pos_roots, Val(R)
+    )
   end::Tuple{BigInt,NTuple{N,SVector{R,Int}}}
 end
 

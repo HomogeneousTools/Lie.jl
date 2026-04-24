@@ -157,9 +157,13 @@ Compact runtime builder for root systems. This is used directly for higher
 ranks and via a small generated wrapper for larger mid-rank types to avoid
 emitting enormous tuple literals into method bodies.
 """
-function _make_root_system_runtime(::Type{DT}, ::Val{R}, ::Val{N}) where {DT<:DynkinType,R,N}
+function _make_root_system_runtime(
+  ::Type{DT}, ::Val{R}, ::Val{N}
+) where {DT<:DynkinType,R,N}
   C_mat = _cartan_matrix_data(DT)
-  pos_roots, pos_coroots, refl_mat = _compute_positive_roots_and_reflections_runtime(C_mat, R)
+  pos_roots, pos_coroots, refl_mat = _compute_positive_roots_and_reflections_runtime(
+    C_mat, R
+  )
   hcr_idx = _highest_coroot_index(pos_coroots)
   roots_tuple = ntuple(i -> SVector{R,Int}(Tuple(pos_roots[i])), Val(N))
   coroots_tuple = ntuple(i -> SVector{R,Int}(Tuple(pos_coroots[i])), Val(N))
