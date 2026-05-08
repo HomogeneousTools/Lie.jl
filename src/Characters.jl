@@ -2194,36 +2194,30 @@ end
     character_from_weights(::Type{DT}, multiplicities::Dict{SVector{R,Int}, Int}) -> WeylCharacter{DT,R}
 
 Given a dictionary of weight multiplicities (as from Freudenthal), decompose
-the representation into a formal sum of irreducibles.
+the representation into a formal sum of irreducibles (a virtual character if
+some multiplicities are negative).
 
-Supports both effective (non-negative) and virtual (mixed sign) characters.
+Uses the "peeling" algorithm: at each step find the dominant weight with the
+largest height score `⟨ρ, λ⟩ = ∑ dᵢ λᵢ` (with ties broken in favour of
+dominant weights — necessary for minuscule representations of simply-laced
+types), subtract the Freudenthal multiplicities of that irreducible, and repeat
+until `mults` is empty.
 
-Uses the "peeling" algorithm: find the highest dominant weight (by height
-`⟨ρ, λ⟩ = ∑ dᵢ λᵢ`, with ties broken in favour of dominant weights), subtract
-the Freudenthal multiplicities of that irreducible, repeat until empty.
-
-Keys are sorted once by (height, dominance) before the main loop, making each
-iteration an O(1) lookup rather than an O(n) `argmax` scan.
+The `argmax` over `mults` is an O(n) scan per iteration but avoids the need to
+maintain a sorted heap as Freudenthal subtraction may introduce entirely new
+keys (e.g. when decomposing virtual characters).
 """
 function character_from_weights(
   ::Type{DT}, multiplicities::Dict{SVector{R,Int},Int}
 ) where {DT<:DynkinType,R}
   d = cartan_symmetrizer(DT)
-
-  # Sort all input keys once by (height, dominance) descending so that the
-  # dominant weight of each Weyl orbit is encountered before its non-dominant
-  # siblings (ties in ⟨ρ,λ⟩ exist for minuscule weights in simply-laced types).
-  all_keys = sort!(
-    collect(keys(multiplicities));
-    by=λ -> (sum(d[i] * λ[i] for i in 1:R), all(>=(0), λ) ? 1 : 0),
-    rev=true,
-  )
+  score = λ -> (sum(d[i] * λ[i] for i in 1:R), all(>=(0), λ) ? 1 : 0)
 
   weights = Dict{WeightLatticeElem{DT,R},Int}()
   mults = copy(multiplicities)
 
-  for best in all_keys
-    (haskey(mults, best) && !iszero(mults[best])) || continue
+  while !isempty(mults)
+    best = argmax(score, keys(mults))
 
     all(>=(0), best) ||
       error("Highest remaining weight is not dominant — input is not Weyl-group invariant")
@@ -2231,10 +2225,12 @@ function character_from_weights(
     coeff = mults[best]
     best_wt = WeightLatticeElem{DT,R}(best)
     weights[best_wt] = get(weights, best_wt, 0) + coeff
+    delete!(mults, best)
 
     # Subtract coeff copies of the Freudenthal multiplicities for V(best)
     sub_mults = freudenthal_formula(best_wt)
     for (μ, m) in sub_mults
+      μ == best && continue  # already removed above
       mults[μ] = get(mults, μ, 0) - coeff * m
       iszero(mults[μ]) && delete!(mults, μ)
     end
