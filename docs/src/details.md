@@ -375,6 +375,7 @@ documented here for contributors and advanced users.
 ```@docs
 Lie._root_system_cache
 Lie._compute_positive_roots_and_reflections
+Lie._make_root_system_runtime
 ```
 
 ### Weyl group internals
@@ -384,6 +385,7 @@ Lie._weyl_denominator
 Lie._weyl_dim_scaled_roots
 Lie._explain_rmul
 Lie.weylloop
+Lie._positive_roots_runtime
 ```
 
 ### Cache internals
