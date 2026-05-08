@@ -226,7 +226,7 @@ end
 function __init__()
   _apply_cache_preferences!()
   show_banner = @load_preference("show_banner", true)
-  if show_banner && displaysize(stdout)[2] >= 60
+  if show_banner && isinteractive() && !haskey(ENV, "CI") && displaysize(stdout)[2] >= 60
     _print_banner()
   end
   return nothing
