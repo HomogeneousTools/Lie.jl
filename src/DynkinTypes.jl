@@ -6,7 +6,7 @@ export DynkinType, SimpleDynkinType, ProductDynkinType
 export TypeA, TypeB, TypeC, TypeD, TypeE, TypeF4, TypeG2
 export rank, n_positive_roots, dimension
 export n_components, component_type, component_ranks, component_offsets
-export dynkin_diagram
+export dynkin_diagram, DynkinDiagram
 
 """
     DynkinType
@@ -305,25 +305,48 @@ Base.show(io::IO, dt::ProductDynkinType) = print(io, _type_name(typeof(dt)))
 # ─── Dynkin diagrams ─────────────────────────────────────────────────────────
 
 """
-    dynkin_diagram(::Type{DT}) -> String
-    dynkin_diagram(dt::DynkinType) -> String
+    DynkinDiagram
 
-Return a text rendering of the Dynkin diagram for the given type,
-following Bourbaki conventions.
+A pretty-printable wrapper around the text rendering of a Dynkin diagram.
+
+Displaying a `DynkinDiagram` in the REPL renders the diagram automatically
+without requiring `println`. Call `string` to recover the raw string.
+
+See also: [`dynkin_diagram`](@ref).
+"""
+struct DynkinDiagram
+  str::String
+end
+
+Base.show(io::IO, d::DynkinDiagram) = print(io, d.str)
+Base.show(io::IO, ::MIME"text/plain", d::DynkinDiagram) = print(io, d.str)
+Base.:(==)(a::DynkinDiagram, b::DynkinDiagram) = a.str == b.str
+Base.:(==)(d::DynkinDiagram, s::AbstractString) = d.str == s
+Base.:(==)(s::AbstractString, d::DynkinDiagram) = s == d.str
+Base.string(d::DynkinDiagram) = d.str
+Base.hash(d::DynkinDiagram, h::UInt) = hash(d.str, h)
+
+"""
+    dynkin_diagram(::Type{DT}) -> DynkinDiagram
+    dynkin_diagram(dt::DynkinType) -> DynkinDiagram
+
+Return the Dynkin diagram for the given type as a [`DynkinDiagram`](@ref),
+following Bourbaki conventions. The result pretty-prints automatically in
+the REPL; call `string` to recover the raw multi-line string.
 
 # Examples
 ```jldoctest
 julia> using Lie
 
-julia> println(dynkin_diagram(TypeA{4}))
+julia> dynkin_diagram(TypeA{4})
 ○───○───○───○
 1   2   3   4
 
-julia> println(dynkin_diagram(TypeB{3}))
+julia> dynkin_diagram(TypeB{3})
 ○───○═>═○
 1   2   3
 
-julia> println(dynkin_diagram(TypeG2))
+julia> dynkin_diagram(TypeG2)
 ○≡≡≡○
 1   2
 ```
@@ -331,7 +354,7 @@ julia> println(dynkin_diagram(TypeG2))
 function dynkin_diagram(::Type{TypeA{N}}) where {N}
   nodes = join(fill("○", N), "───")
   labels = join([lpad(string(i), 1) for i in 1:N], "   ")
-  return nodes * "\n" * labels
+  return DynkinDiagram(nodes * "\n" * labels)
 end
 
 function dynkin_diagram(::Type{TypeB{N}}) where {N}
@@ -342,7 +365,7 @@ function dynkin_diagram(::Type{TypeB{N}}) where {N}
     nodes = join(fill("○", N - 1), "───") * "═>═○"
   end
   labels = join([lpad(string(i), 1) for i in 1:N], "   ")
-  return nodes * "\n" * labels
+  return DynkinDiagram(nodes * "\n" * labels)
 end
 
 function dynkin_diagram(::Type{TypeC{N}}) where {N}
@@ -353,7 +376,7 @@ function dynkin_diagram(::Type{TypeC{N}}) where {N}
     nodes = join(fill("○", N - 1), "───") * "═<═○"
   end
   labels = join([lpad(string(i), 1) for i in 1:N], "   ")
-  return nodes * "\n" * labels
+  return DynkinDiagram(nodes * "\n" * labels)
 end
 
 function dynkin_diagram(::Type{TypeD{N}}) where {N}
@@ -372,7 +395,7 @@ function dynkin_diagram(::Type{TypeD{N}}) where {N}
     main = "○"
     main_labels = "$(N-1)"
   end
-  return prefix * "\n" * fork * "\n" * main * "\n" * main_labels
+  return DynkinDiagram(prefix * "\n" * fork * "\n" * main * "\n" * main_labels)
 end
 
 function dynkin_diagram(::Type{TypeE{N}}) where {N}
@@ -390,22 +413,22 @@ function dynkin_diagram(::Type{TypeE{N}}) where {N}
   indent = 8  # position of node 4 = 2 nodes * 4 chars each
   top = " "^indent * "○ 2"
   branch = " "^indent * "|"
-  return top * "\n" * branch * "\n" * main * "\n" * main_labels
+  return DynkinDiagram(top * "\n" * branch * "\n" * main * "\n" * main_labels)
 end
 
 function dynkin_diagram(::Type{TypeF4})
-  return "○───○═>═○───○\n1   2   3   4"
+  return DynkinDiagram("○───○═>═○───○\n1   2   3   4")
 end
 
 function dynkin_diagram(::Type{TypeG2})
-  return "○≡≡≡○\n1   2"
+  return DynkinDiagram("○≡≡≡○\n1   2")
 end
 
 function dynkin_diagram(::Type{ProductDynkinType{Ts}}) where {Ts}
-  diagrams = [dynkin_diagram(T) for T in Ts.parameters]
+  diagrams = [dynkin_diagram(T).str for T in Ts.parameters]
   labels = [_type_name(T) for T in Ts.parameters]
   parts = [labels[i] * ":\n" * diagrams[i] for i in eachindex(diagrams)]
-  return join(parts, "\n\n")
+  return DynkinDiagram(join(parts, "\n\n"))
 end
 
 dynkin_diagram(dt::DynkinType) = dynkin_diagram(typeof(dt))

@@ -79,6 +79,15 @@ end
   # Instance dispatch matches type dispatch
   @test dynkin_diagram(TypeA{3}()) == dynkin_diagram(TypeA{3})
   @test dynkin_diagram(TypeE{6}()) == dynkin_diagram(TypeE{6})
+
+  # Return type is DynkinDiagram, not raw String
+  @test dynkin_diagram(TypeA{3}) isa DynkinDiagram
+  @test dynkin_diagram(TypeG2) isa DynkinDiagram
+  @test dynkin_diagram(PT) isa DynkinDiagram
+
+  # string() recovers the raw multi-line string
+  @test string(dynkin_diagram(TypeA{3})) == "○───○───○\n1   2   3"
+  @test string(dynkin_diagram(TypeF4)) == "○───○═>═○───○\n1   2   3   4"
 end
 @testset "Cartan matrices" begin
   # A₂
