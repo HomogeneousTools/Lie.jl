@@ -562,6 +562,73 @@ for (DT, coords, partition, label) in plethysm_cases
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════
+#  11. Adams operator
+# ═══════════════════════════════════════════════════════════════════════════════
+
+header("11. Adams operator")
+
+function bench_adams(::Type{DT}, coords, k) where {DT}
+  R = rank(DT)
+  λ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(coords)))
+  return adams_operator(λ, k)
+end
+
+adams_cases = [
+  (TypeA{3}, [1, 0, 0], 2, "ψ²V(ω₁)"),
+  (TypeA{3}, [1, 0, 0], 5, "ψ⁵V(ω₁)"),
+  (TypeA{4}, [1, 0, 0, 0], 3, "ψ³V(ω₁)"),
+  (TypeB{3}, [0, 0, 1], 2, "ψ²V(ω₃) [spin]"),
+  (TypeB{3}, [0, 0, 1], 4, "ψ⁴V(ω₃) [spin]"),
+  (TypeD{4}, [0, 0, 1, 0], 3, "ψ³V(ω₃) [spin]"),
+  (TypeG2, [0, 1], 3, "ψ³V(ω₂) [adjoint]"),
+  (TypeG2, [0, 1], 5, "ψ⁵V(ω₂) [adjoint]"),
+  (TypeE{6}, [1, 0, 0, 0, 0, 0], 2, "ψ²V(ω₁) [27-dim]"),
+  (TypeE{6}, [1, 0, 0, 0, 0, 0], 3, "ψ³V(ω₁) [27-dim]"),
+  (TypeE{8}, [0, 0, 0, 0, 0, 0, 0, 1], 2, "ψ²V(ω₈) [adjoint 248]"),
+  (TypeE{8}, [0, 0, 0, 0, 0, 0, 0, 1], 3, "ψ³V(ω₈) [adjoint 248]"),
+]
+
+for (DT, coords, k, label) in adams_cases
+  r = bench_adams(DT, coords, k)
+  b = @benchmark bench_adams($DT, $coords, $k) evals = 1 samples = 30
+  report("$(sprint(show,DT())): $label ($(length(r)) wts)", b; category="adams")
+end
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  12. character_from_weights
+# ═══════════════════════════════════════════════════════════════════════════════
+
+header("12. character_from_weights (peeling decomposition)")
+
+function bench_cfw(::Type{DT}, coords) where {DT}
+  R = rank(DT)
+  λ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(coords)))
+  ff = freudenthal_formula(λ)
+  return character_from_weights(DT, ff)
+end
+
+cfw_cases = [
+  (TypeA{2}, [1, 1], "adjoint (dim 8)"),
+  (TypeA{3}, [1, 0, 0], "standard (dim 4)"),
+  (TypeA{3}, [1, 1, 0], "adjoint (dim 15)"),
+  (TypeB{3}, [1, 0, 0], "standard (dim 7)"),
+  (TypeB{3}, [0, 1, 0], "adjoint-type (dim 21)"),
+  (TypeG2, [0, 1], "adjoint (dim 14)"),
+  (TypeF4, [1, 0, 0, 0], "standard (dim 26)"),
+  (TypeE{6}, [1, 0, 0, 0, 0, 0], "27-dim (minuscule)"),
+  (TypeE{6}, [1, 0, 0, 0, 0, 1], "adjoint (dim 78)"),
+  (TypeE{7}, [1, 0, 0, 0, 0, 0, 0], "56-dim (minuscule)"),
+  (TypeE{8}, [0, 0, 0, 0, 0, 0, 0, 1], "adjoint (dim 248)"),
+]
+
+for (DT, coords, label) in cfw_cases
+  r = bench_cfw(DT, coords)
+  b = @benchmark bench_cfw($DT, $coords) evals = 1 samples = 20
+  report("$(sprint(show,DT())): $label → $(length(r.terms)) irreps", b;
+    category="character_from_weights")
+end
+
+# ═══════════════════════════════════════════════════════════════════════════════
 #  Save results
 # ═══════════════════════════════════════════════════════════════════════════════
 

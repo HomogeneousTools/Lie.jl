@@ -3,6 +3,7 @@
 [![tests](https://github.com/HomogeneousTools/Lie.jl/actions/workflows/tests.yml/badge.svg)](https://github.com/HomogeneousTools/Lie.jl/actions/workflows/tests.yml)
 [![Docs](https://img.shields.io/badge/docs-homogeneous.tools/Lie.jl-blue)](https://homogeneous.tools/Lie.jl/)
 [![Release](https://img.shields.io/github/v/release/HomogeneousTools/Lie.jl?color=green)](https://github.com/HomogeneousTools/Lie.jl/releases)
+[![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 A Julia package for computations with semisimple Lie algebras: root systems,
 Weyl groups, weight lattices, and representation-theoretic operations.

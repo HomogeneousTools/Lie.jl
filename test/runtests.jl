@@ -1785,3 +1785,11 @@ end
     end
   end
 end
+
+# ═══════════════════════════════════════════════════════════════════════
+#  Aqua.jl: package quality checks
+# ═══════════════════════════════════════════════════════════════════════
+@testset "Aqua" begin
+  # ambiguities=false: @generated functions can trigger false positives
+  Aqua.test_all(Lie; ambiguities=false)
+end
