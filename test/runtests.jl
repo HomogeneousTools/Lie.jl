@@ -1980,6 +1980,52 @@ end
     @test degree(V1 - V2) == 0         # 3 - 3 = 0
     @test degree(V1 - 2 * V2) == -3   # 3 - 6 = -3
     @test degree(2 * V1 + 3 * V2) == 15  # 2*3 + 3*3 = 15
+
+    # Zero character
+    @test degree(V1 - V1) == 0
+
+    # A₂: V(ω₁+ω₂) = adjoint (8), V(2ω₁) = Sym² (6)
+    adj = WeylCharacter(WeightLatticeElem(TypeA{2}, [1, 1]))
+    sym2 = WeylCharacter(WeightLatticeElem(TypeA{2}, [2, 0]))
+    @test degree(adj - sym2) == 2           # 8 - 6 = 2
+    @test degree(sym2 - adj) == -2          # 6 - 8 = -2
+    @test degree(adj - sym2 + V1) == 5      # 2 + 3 = 5
+    @test degree(3 * adj - 2 * sym2) == 12  # 24 - 12 = 12
+
+    # B₂: V(ω₁)=5, V(ω₂)=4, V(ω₁+ω₂)=16, V(2ω₁)=14
+    b2ω₁ = fundamental_weight(TypeB{2}, 1)
+    b2ω₂ = fundamental_weight(TypeB{2}, 2)
+    W1 = WeylCharacter(b2ω₁)   # dim 5
+    W2 = WeylCharacter(b2ω₂)   # dim 4
+    @test degree(W1 - W2) == 1             # 5 - 4 = 1
+    @test degree(W2 - W1) == -1            # 4 - 5 = -1
+    @test degree(2 * W1 - 3 * W2) == -2   # 10 - 12 = -2
+
+    # G₂: V(ω₁)=7, V(ω₂)=14
+    g2ω₁ = fundamental_weight(TypeG2, 1)
+    g2ω₂ = fundamental_weight(TypeG2, 2)
+    G1 = WeylCharacter(g2ω₁)   # dim 7
+    G2char = WeylCharacter(g2ω₂)  # dim 14
+    @test degree(G1 - G2char) == -7        # 7 - 14 = -7
+    @test degree(2 * G1 - G2char) == 0    # 14 - 14 = 0
+    @test degree(3 * G1 - G2char) == 7    # 21 - 14 = 7
+
+    # Newton identity: ψ₂(V) = Sym²(V) - ⋀²(V) is a virtual character with
+    # degree = dim Sym²(V) - dim ⋀²(V)
+    ψ2_raw = adams_operator(ω₁, 2)
+    ψ2 = character_from_weights(TypeA{2}, ψ2_raw)
+    @test degree(ψ2) == degree(Sym(2, ω₁)) - degree(⋀(2, ω₁))  # 6 - 3 = 3
+    @test degree(ψ2) == 3
+
+    # Additivity: degree(V + W) == degree(V) + degree(W)
+    for (V, W) in [(V1, V2), (W1, W2), (G1, G2char)]
+      @test degree(V + W) == degree(V) + degree(W)
+    end
+
+    # Multiplicativity: degree(V * W) == degree(V) * degree(W)
+    for (V, W) in [(V1, V2), (W1, W2)]
+      @test degree(V * W) == degree(V) * degree(W)
+    end
   end
 end
 
