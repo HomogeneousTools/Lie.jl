@@ -912,7 +912,10 @@ const _positive_roots_set_cache = Dict{Type,Any}()
 Check whether `v` is a positive root.
 """
 function is_positive_root(RS::RootSystem{DT,R}, v::RootSpaceElem{DT,R}) where {DT,R}
-  return v.vec in _positive_roots_set_cache[DT]::Set{SVector{R,Int}}
+  s = get!(_positive_roots_set_cache, DT) do
+    Set{SVector{R,Int}}(RS.positive_roots_list)
+  end::Set{SVector{R,Int}}
+  return v.vec in s
 end
 
 # ─── Inner product on root space ─────────────────────────────────────────────
