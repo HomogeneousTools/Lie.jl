@@ -1,5 +1,6 @@
 using Test
 using Lie
+using Aqua
 import Lie: borel_weil_bott  # no longer publicly exported; tested here via explicit import
 using StaticArrays
 
@@ -1792,4 +1793,350 @@ end
 @testset "Aqua" begin
   # ambiguities=false: @generated functions can trigger false positives
   Aqua.test_all(Lie; ambiguities=false)
+end
+
+# ═══════════════════════════════════════════════════════════════════════
+#  Coset reps and Bruhat order — extended coverage (item 12)
+# ═══════════════════════════════════════════════════════════════════════
+@testset "Coset reps extended" begin
+  # ─── B₂: |W| = 8, parabolic by {1} has 4 cosets ──────────────────
+  @testset "B₂ right coset reps" begin
+    W = weyl_group(TypeB{2})
+    reps = right_coset_reps(W, [1])
+    @test length(reps) == 4   # |W|/|W_{\{1\}}| = 8/2
+    for w in reps
+      @test !(1 in right_descent_set(w))
+    end
+    # Lengths: shortest coset rep has length 0,1,2,3
+    lens = sort(length.(reps))
+    @test lens == [0, 1, 2, 3]
+  end
+
+  @testset "B₂ left coset reps" begin
+    W = weyl_group(TypeB{2})
+    reps = left_coset_reps(W, [2])
+    @test length(reps) == 4
+    for w in reps
+      @test !(2 in left_descent_set(w))
+    end
+  end
+
+  # ─── A₃: |W| = 24, parabolic by {1,2} = S₃, cosets = 4 ──────────
+  @testset "A₃ right coset reps by {1,2}" begin
+    W = weyl_group(TypeA{3})
+    reps = right_coset_reps(W, [1, 2])
+    @test length(reps) == 4   # |S₄|/|S₃| = 4
+    for w in reps
+      @test !(1 in right_descent_set(w))
+      @test !(2 in right_descent_set(w))
+    end
+  end
+
+  @testset "A₃ right coset reps by {1}" begin
+    W = weyl_group(TypeA{3})
+    reps = right_coset_reps(W, [1])
+    @test length(reps) == 12   # 24/2
+    for w in reps
+      @test !(1 in right_descent_set(w))
+    end
+    # Lengths 0..3 each appear at least once (Grassmannian variety)
+    lens = Set(length.(reps))
+    @test 0 in lens
+    @test 3 in lens
+  end
+
+  # ─── A₃ Bruhat order ────────────────────────────────────────────
+  @testset "A₃ Bruhat order" begin
+    W = weyl_group(TypeA{3})
+    e = one(W)
+    w0 = longest_element(W)
+    s1 = gen(W, 1); s2 = gen(W, 2); s3 = gen(W, 3)
+
+    # Identity ≤ everything, w₀ ≥ everything
+    elems = [e, s1, s2, s3, s1 * s2, s2 * s3, s1 * s2 * s3, w0]
+    for x in elems
+      @test bruhat_leq(e, x)
+      @test bruhat_leq(x, w0)
+      @test bruhat_leq(x, x)
+    end
+
+    # Simple reflections are incomparable
+    @test !bruhat_leq(s1, s2)
+    @test !bruhat_leq(s2, s1)
+    @test !bruhat_leq(s1, s3)
+
+    # Transitivity spot-check
+    @test bruhat_leq(s1, s1 * s2)
+    @test bruhat_leq(s1 * s2, w0)
+    @test bruhat_leq(s1, w0)
+  end
+
+  # ─── E₆ maximal parabolic (benchmark sanity) ───────────────────
+  @testset "E₆ right coset reps by {2,3,4,5,6}" begin
+    W = weyl_group(TypeE{6})
+    # Remove node 1: W/W_{2..6} ≅ E₆/P₁, |cosets| = dim(E₆ 27-rep) = 27
+    reps = right_coset_reps(W, [2, 3, 4, 5, 6])
+    @test length(reps) == 27
+    for w in reps
+      for i in 2:6
+        @test !(i in right_descent_set(w))
+      end
+    end
+  end
+end
+
+# ═══════════════════════════════════════════════════════════════════════
+#  Deterministic property tests for character identities (item 18)
+# ═══════════════════════════════════════════════════════════════════════
+@testset "Character property tests" begin
+
+  # ─── dual∘dual = id ────────────────────────────────────────────────
+  @testset "dual involution" begin
+    for (DT, R, coords) in [
+      (TypeA{2}, 2, [1, 0]),
+      (TypeA{2}, 2, [2, 1]),
+      (TypeA{3}, 3, [1, 0, 1]),
+      (TypeB{3}, 3, [1, 0, 0]),
+      (TypeB{3}, 3, [0, 1, 1]),
+      (TypeC{3}, 3, [1, 0, 0]),
+      (TypeD{4}, 4, [1, 0, 0, 0]),
+      (TypeG2, 2, [1, 0]),
+      (TypeG2, 2, [0, 1]),
+      (TypeF4, 4, [1, 0, 0, 0]),
+    ]
+      λ = WeightLatticeElem(DT, coords)
+      @test dual(dual(λ)) == λ
+      V = WeylCharacter(λ)
+      @test dual(dual(V)) == V
+    end
+  end
+
+  # ─── degree(V) = sum(values(freudenthal_formula(λ))) ───────────────
+  @testset "degree equals Freudenthal sum" begin
+    for (DT, coords) in [
+      (TypeA{1}, [5]),
+      (TypeA{2}, [1, 0]),
+      (TypeA{2}, [2, 1]),
+      (TypeA{3}, [1, 0, 0]),
+      (TypeA{3}, [1, 1, 0]),
+      (TypeB{3}, [0, 0, 1]),
+      (TypeC{3}, [1, 0, 0]),
+      (TypeD{4}, [0, 1, 0, 0]),
+      (TypeG2, [0, 1]),
+      (TypeE{6}, [1, 0, 0, 0, 0, 0]),
+    ]
+      λ = WeightLatticeElem(DT, coords)
+      @test degree(λ) == sum(values(freudenthal_formula(λ)))
+    end
+  end
+
+  # ─── Tensor associativity (U⊗V)⊗W = U⊗(V⊗W) ─────────────────────
+  @testset "tensor associativity" begin
+    for (DT, a, b, c) in [
+      (TypeA{2}, [1, 0], [0, 1], [1, 0]),
+      (TypeA{2}, [1, 1], [1, 0], [0, 1]),
+      (TypeA{3}, [1, 0, 0], [0, 1, 0], [0, 0, 1]),
+      (TypeB{2}, [1, 0], [0, 1], [1, 0]),
+      (TypeG2, [1, 0], [0, 1], [1, 0]),
+    ]
+      U = WeylCharacter(WeightLatticeElem(DT, a))
+      V = WeylCharacter(WeightLatticeElem(DT, b))
+      W = WeylCharacter(WeightLatticeElem(DT, c))
+      @test (U * V) * W == U * (V * W)
+    end
+  end
+
+  # ─── Sym^k ⊕ ⋀^k dimension identity ─────────────────────────────
+  # For V of dim d: Σ_k degree(Sym^k(V)) x^k = 1/(1-x)^d
+  # Check that degree(Sym^k(V)) + degree(⋀^k(V)) matches known formula
+  @testset "Sym + exterior dimension identity" begin
+    ω₁_A2 = fundamental_weight(TypeA{2}, 1)  # dim 3
+    V = WeylCharacter(ω₁_A2)
+    # Sym^2(3) = 6, ⋀^2(3) = 3
+    @test degree(symmetric_power(V, 2)) == 6
+    @test degree(exterior_power(V, 2)) == 3
+
+    ω₁_B3 = fundamental_weight(TypeB{3}, 1)  # dim 7
+    V7 = WeylCharacter(ω₁_B3)
+    # Sym^2(7) = 28, ⋀^2(7) = 21
+    @test degree(symmetric_power(V7, 2)) == 28
+    @test degree(exterior_power(V7, 2)) == 21
+
+    # Full exterior algebra of 7-dim: Σ_k C(7,k) = 128 = 2^7
+    total = sum(degree(exterior_power(V7, k)) for k in 0:7)
+    @test total == 2^7
+
+    # Adams operator degree: degree(ψ^k(V)) via character = degree(V) (same)
+    ψ2 = adams_operator(ω₁_A2, 2)
+    @test sum(values(ψ2)) == degree(ω₁_A2)
+  end
+
+  # ─── degree(V::WeylCharacter) works for virtual characters ────────
+  @testset "degree of virtual character" begin
+    ω₁ = fundamental_weight(TypeA{2}, 1)
+    ω₂ = fundamental_weight(TypeA{2}, 2)
+    V1 = WeylCharacter(ω₁)
+    V2 = WeylCharacter(ω₂)
+    @test degree(V1 - V2) == 0         # 3 - 3 = 0
+    @test degree(V1 - 2 * V2) == -3   # 3 - 6 = -3
+    @test degree(2 * V1 + 3 * V2) == 15  # 2*3 + 3*3 = 15
+  end
+end
+
+# ═══════════════════════════════════════════════════════════════════════
+#  Product-type character tests (item 21)
+# ═══════════════════════════════════════════════════════════════════════
+@testset "Product-type characters extended" begin
+  # ─── A₂ × B₂ (rank 4) ────────────────────────────────────────────
+  @testset "A₂ × B₂" begin
+    PT = ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}
+    ω = [fundamental_weight(PT, i) for i in 1:4]
+
+    # Each fundamental weight lives in one factor
+    @test degree(ω[1]) == 3    # A₂ standard
+    @test degree(ω[2]) == 3    # A₂ dual standard
+    @test degree(ω[3]) == 4    # B₂ standard (= SO(5) vector = C₂ standard)
+    @test degree(ω[4]) == 4    # B₂ spinor = 4
+
+    # Freudenthal formula consistency
+    for i in 1:4
+      @test degree(ω[i]) == sum(values(freudenthal_formula(ω[i])))
+    end
+
+    # tensor product: V(ω₁) ⊗ V(ω₃) has dim 3×4 = 12
+    V1 = WeylCharacter(ω[1]); V3 = WeylCharacter(ω[3])
+    @test degree(V1 * V3) == 12
+
+    # V(ω₁) ⊗ V(ω₁) decomposes in A₂ factor only
+    @test degree(V1 * V1) == 9   # 3⊗3 in A₂
+
+    # Sym² and ⋀² of fundamental reps
+    @test degree(symmetric_power(ω[1], 2)) == 6
+    @test degree(exterior_power(ω[1], 2)) == 3
+    @test degree(symmetric_power(ω[3], 2)) == 10
+    @test degree(exterior_power(ω[3], 2)) == 6  # adjoint of B₂ = SO(5)
+
+    # dual involution
+    for i in 1:4
+      @test dual(dual(ω[i])) == ω[i]
+    end
+
+    # WeylCharacter equality on product type
+    @test WeylCharacter(ω[1]) + WeylCharacter(ω[2]) ==
+      WeylCharacter(ω[2]) + WeylCharacter(ω[1])
+
+    # degree via WeylCharacter
+    for i in 1:4
+      @test degree(WeylCharacter(ω[i])) == degree(ω[i])
+    end
+  end
+
+  # ─── A₁ × A₁ (simplest product) ─────────────────────────────────
+  @testset "A₁ × A₁" begin
+    PT = ProductDynkinType{Tuple{TypeA{1},TypeA{1}}}
+    ω₁ = fundamental_weight(PT, 1)
+    ω₂ = fundamental_weight(PT, 2)
+
+    @test degree(ω₁) == 2
+    @test degree(ω₂) == 2
+
+    V1 = WeylCharacter(ω₁); V2 = WeylCharacter(ω₂)
+
+    # (2⊗1) ⊗ (1⊗2) = 4-dim
+    @test degree(V1 * V2) == 4
+
+    # Sym²(2⊗1) in product type = Sym²(2) ⊗ 1 = 3⊗1 in product
+    # In A₁×A₁: V(ω₁)=2⊗1, Sym²(V(ω₁)) = V(2ω₁) = 3⊗1, dim=3
+    @test degree(symmetric_power(ω₁, 2)) == 3
+
+    # Bruhat-like: dimension formula on product
+    @test weyl_order(PT) == 4   # Z/2 × Z/2
+
+    # freudenthal on product type
+    m = freudenthal_formula(ω₁)
+    @test sum(values(m)) == 2
+  end
+
+  # ─── A₂ × A₂ × A₂ (three factors) ───────────────────────────────
+  @testset "A₂ × A₂ × A₂" begin
+    PT = ProductDynkinType{Tuple{TypeA{2},TypeA{2},TypeA{2}}}
+    ω = [fundamental_weight(PT, i) for i in 1:6]
+
+    # Each A₂ has 2 fundamental weights with dim 3
+    for i in 1:6
+      @test degree(ω[i]) == 3
+    end
+
+    # Triple tensor product: V(ω₁) ⊗ V(ω₃) ⊗ V(ω₅) has dim 27
+    V1 = WeylCharacter(ω[1]); V3 = WeylCharacter(ω[3]); V5 = WeylCharacter(ω[5])
+    @test degree(V1 * V3 * V5) == 27
+
+    # Weyl order: (3!)^3 = 216
+    @test weyl_order(PT) == 216
+
+    # Cartan matrix is block diagonal 6×6
+    C = cartan_matrix(PT)
+    @test C[1:2, 1:2] == cartan_matrix(TypeA{2})
+    @test C[3:4, 3:4] == cartan_matrix(TypeA{2})
+    @test C[5:6, 5:6] == cartan_matrix(TypeA{2})
+    @test C[1:2, 3:6] == zeros(Int, 2, 4)
+
+    # rank and positive root count
+    @test rank(PT) == 6
+    @test n_positive_roots(PT) == 9
+  end
+
+  # ─── A₃ × G₂ ─────────────────────────────────────────────────────
+  @testset "A₃ × G₂" begin
+    PT = ProductDynkinType{Tuple{TypeA{3},TypeG2}}
+    ω = [fundamental_weight(PT, i) for i in 1:5]
+
+    @test degree(ω[1]) == 4    # A₃ standard
+    @test degree(ω[2]) == 6    # A₃ antisym
+    @test degree(ω[3]) == 4    # A₃ det = dual standard (= 4 since self-dual A₃ ω₃)
+    @test degree(ω[4]) == 7    # G₂ standard
+    @test degree(ω[5]) == 14   # G₂ adjoint
+
+    V4 = WeylCharacter(ω[4])
+    V5 = WeylCharacter(ω[5])
+
+    # G₂ factor: 7⊗14 decomposes as known
+    # In the product type, this is a G₂ tensor product tensored with trivial A₃
+    @test degree(V4 * V5) == 98
+
+    # Freudenthal consistency
+    for i in 1:5
+      @test degree(ω[i]) == sum(values(freudenthal_formula(ω[i])))
+    end
+
+    # dimension: rank + 2*n_pos
+    @test dimension(PT) == dimension(TypeA{3}) + dimension(TypeG2)
+  end
+
+  # ─── character_from_weights round-trip ──────────────────────────
+  @testset "character_from_weights round-trip" begin
+    # For each irreducible, reconstruct from freudenthal_formula
+    for (DT, coords) in [
+      (TypeA{2}, [1, 0]),
+      (TypeA{2}, [1, 1]),
+      (TypeA{3}, [1, 0, 0]),
+      (TypeB{3}, [0, 0, 1]),
+      (TypeG2, [1, 0]),
+      (TypeE{6}, [1, 0, 0, 0, 0, 0]),   # minuscule: ties in height exist
+    ]
+      λ = WeightLatticeElem(DT, coords)
+      ff = freudenthal_formula(λ)
+      V = character_from_weights(DT, ff)
+      @test V == WeylCharacter(λ)
+    end
+
+    # Multi-irreducible: V(ω₁) ⊕ V(ω₂) in A₂
+    ω₁ = fundamental_weight(TypeA{2}, 1)
+    ω₂ = fundamental_weight(TypeA{2}, 2)
+    ff1 = freudenthal_formula(ω₁)
+    ff2 = freudenthal_formula(ω₂)
+    combined = merge(+, ff1, ff2)
+    result = character_from_weights(TypeA{2}, combined)
+    @test result == WeylCharacter(ω₁) + WeylCharacter(ω₂)
+  end
 end
