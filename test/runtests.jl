@@ -418,6 +418,19 @@ end
   # Confirm restored
   show(io, ω1)
   @test String(take!(io)) == "ω1"
+
+  # Vector constructor: zero-padding and warn-truncation
+  @testset "WeightLatticeElem vector constructor" begin
+    # Exact length
+    @test WeightLatticeElem(TypeA{3}, [1, 2, 3]) == WeightLatticeElem(TypeA{3}, (1, 2, 3))
+    # Shorter → pad with zeros
+    @test WeightLatticeElem(TypeA{3}, [1, 2]) == WeightLatticeElem(TypeA{3}, (1, 2, 0))
+    @test WeightLatticeElem(TypeA{3}, [5]) == WeightLatticeElem(TypeA{3}, (5, 0, 0))
+    @test WeightLatticeElem(TypeA{3}, Int[]) == WeightLatticeElem(TypeA{3}, (0, 0, 0))
+    # Longer → truncate (with warning)
+    @test_warn r"truncating" WeightLatticeElem(TypeA{2}, [1, 2, 3]) == WeightLatticeElem(TypeA{2}, (1, 2))
+    @test_warn r"truncating" WeightLatticeElem(TypeA{2}, [7, 8, 9, 10]) == WeightLatticeElem(TypeA{2}, (7, 8))
+  end
 end
 
 # ═══════════════════════════════════════════════════════════════════════
