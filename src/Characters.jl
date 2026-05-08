@@ -2517,6 +2517,8 @@ julia> PDT = ProductDynkinType{Tuple{TypeA{2},TypeB{2}}};
 julia> degree(adjoint_representation(PDT))
 18
 
+julia> adjoint_representation(PDT)
+A2 × B2(1, 1, 0, 0) + A2 × B2(0, 0, 0, 2)
 ```
 """
 function adjoint_representation(::Type{DT}) where {DT<:SimpleDynkinType}
@@ -2550,3 +2552,5 @@ function adjoint_representation(::Type{PDT}) where {Ts,PDT<:ProductDynkinType{Ts
     result = result + WeylCharacter(λ)
     offset += r
   end
+  return result
+end
