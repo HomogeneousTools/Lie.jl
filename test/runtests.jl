@@ -135,6 +135,13 @@ end
 
   # Instance dispatch
   @test cartan_determinant(TypeA{2}()) == cartan_determinant(TypeA{2})
+
+  # Cross-check: cartan_determinant == det(cartan_matrix) for all simple types
+  for DT in [TypeA{1}, TypeA{2}, TypeA{3}, TypeA{4}, TypeB{2}, TypeB{3},
+             TypeC{2}, TypeC{3}, TypeD{4}, TypeD{5},
+             TypeE{6}, TypeE{7}, TypeE{8}, TypeF4, TypeG2]
+    @test cartan_determinant(DT) == round(Int, det(Matrix{Float64}(cartan_matrix(DT))))
+  end
 end
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -210,6 +217,11 @@ end
 
   c_G2 = coxeter_coefficients(TypeG2)
   @test c_G2 == [3, 2]  # G₂ Coxeter coefficients
+
+  # Product type: must return SVector (not Vector), matching simple-type contract
+  c_prod = coxeter_coefficients(ProductDynkinType{Tuple{TypeA{2},TypeB{3}}}())
+  @test c_prod isa SVector
+  @test c_prod == vcat(coxeter_coefficients(TypeA{2}), coxeter_coefficients(TypeB{3}))
 
   # Dual Coxeter coefficients: highest short root of the dual root system
   dc_B2 = dual_coxeter_coefficients(TypeB{2})
@@ -307,6 +319,18 @@ end
   @test is_positive_root(RS_A2, α1)
   @test is_positive_root(RS_A2, α1 + α2)
   @test !is_positive_root(RS_A2, -α1)
+
+  # clear_caches! must not break is_positive_root on re-use
+  RS_E6 = root_system(TypeE{6})
+  α_E6 = simple_roots(RS_E6)[1]
+  @test is_positive_root(RS_E6, α_E6)
+  clear_caches!()
+  # After clearing, is_positive_root must still work (cache repopulates on demand)
+  @test is_positive_root(RS_E6, α_E6)
+  @test !is_positive_root(RS_E6, -α_E6)
+  # And a fresh root system should also work
+  RS_B3 = root_system(TypeB{3})
+  @test is_positive_root(RS_B3, simple_roots(RS_B3)[2])
 
   # Compact show for RootSpaceElem
   io = IOBuffer()
@@ -1930,6 +1954,21 @@ end
         @test !(i in right_descent_set(w))
       end
     end
+  end
+
+  @testset "E₈ maximal parabolic by {2,3,4,5,6,7,8}" begin
+    W = weyl_group(TypeE{8})
+    # Remove node 1: W_I = W(E₇), |W(E₈)|/|W(E₇)| = 696729600/2903040 = 240
+    reps = right_coset_reps(W, [2, 3, 4, 5, 6, 7, 8])
+    @test length(reps) == 240
+    # Every representative has no right descent in I
+    for w in reps
+      for i in 2:8
+        @test !(i in right_descent_set(w))
+      end
+    end
+    # Left coset reps give the same count
+    @test length(left_coset_reps(W, [2, 3, 4, 5, 6, 7, 8])) == 240
   end
 end
 
