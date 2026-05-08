@@ -54,9 +54,6 @@ Sym(3, ω₁)    # Sym³(standard rep)
 length(weyl_orbit(TypeA{3}, ω₁))   # 4
 weyl_order(TypeA{3})                # 24
 
-# Borel–Weil–Bott theorem
-borel_weil_bott(ω₁)   # (0, ω₁) — degree 0, weight ω₁
-
 # Virtual (Weyl) characters and the representation ring
 V = WeylCharacter(ω₁)
 V * V                    # tensor product as ring multiplication
