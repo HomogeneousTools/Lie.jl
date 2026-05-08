@@ -23,6 +23,12 @@ const _DEFAULT_EXT_POWER_FRAC = 0.15
 
 _cache_maxsize(budget::Int, fraction::Float64) = max(1, round(Int, budget * fraction))
 
+# ─── Compact display toggle ──────────────────────────────────────────────────
+# Governs the default show format for WeightLatticeElem and RootSpaceElem.
+# When true, show always uses the coordinate form "DT[c₁,c₂,…]" regardless of
+# the IOContext.  Per-call override is still possible via IOContext(:compact).
+const _compact_display = Ref{Bool}(false)
+
 # ─── Type-level Dynkin types ────────────────────────────────────────────────
 include("DynkinTypes.jl")
 
@@ -57,6 +63,52 @@ Clear all internal caches used by Lie.jl.  Alias for `clear_caches!`.
 clear_all_caches!() = clear_caches!()
 
 export clear_all_caches!, clear_caches!, configure_caches!, cache_info
+
+# ─── Compact display ─────────────────────────────────────────────────────────
+
+"""
+    compact_display!(val::Bool = true)
+
+Set the global compact-display mode for [`WeightLatticeElem`](@ref) and
+[`RootSpaceElem`](@ref).
+
+When `true`, every call to `show` on these types prints the coordinate form
+`DT[c₁,c₂,…]` (e.g. `A3[1,0,0]` for ω₁ in type A₃) regardless of the
+`IOContext`.  When `false` (the default), the standard symbolic form is used
+(`ω1`, `α1 + α2`, etc.).
+
+The per-call `IOContext(:compact => true)` override always takes precedence.
+
+# Examples
+```jldoctest compact
+julia> using Lie
+
+julia> ω₁ = fundamental_weight(TypeA{3}, 1);
+
+julia> compact_display!(true)
+true
+
+julia> ω₁
+A3[1,0,0]
+
+julia> fundamental_weights(TypeA{3})
+3-element Vector{WeightLatticeElem{TypeA{3}, 3}}:
+ A3[1,0,0]
+ A3[0,1,0]
+ A3[0,0,1]
+
+julia> compact_display!(false)
+false
+
+julia> ω₁
+ω1
+```
+"""
+function compact_display!(val::Bool = true)
+  _compact_display[] = val
+end
+
+export compact_display!
 
 # ─── Precompilation ─────────────────────────────────────────────────────────
 # @compile_workload executes real code during precompilation, so Julia

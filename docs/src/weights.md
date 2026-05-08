@@ -57,6 +57,49 @@ fundamental_weights
 weyl_vector
 ```
 
+## Display
+
+Weights are printed in the fundamental weight basis by default:
+`ω1`, `2ω1 + ω2`, `0`, etc.
+
+### Per-call compact format
+
+Pass `:compact => true` via `IOContext` to switch a single `show` call to the
+concise coordinate form `DT[c₁,c₂,…]`:
+
+```jldoctest weights
+julia> show(IOContext(stdout, :compact => true), ω₁)
+A3[1,0,0]
+
+julia> show(IOContext(stdout, :compact => true), 2*ω₁ - ω₃)
+A3[2,0,-1]
+```
+
+The same compact form is used by [`RootSpaceElem`](@ref).
+
+### Global compact toggle
+
+Call [`compact_display!`](@ref) to make the compact form the session-wide
+default for all `WeightLatticeElem` and `RootSpaceElem` output:
+
+```jldoctest weights
+julia> compact_display!(true)
+true
+
+julia> fundamental_weights(TypeA{3})
+3-element Vector{WeightLatticeElem{TypeA{3}, 3}}:
+ A3[1,0,0]
+ A3[0,1,0]
+ A3[0,0,1]
+
+julia> compact_display!(false)   # restore default
+false
+```
+
+```@docs
+compact_display!
+```
+
 ## Dominance
 
 A weight is **dominant** when all its fundamental weight coordinates

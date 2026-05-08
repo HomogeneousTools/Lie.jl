@@ -73,6 +73,10 @@ Base.zero(::WeightLatticeElem{DT,R}) where {DT,R} = WeightLatticeElem{DT,R}(
 Base.iszero(a::WeightLatticeElem) = iszero(a.vec)
 
 function Base.show(io::IO, w::WeightLatticeElem{DT,R}) where {DT,R}
+  if get(io, :compact, _compact_display[])
+    print(io, _type_name(DT), "[", join(w.vec, ","), "]")
+    return
+  end
   terms = String[]
   for i in 1:R
     c = w.vec[i]

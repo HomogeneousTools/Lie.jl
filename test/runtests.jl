@@ -271,6 +271,19 @@ end
   @test is_positive_root(RS_A2, α1)
   @test is_positive_root(RS_A2, α1 + α2)
   @test !is_positive_root(RS_A2, -α1)
+
+  # Compact show for RootSpaceElem
+  io = IOBuffer()
+  show(IOContext(io, :compact => true), α1)
+  @test String(take!(io)) == "A2[1,0]"
+  show(IOContext(io, :compact => true), α1 + α2)
+  @test String(take!(io)) == "A2[1,1]"
+  show(IOContext(io, :compact => true), -α1)
+  @test String(take!(io)) == "A2[-1,0]"
+  show(io, α1)
+  @test String(take!(io)) == "α1"
+  show(io, α1 + α2)
+  @test String(take!(io)) == "α1 + α2"
 end
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -318,7 +331,7 @@ end
   w_dom = conjugate_dominant_weight(w_neg)
   @test is_dominant(w_dom)
 
-  # conjugate_dominant_weight_with_length agrees with _with_elem
+  # Conjugate_dominant_weight_with_length agrees with _with_elem
   for coords in [[-1, 2], [-3, 5], [2, -4], [-2, -3], [0, 0]]
     wt = WeightLatticeElem(DT, coords)
     dom_e, word = conjugate_dominant_weight_with_elem(wt)
@@ -326,6 +339,49 @@ end
     @test dom_e == dom_l
     @test length(word) == len
   end
+
+  # Compact show: explicit IOContext(:compact => true) → "DT[c₁,c₂,…]"
+  io = IOBuffer()
+  show(IOContext(io, :compact => true), ω1)
+  @test String(take!(io)) == "A2[1,0]"
+
+  show(IOContext(io, :compact => true), ω2)
+  @test String(take!(io)) == "A2[0,1]"
+
+  show(IOContext(io, :compact => true), ω1 + ω2)
+  @test String(take!(io)) == "A2[1,1]"
+
+  show(IOContext(io, :compact => true), WeightLatticeElem(DT, [0, 0]))
+  @test String(take!(io)) == "A2[0,0]"
+
+  show(IOContext(io, :compact => true), WeightLatticeElem(DT, [-3, 2]))
+  @test String(take!(io)) == "A2[-3,2]"
+
+  # Default show unchanged (no :compact key)
+  show(io, ω1)
+  @test String(take!(io)) == "ω1"
+  show(io, ω1 + 2ω2)
+  @test String(take!(io)) == "ω1 + 2ω2"
+  show(io, WeightLatticeElem(DT, [0, 0]))
+  @test String(take!(io)) == "0"
+
+  # compact_display! global toggle
+  compact_display!(true)
+  try
+    show(io, ω1)
+    @test String(take!(io)) == "A2[1,0]"
+    show(io, WeightLatticeElem(DT, [0, 0]))
+    @test String(take!(io)) == "A2[0,0]"
+    # IOContext(:compact => false) overrides the global toggle
+    show(IOContext(io, :compact => false), ω1)
+    @test String(take!(io)) == "ω1"
+  finally
+    compact_display!(false)
+  end
+
+  # Confirm restored
+  show(io, ω1)
+  @test String(take!(io)) == "ω1"
 end
 
 # ═══════════════════════════════════════════════════════════════════════
