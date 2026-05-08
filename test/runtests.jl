@@ -3,6 +3,7 @@ using Lie
 using Aqua
 import Lie: borel_weil_bott  # no longer publicly exported; tested here via explicit import
 using StaticArrays
+using LinearAlgebra: det
 
 # ═══════════════════════════════════════════════════════════════════════
 #  Dynkin types
@@ -56,12 +57,16 @@ end
 
   # D-type: forked tail (Bourbaki orientation — top node is N, fork from N-2)
   @test dynkin_diagram(TypeD{4}) == "        ○ 4\n       /\n○───○───○\n1   2   3"
-  @test dynkin_diagram(TypeD{5}) == "            ○ 5\n           /\n○───○───○───○\n1   2   3   4"
+  @test dynkin_diagram(TypeD{5}) ==
+    "            ○ 5\n           /\n○───○───○───○\n1   2   3   4"
 
   # E-type: node 2 branches off node 4 (Bourbaki)
-  @test dynkin_diagram(TypeE{6}) == "        ○ 2\n        |\n○───○───○───○───○\n1   3   4   5   6"
-  @test dynkin_diagram(TypeE{7}) == "        ○ 2\n        |\n○───○───○───○───○───○\n1   3   4   5   6   7"
-  @test dynkin_diagram(TypeE{8}) == "        ○ 2\n        |\n○───○───○───○───○───○───○\n1   3   4   5   6   7   8"
+  @test dynkin_diagram(TypeE{6}) ==
+    "        ○ 2\n        |\n○───○───○───○───○\n1   3   4   5   6"
+  @test dynkin_diagram(TypeE{7}) ==
+    "        ○ 2\n        |\n○───○───○───○───○───○\n1   3   4   5   6   7"
+  @test dynkin_diagram(TypeE{8}) ==
+    "        ○ 2\n        |\n○───○───○───○───○───○───○\n1   3   4   5   6   7   8"
 
   # F₄ and G₂
   @test dynkin_diagram(TypeF4) == "○───○═>═○───○\n1   2   3   4"
@@ -138,8 +143,8 @@ end
 
   # Cross-check: cartan_determinant == det(cartan_matrix) for all simple types
   for DT in [TypeA{1}, TypeA{2}, TypeA{3}, TypeA{4}, TypeB{2}, TypeB{3},
-             TypeC{2}, TypeC{3}, TypeD{4}, TypeD{5},
-             TypeE{6}, TypeE{7}, TypeE{8}, TypeF4, TypeG2]
+    TypeC{2}, TypeC{3}, TypeD{4}, TypeD{5},
+    TypeE{6}, TypeE{7}, TypeE{8}, TypeF4, TypeG2]
     @test cartan_determinant(DT) == round(Int, det(Matrix{Float64}(cartan_matrix(DT))))
   end
 end
@@ -321,7 +326,7 @@ end
   @test !is_positive_root(RS_A2, -α1)
 
   # clear_caches! must not break is_positive_root on re-use
-  RS_E6 = root_system(TypeE{6})
+  RS_E6 = RootSystem(TypeE{6})
   α_E6 = simple_roots(RS_E6)[1]
   @test is_positive_root(RS_E6, α_E6)
   clear_caches!()
@@ -329,7 +334,7 @@ end
   @test is_positive_root(RS_E6, α_E6)
   @test !is_positive_root(RS_E6, -α_E6)
   # And a fresh root system should also work
-  RS_B3 = root_system(TypeB{3})
+  RS_B3 = RootSystem(TypeB{3})
   @test is_positive_root(RS_B3, simple_roots(RS_B3)[2])
 
   # Compact show for RootSpaceElem
@@ -452,8 +457,10 @@ end
     @test WeightLatticeElem(TypeA{3}, [5]) == WeightLatticeElem(TypeA{3}, (5, 0, 0))
     @test WeightLatticeElem(TypeA{3}, Int[]) == WeightLatticeElem(TypeA{3}, (0, 0, 0))
     # Longer → truncate (with warning)
-    @test_warn r"truncating" WeightLatticeElem(TypeA{2}, [1, 2, 3]) == WeightLatticeElem(TypeA{2}, (1, 2))
-    @test_warn r"truncating" WeightLatticeElem(TypeA{2}, [7, 8, 9, 10]) == WeightLatticeElem(TypeA{2}, (7, 8))
+    @test_warn r"truncating" WeightLatticeElem(TypeA{2}, [1, 2, 3]) ==
+      WeightLatticeElem(TypeA{2}, (1, 2))
+    @test_warn r"truncating" WeightLatticeElem(TypeA{2}, [7, 8, 9, 10]) ==
+      WeightLatticeElem(TypeA{2}, (7, 8))
   end
 end
 
@@ -1922,7 +1929,9 @@ end
     W = weyl_group(TypeA{3})
     e = one(W)
     w0 = longest_element(W)
-    s1 = gen(W, 1); s2 = gen(W, 2); s3 = gen(W, 3)
+    s1 = gen(W, 1);
+    s2 = gen(W, 2);
+    s3 = gen(W, 3)
 
     # Identity ≤ everything, w₀ ≥ everything
     elems = [e, s1, s2, s3, s1 * s2, s2 * s3, s1 * s2 * s3, w0]
@@ -1956,19 +1965,20 @@ end
     end
   end
 
-  @testset "E₈ maximal parabolic by {2,3,4,5,6,7,8}" begin
+  @testset "E₈ maximal parabolic by {1,2,3,4,5,6,7}" begin
     W = weyl_group(TypeE{8})
-    # Remove node 1: W_I = W(E₇), |W(E₈)|/|W(E₇)| = 696729600/2903040 = 240
-    reps = right_coset_reps(W, [2, 3, 4, 5, 6, 7, 8])
+    # Remove node 8 (rightmost leaf): subdiagram is E₇.
+    # |W(E₈)| / |W(E₇)| = 696_729_600 / 2_903_040 = 240
+    reps = right_coset_reps(W, [1, 2, 3, 4, 5, 6, 7])
     @test length(reps) == 240
     # Every representative has no right descent in I
     for w in reps
-      for i in 2:8
+      for i in 1:7
         @test !(i in right_descent_set(w))
       end
     end
     # Left coset reps give the same count
-    @test length(left_coset_reps(W, [2, 3, 4, 5, 6, 7, 8])) == 240
+    @test length(left_coset_reps(W, [1, 2, 3, 4, 5, 6, 7])) == 240
   end
 end
 
@@ -2137,7 +2147,8 @@ end
     end
 
     # tensor product: V(ω₁) ⊗ V(ω₃) has dim 3×5 = 15
-    V1 = WeylCharacter(ω[1]); V3 = WeylCharacter(ω[3])
+    V1 = WeylCharacter(ω[1]);
+    V3 = WeylCharacter(ω[3])
     @test degree(V1 * V3) == 15
 
     # V(ω₁) ⊗ V(ω₁) decomposes in A₂ factor only
@@ -2173,7 +2184,8 @@ end
     @test degree(ω₁) == 2
     @test degree(ω₂) == 2
 
-    V1 = WeylCharacter(ω₁); V2 = WeylCharacter(ω₂)
+    V1 = WeylCharacter(ω₁);
+    V2 = WeylCharacter(ω₂)
 
     # (2⊗1) ⊗ (1⊗2) = 4-dim
     @test degree(V1 * V2) == 4
@@ -2201,7 +2213,9 @@ end
     end
 
     # Triple tensor product: V(ω₁) ⊗ V(ω₃) ⊗ V(ω₅) has dim 27
-    V1 = WeylCharacter(ω[1]); V3 = WeylCharacter(ω[3]); V5 = WeylCharacter(ω[5])
+    V1 = WeylCharacter(ω[1]);
+    V3 = WeylCharacter(ω[3]);
+    V5 = WeylCharacter(ω[5])
     @test degree(V1 * V3 * V5) == 27
 
     # Weyl order: (3!)^3 = 216
