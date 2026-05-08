@@ -23,8 +23,7 @@ Porting more features is planned.
 - **Weight lattice** — Fundamental weights, Weyl vector, dominance, conjugation
 - **Weyl groups** — Reduced words, multiplication via reflection tables, orbits, dimension formula
 - **Characters** — Weyl characters (representation ring), Freudenthal formula, Brauer–Klimyk
-  tensor products, Littlewood–Richardson (Type A), Adams operators, symmetric/exterior powers,
-  Borel–Weil–Bott
+  tensor products, Littlewood–Richardson (Type A), Adams operators, symmetric/exterior powers
 
 ## Installation
 
