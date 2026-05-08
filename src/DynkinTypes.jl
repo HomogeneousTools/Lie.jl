@@ -358,34 +358,7 @@ end
 
 function dynkin_diagram(::Type{TypeD{N}}) where {N}
   # D_n: linear chain 1..N-2, then fork to N-1 and N at node N-2
-  #         ○ N
-  #        /
-  # ○───○───…───○
-  # 1   2      N-1
-  # Actually Bourbaki D_n: nodes 1..N-2 linear, node N-1 and N branch from N-2
-  chain_len = N - 2
-  if chain_len >= 1
-    chain = join(fill("○", chain_len), "───")
-    chain_labels = join([lpad(string(i), 1) for i in 1:(chain_len)], "   ")
-  else
-    chain = ""
-    chain_labels = ""
-  end
-  # Branch node
-  indent = max(0, 4 * (chain_len - 1) + 4)
-  top_line = " "^indent * "○ $N"
-  branch_line = " "^indent * "/"  # changed from fork_line
-  if chain_len >= 1
-    bottom_line = chain * "───○───○"
-    bottom_labels = chain_labels * "   $(N-1)   $N" # wait, rethink
-  else
-    bottom_line = "○───○"
-    bottom_labels = "$(N-1)   $N"
-  end
-  # Actually let me reconsider the layout for D_n
-  # Standard: 1 ─ 2 ─ ... ─ (N-2) ─ (N-1)
-  #                               \─ N
-  # or as Bourbaki:
+  # Bourbaki layout:
   #          ○ N
   #         /
   # ○──○──...──○──○
