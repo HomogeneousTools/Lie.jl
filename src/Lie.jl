@@ -20,7 +20,7 @@ using LRUCache
 using PrecompileTools
 using Preferences
 using StaticArrays
-using LinearAlgebra: dot as _dot, I as _I
+using LinearAlgebra: I as _I
 
 # ─── Cache budget (computed before any cache is created) ─────────────────────
 
