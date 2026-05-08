@@ -1561,7 +1561,9 @@ end
 # The dominant part of ψ^r(V) = Σᵢ mᵢ ψ^r(V(λᵢ)) is accumulated inline:
 # for each dominant weight μ of V(λᵢ), r·μ is also dominant (r ≥ 1), so the
 # dominant-weight dict can be passed directly to _brauer_klimyk_dominant.
-function _symmetric_power_newton_girard_char(V::WeylCharacter{DT,R}, k::Integer) where {DT,R}
+function _symmetric_power_newton_girard_char(
+  V::WeylCharacter{DT,R}, k::Integer
+) where {DT,R}
   result = WeylCharacter(DT)
   adams = Dict{SVector{R,Int},Int}()
   for r in 1:k
