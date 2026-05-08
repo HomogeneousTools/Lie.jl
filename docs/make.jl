@@ -14,7 +14,6 @@ makedocs(;
     "Implementation details" => "details.md",
   ],
   doctest=true,
-  warnonly=[:missing_docs],
   format=Documenter.HTML(;
     canonical="https://HomogeneousTools.github.io/Lie.jl"
   ),
