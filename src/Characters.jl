@@ -1590,22 +1590,32 @@ function symmetric_power(V::WeylCharacter{DT,R}, k::Integer) where {DT,R}
 end
 
 # Newton–Girard for a general virtual character V (not just a single irreducible).
-# The dominant part of ψ^r(V) = Σᵢ mᵢ ψ^r(V(λᵢ)) is accumulated inline:
-# for each dominant weight μ of V(λᵢ), r·μ is also dominant (r ≥ 1), so the
-# dominant-weight dict can be passed directly to _brauer_klimyk_dominant.
+# The dominant part of ψ^r(V) = Σᵢ mᵢ ψ^r(V(λᵢ)) is accumulated inline.
+#
+# Optimisation: pre-aggregate the base dominant character
+#   base_dom[μ] = Σᵢ mᵢ · m_{V(λᵢ)}(μ)
+# so that building adams for each r costs O(|base_dom|) rather than
+# O(|V.terms| × avg_dom_char_size).
 function _symmetric_power_newton_girard_char(
   V::WeylCharacter{DT,R}, k::Integer
 ) where {DT,R}
   result = WeylCharacter(DT)
+
+  # Build base dominant character once (aggregated over all irreducible components).
+  base_dom = Dict{SVector{R,Int},Int}()
+  for (λ, m_λ) in V.terms
+    for (μ_vec, m_μ) in dominant_character(λ)
+      base_dom[μ_vec] = get(base_dom, μ_vec, 0) + m_λ * m_μ
+    end
+  end
+
   adams = Dict{SVector{R,Int},Int}()
+  sizehint!(adams, length(base_dom))
   for r in 1:k
-    # Build dominant part of ψ^r(V): {r·μ ↦ Σᵢ mᵢ · m_λᵢ(μ)} for dominant μ
+    # Scale dominant weights by r: ψ^r scales each weight μ → r·μ.
     empty!(adams)
-    for (λ, m_λ) in V.terms
-      for (μ_vec, m_μ) in dominant_character(λ)
-        key = r * μ_vec
-        adams[key] = get(adams, key, 0) + m_λ * m_μ
-      end
+    for (μ_vec, w) in base_dom
+      adams[r * μ_vec] = w
     end
     prev = symmetric_power(V, k - r)
     for (μ, m) in prev.terms
@@ -1737,17 +1747,23 @@ end
 
 # Newton–Girard for a general virtual character V (not just a single irreducible).
 # Mirror of _symmetric_power_newton_girard_char with alternating signs.
+# Same pre-aggregation optimisation: base_dom is computed once before the r-loop.
 function _exterior_power_newton_girard_char(V::WeylCharacter{DT,R}, k::Integer) where {DT,R}
   result = WeylCharacter(DT)
+
+  base_dom = Dict{SVector{R,Int},Int}()
+  for (λ, m_λ) in V.terms
+    for (μ_vec, m_μ) in dominant_character(λ)
+      base_dom[μ_vec] = get(base_dom, μ_vec, 0) + m_λ * m_μ
+    end
+  end
+
   adams = Dict{SVector{R,Int},Int}()
+  sizehint!(adams, length(base_dom))
   for r in 1:k
-    # Build dominant part of ψ^r(V): {r·μ ↦ Σᵢ mᵢ · m_λᵢ(μ)} for dominant μ
     empty!(adams)
-    for (λ, m_λ) in V.terms
-      for (μ_vec, m_μ) in dominant_character(λ)
-        key = r * μ_vec
-        adams[key] = get(adams, key, 0) + m_λ * m_μ
-      end
+    for (μ_vec, w) in base_dom
+      adams[r * μ_vec] = w
     end
     prev = exterior_power(V, k - r)
     sign = iseven(r) ? -1 : 1
