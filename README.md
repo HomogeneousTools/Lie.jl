@@ -138,9 +138,12 @@ infrastructure). Results are saved as JSON for regression tracking.
 ## Dependencies
 
 - [StaticArrays.jl](https://github.com/JuliaArrays/StaticArrays.jl) — fixed-size arrays for compile-time root/weight data
+- [LRUCache.jl](https://github.com/JuliaCollections/LRUCache.jl) — bounded LRU caches for memoised computations
+- [PrecompileTools.jl](https://github.com/JuliaLang/PrecompileTools.jl) — precompilation workloads for fast first-call latency
+- [Preferences.jl](https://github.com/JuliaPackaging/Preferences.jl) — persistent per-environment configuration
 - [LinearAlgebra](https://docs.julialang.org/en/v1/stdlib/LinearAlgebra/) (stdlib)
-- [BenchmarkTools.jl](https://github.com/JuliaCI/BenchmarkTools.jl) — benchmarking
-- [Documenter.jl](https://github.com/JuliaDocs/Documenter.jl) — documentation and doctests
+- [BenchmarkTools.jl](https://github.com/JuliaCI/BenchmarkTools.jl) — benchmarking (test/benchmark only)
+- [Documenter.jl](https://github.com/JuliaDocs/Documenter.jl) — documentation and doctests (docs only)
 
 Julia ≥ 1.9 required.
 
