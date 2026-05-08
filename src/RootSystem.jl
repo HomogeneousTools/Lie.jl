@@ -15,6 +15,8 @@ export is_root, is_positive_root, height
 export dot, coefficients, coxeter_coefficients, dual_coxeter_coefficients, coxeter_number,
   dual_coxeter_number, degrees_fundamental_invariants
 
+import LinearAlgebra: dot
+
 # ═══════════════════════════════════════════════════════════════════════════════
 #  RootSpaceElem — a vector in the root space (linear combination of simple roots)
 # ═══════════════════════════════════════════════════════════════════════════════
