@@ -1,6 +1,6 @@
 name = "Lie"
-uuid = "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
-version = "0.1.0"
+uuid = "c99f5fee-6cdb-4bf1-806f-d7690e6ee6f7"
+version = "1.0.0-rc.1"
 authors = ["Pieter Belmans <p.belmans@uu.nl>"]
 
 [deps]
@@ -11,16 +11,22 @@ Preferences = "21216c6a-2e73-6563-6e65-726566657250"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
+Aqua = "0.8"
+BenchmarkTools = "1"
+Documenter = "1"
 LRUCache = "1.6"
+LinearAlgebra = "1"
 PrecompileTools = "1"
 Preferences = "1"
 StaticArrays = "1"
+Test = "1"
 julia = "1.9"
 
 [extras]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Test", "BenchmarkTools"]
+test = ["Aqua", "Test", "BenchmarkTools"]
