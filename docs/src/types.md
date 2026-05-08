@@ -47,14 +47,17 @@ n_positive_roots
 
 The function `dynkin_diagram` produces a text rendering of the Dynkin diagram
 following Bourbaki labelling conventions. This includes the correct arrow
-directions for non-simply-laced types and the branching for types D and E:
+directions for non-simply-laced types and the branching for types D and E.
+
+The return value is a [`DynkinDiagram`](@ref) object that pretty-prints
+automatically in the REPL without requiring `println`:
 
 ```jldoctest types
-julia> println(dynkin_diagram(TypeA{4}))
+julia> dynkin_diagram(TypeA{4})
 ○───○───○───○
 1   2   3   4
 
-julia> println(dynkin_diagram(TypeG2))
+julia> dynkin_diagram(TypeG2)
 ○≡≡≡○
 1   2
 ```
@@ -63,15 +66,16 @@ For types with branching (D and E), the diagram shows the fork:
 
 ```@example
 using Lie  # hide
-println(dynkin_diagram(TypeD{5}))
+dynkin_diagram(TypeD{5})
 ```
 
 ```@example
 using Lie  # hide
-println(dynkin_diagram(TypeE{6}))
+dynkin_diagram(TypeE{6})
 ```
 
 ```@docs
+DynkinDiagram
 dynkin_diagram
 ```
 
@@ -99,7 +103,7 @@ julia> component_offsets(PT)
 ```@example
 using Lie  # hide
 PT = ProductDynkinType{Tuple{TypeA{2}, TypeB{2}}}
-println(dynkin_diagram(PT))
+dynkin_diagram(PT)
 ```
 
 ```@docs
