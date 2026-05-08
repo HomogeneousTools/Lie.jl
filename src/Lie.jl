@@ -153,7 +153,7 @@ function _print_banner()
 
   # Row 4:        ▙▌
   print("       ▙▌  ")
-  println(" │  Docs:    https://homogeneous.tools/lie.jl")
+  println(" │  Docs:    https://homogeneous.tools/Lie.jl")
 
   print("            ")
   println("│  Version: ", version_str)
