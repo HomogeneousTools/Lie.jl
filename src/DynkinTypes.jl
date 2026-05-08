@@ -215,23 +215,26 @@ n_positive_roots(dt::DynkinType) = n_positive_roots(typeof(dt))
     dimension(::Type{DT}) -> Int
     dimension(dt::DynkinType) -> Int
 
-Return the dimension of the semisimple Lie group (or algebra) of type `DT`.
+Return the dimension of the semisimple Lie algebra of type `DT`.
 
 For a semisimple Lie algebra of rank ``r`` with ``n`` positive roots,
 the dimension is ``r + 2n`` (Cartan subalgebra plus positive and negative
 root spaces).
 
+Note: for the adjoint representation dimension (same number), use
+[`degree`](@ref) on [`adjoint_representation`](@ref).
+
 # Examples
 ```jldoctest
 julia> using Lie
 
-julia> dimension(TypeA{3})  # dim(SL₄) = 15
+julia> dimension(TypeA{3})  # 𝔰𝔩₄ has dimension 15
 15
 
-julia> dimension(TypeE{8})  # dim(E₈) = 248
+julia> dimension(TypeE{8})  # 𝔢₈ has dimension 248
 248
 
-julia> dimension(ProductDynkinType{Tuple{TypeA{1}, TypeA{1}}}())  # dim(SL₂ × SL₂) = 6
+julia> dimension(ProductDynkinType{Tuple{TypeA{1}, TypeA{1}}}())  # 𝔰𝔩₂ ⊕ 𝔰𝔩₂ has dimension 6
 6
 ```
 """
