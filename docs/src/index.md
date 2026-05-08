@@ -30,7 +30,7 @@ Porting more features is planned.
 
 ```julia
 using Pkg
-Pkg.add(url="https://github.com/…/Lie.jl")
+Pkg.add(url="https://github.com/HomogeneousTools/Lie.jl")
 ```
 
 ## Quick start
