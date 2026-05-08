@@ -792,6 +792,12 @@ end
 
 Apply the Borel–Weil–Bott theorem to the weight `λ`.
 
+!!! note "Package placement"
+    This function is a preview implementation that properly belongs to
+    `PartialFlagVarieties.jl`, an upcoming companion package. It is included here
+    for convenience but is **not part of the public API of `Lie.jl`** and is not
+    exported. Access it via `import Lie: borel_weil_bott`.
+
 Compute `μ = λ + ρ` and find the unique Weyl group element `w` such that
 `w(μ)` is dominant. If `μ` is singular (lies on a Weyl chamber wall),
 all cohomology vanishes and we return `nothing`. Otherwise, return
