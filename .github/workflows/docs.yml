@@ -28,7 +28,7 @@ jobs:
       - uses: julia-actions/cache@v2
       - name: Install dependencies
         run: |
-          julia --project=docs -e 'using Pkg; Pkg.develop(PackageSpec(path=".")); Pkg.instantiate()'
+          julia --project=docs -e 'using Pkg; Pkg.instantiate()'
       - name: Build and deploy documentation
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
