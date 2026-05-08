@@ -1870,7 +1870,8 @@ end
     @test length(adj3) == 2
 
     # Instance dispatch works too
-    @test degree(adjoint_representation(ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}())) == 18
+    @test degree(adjoint_representation(ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}())) ==
+      18
   end
 end
 
