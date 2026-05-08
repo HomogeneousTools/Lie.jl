@@ -516,50 +516,52 @@ function freudenthal_formula(λ::WeightLatticeElem{DT,R}) where {DT,R}
 end
 
 function _dominant_character_type_data(::Type{DT}) where {DT<:DynkinType}
-  return get!(
-    _dominant_character_type_cache, DT
-  ) do
-    R = rank(DT)
-    RS = RootSystem(DT)
-    C = cartan_matrix(DT)
-    B = cartan_bilinear_form(DT)
-    d = cartan_symmetrizer(DT)
-    n_pos = n_positive_roots(RS)
+  lock(_dominant_character_type_lock) do
+    get!(
+      _dominant_character_type_cache, DT
+    ) do
+      R = rank(DT)
+      RS = RootSystem(DT)
+      C = cartan_matrix(DT)
+      B = cartan_bilinear_form(DT)
+      d = cartan_symmetrizer(DT)
+      n_pos = n_positive_roots(RS)
 
-    # These arrays depend only on the root system type, not on the highest weight.
-    # Caching them avoids rebuilding the same root-coordinate transforms for every
-    # dominant_character call and benefits all downstream algorithms that rely on it.
-    α_w = ntuple(
-      k -> begin
-        α_root = RS.positive_roots_list[k]
-        SVector{R,Int}(ntuple(j -> sum(C[j, i] * α_root[i] for i in 1:R), R))
-      end, n_pos)
+      # These arrays depend only on the root system type, not on the highest weight.
+      # Caching them avoids rebuilding the same root-coordinate transforms for every
+      # dominant_character call and benefits all downstream algorithms that rely on it.
+      α_w = ntuple(
+        k -> begin
+          α_root = RS.positive_roots_list[k]
+          SVector{R,Int}(ntuple(j -> sum(C[j, i] * α_root[i] for i in 1:R), R))
+        end, n_pos)
 
-    α_dot_α = SVector{n_pos,Int}(ntuple(k -> begin
-        v = RS.positive_roots_list[k]
-        s = 0
-        for j in 1:R, i in 1:R
-          s += v[i] * B[i, j] * v[j]
-        end
-        s
-      end, n_pos))
+      α_dot_α = SVector{n_pos,Int}(ntuple(k -> begin
+          v = RS.positive_roots_list[k]
+          s = 0
+          for j in 1:R, i in 1:R
+            s += v[i] * B[i, j] * v[j]
+          end
+          s
+        end, n_pos))
 
-    dα = ntuple(k -> begin
-        v = RS.positive_roots_list[k]
-        SVector{R,Int}(ntuple(i -> d[i] * v[i], R))
-      end, n_pos)
+      dα = ntuple(k -> begin
+          v = RS.positive_roots_list[k]
+          SVector{R,Int}(ntuple(i -> d[i] * v[i], R))
+        end, n_pos)
 
-    max_level = sum(RS.positive_roots_list[end])
-    rbl = [Int[] for _ in 1:max_level]
-    for k in 1:n_pos
-      lev = sum(RS.positive_roots_list[k])
-      push!(rbl[lev], k)
-    end
+      max_level = sum(RS.positive_roots_list[end])
+      rbl = [Int[] for _ in 1:max_level]
+      for k in 1:n_pos
+        lev = sum(RS.positive_roots_list[k])
+        push!(rbl[lev], k)
+      end
 
-    DominantCharacterTypeData{DT,R,n_pos}(
-      α_w, α_dot_α, dα, max_level, rbl
-    )
-  end::DominantCharacterTypeData{DT,rank(DT),n_positive_roots(DT)}
+      DominantCharacterTypeData{DT,R,n_pos}(
+        α_w, α_dot_α, dα, max_level, rbl
+      )
+    end::DominantCharacterTypeData{DT,rank(DT),n_positive_roots(DT)}
+  end
 end
 
 """
@@ -618,8 +620,8 @@ function dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
 
   # Check cache first
   cache_key = (DT, λ)
-  cached = get(_dominant_character_cache, cache_key, nothing)
-  cached !== nothing && return cached::Dict{SVector{R,Int},Int}
+  cached = _get_dominant_cache(DT, cache_key)
+  cached !== nothing && return cached
 
   # ─── Phase 1: compute dominant weights below λ ─────────────────────
   dom_weights = dominant_weights(DT, λ)
@@ -1264,6 +1266,7 @@ end
 
 # Cache for type-only Freudenthal data reused across dominant_character calls.
 const _dominant_character_type_cache = Dict{Type,Any}()
+const _dominant_character_type_lock = ReentrantLock()
 
 """
     tensor_product(λ::WeightLatticeElem{DT,R}, μ::WeightLatticeElem{DT,R}) -> WeylCharacter{DT,R}
@@ -1292,8 +1295,8 @@ function tensor_product(λ::WeightLatticeElem{DT,R}, μ::WeightLatticeElem{DT,R}
   # Canonical key: lexicographically smaller weight first (avoids double lookup)
   a, b = λ.vec <= μ.vec ? (λ, μ) : (μ, λ)
   key = (DT, a, b)
-  cached = get(_tensor_cache, key, nothing)
-  cached !== nothing && return cached::WeylCharacter{DT,R}
+  cached = _get_tensor_cache(DT, key)
+  cached !== nothing && return cached
 
   # Brauer–Klimyk: decompose the smaller rep via Freudenthal (dominant only),
   # then expand orbits on-the-fly in BK. This avoids materializing the
@@ -1323,8 +1326,8 @@ function tensor_product(
   # Canonical key: lexicographically smaller weight first
   a, b = λ.vec <= μ.vec ? (λ, μ) : (μ, λ)
   key = (TypeA{N}, a, b)
-  cached = get(_tensor_cache, key, nothing)
-  cached !== nothing && return cached::WeylCharacter{TypeA{N},N}
+  cached = _get_tensor_cache(TypeA{N}, key)
+  cached !== nothing && return cached
 
   result = lr_tensor_product(λ, μ)
 
@@ -1432,8 +1435,34 @@ const _exterior_power_cache = let b = _default_cache_budget()
   )
 end
 
+# Typed accessors for the LRU caches.  The LRU values are `Any`; centralising the
+# type assertion here ensures callers always get a concrete type without each call
+# site having to remember the assertion.
+@inline function _get_tensor_cache(::Type{DT}, key) where {DT<:DynkinType}
+  cached = get(_tensor_cache, key, nothing)
+  cached === nothing && return nothing
+  cached::WeylCharacter{DT,rank(DT)}
+end
+
+@inline function _get_dominant_cache(::Type{DT}, key) where {DT<:DynkinType}
+  cached = get(_dominant_character_cache, key, nothing)
+  cached === nothing && return nothing
+  cached::Dict{SVector{rank(DT),Int},Int}
+end
+
+@inline function _get_sym_power_cache(::Type{DT}, key) where {DT<:DynkinType}
+  cached = get(_symmetric_power_cache, key, nothing)
+  cached === nothing && return nothing
+  cached::WeylCharacter{DT,rank(DT)}
+end
+
+@inline function _get_ext_power_cache(::Type{DT}, key) where {DT<:DynkinType}
+  cached = get(_exterior_power_cache, key, nothing)
+  cached === nothing && return nothing
+  cached::WeylCharacter{DT,rank(DT)}
+end
+
 """
-    symmetric_power(λ::WeightLatticeElem{DT,R}, k::Integer) -> WeylCharacter{DT,R}
 
 Compute the `k`-th symmetric power ``\\mathrm{Sym}^k \\mathrm{V}(λ)`` of the irreducible
 representation with highest weight `λ`, using the Newton–Girard recurrence:
@@ -1464,8 +1493,8 @@ function symmetric_power(λ::WeightLatticeElem{DT,R}, k::Integer) where {DT,R}
   k == 1 && return WeylCharacter(λ)
 
   cache_key = (DT, λ, k)
-  cached = get(_symmetric_power_cache, cache_key, nothing)
-  cached !== nothing && return cached::WeylCharacter{DT,R}
+  cached = _get_sym_power_cache(DT, cache_key)
+  cached !== nothing && return cached
 
   result = _symmetric_power_newton_girard(λ, k)
 
@@ -1549,8 +1578,8 @@ function symmetric_power(V::WeylCharacter{DT,R}, k::Integer) where {DT,R}
   is_irreducible(V) && return symmetric_power(highest_weight(V), k)
 
   cache_key = (DT, V, k)
-  cached = get(_symmetric_power_cache, cache_key, nothing)
-  cached !== nothing && return cached::WeylCharacter{DT,R}
+  cached = _get_sym_power_cache(DT, cache_key)
+  cached !== nothing && return cached
 
   result = _symmetric_power_newton_girard_char(V, k)
   _symmetric_power_cache[cache_key] = result
@@ -1618,8 +1647,8 @@ function exterior_power(λ::WeightLatticeElem{DT,R}, k::Integer) where {DT,R}
   k > degree(λ) && return WeylCharacter(DT)
 
   cache_key = (DT, λ, k)
-  cached = get(_exterior_power_cache, cache_key, nothing)
-  cached !== nothing && return cached::WeylCharacter{DT,R}
+  cached = _get_ext_power_cache(DT, cache_key)
+  cached !== nothing && return cached
 
   result = _exterior_power_newton_girard(λ, k)
 
@@ -1695,8 +1724,8 @@ function exterior_power(V::WeylCharacter{DT,R}, k::Integer) where {DT,R}
   is_irreducible(V) && return exterior_power(highest_weight(V), k)
 
   cache_key = (DT, V, k)
-  cached = get(_exterior_power_cache, cache_key, nothing)
-  cached !== nothing && return cached::WeylCharacter{DT,R}
+  cached = _get_ext_power_cache(DT, cache_key)
+  cached !== nothing && return cached
 
   result = _exterior_power_newton_girard_char(V, k)
   _exterior_power_cache[cache_key] = result

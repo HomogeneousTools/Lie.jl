@@ -140,14 +140,17 @@ Dynkin type, with small ranks using fully generated literals and larger ranks
 using a compact runtime builder.
 """
 const _root_system_cache = Dict{Type,Any}()
+const _root_system_lock = ReentrantLock()
 
 function RootSystem(::Type{DT}) where {DT<:DynkinType}
-  return get!(_root_system_cache, DT) do
-    R = rank(DT)
-    rs = _make_root_system(DT)
-    _positive_roots_set_cache[DT] = Set{SVector{R,Int}}(rs.positive_roots_list)
-    rs
-  end::RootSystem{DT,rank(DT),n_positive_roots(DT)}
+  lock(_root_system_lock) do
+    get!(_root_system_cache, DT) do
+      R = rank(DT)
+      rs = _make_root_system(DT)
+      _positive_roots_set_cache[DT] = Set{SVector{R,Int}}(rs.positive_roots_list)
+      rs
+    end::RootSystem{DT,rank(DT),n_positive_roots(DT)}
+  end
 end
 
 """

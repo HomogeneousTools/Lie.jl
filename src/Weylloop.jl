@@ -345,12 +345,14 @@ end
 # ─── Coset representative matrices (cached) ─────────────────────────────────
 
 const _coset_reps_cache = Dict{Type,Vector{Matrix{Int}}}()
+const _coset_reps_lock = ReentrantLock()
 
 function _coset_reps(::Type{DT}) where {DT}
-  haskey(_coset_reps_cache, DT) && return _coset_reps_cache[DT]::Vector{Matrix{Int}}
-  reps = _build_coset_reps(DT)
-  _coset_reps_cache[DT] = reps
-  return reps
+  lock(_coset_reps_lock) do
+    get!(_coset_reps_cache, DT) do
+      _build_coset_reps(DT)
+    end::Vector{Matrix{Int}}
+  end
 end
 
 # Classical types: identity only.

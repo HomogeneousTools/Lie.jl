@@ -291,6 +291,7 @@ end
 # ─── Longest element ────────────────────────────────────────────────────────
 
 const _longest_element_cache = Dict{Type,Any}()
+const _longest_element_lock = ReentrantLock()
 
 """
     longest_element(W::WeylGroup{DT,R}) -> WeylGroupElem{DT,R}
@@ -312,36 +313,29 @@ julia> length(w₀)
 ```
 """
 function longest_element(W::WeylGroup{DT,R}) where {DT,R}
-  haskey(_longest_element_cache, DT) &&
-    return _longest_element_cache[DT]::WeylGroupElem{DT,R}
-
-  RS = W.root_system
-  np = n_positive_roots(RS)
-
-  w0 = one(W)
-  # ρ in weight coords (all 1s)
-  wt = MVector{R,Int}(ntuple(j -> 1, R))
-  C = cartan_matrix(DT)
-
-  while true
-    found = false
-    for s in 1:R
-      if wt[s] > 0
-        # Apply s-th reflection
-        rmul!(w0, UInt8(s))
-        pairing = wt[s]
-        for j in 1:R
-          wt[j] -= pairing * C[j, s]
+  lock(_longest_element_lock) do
+    get!(_longest_element_cache, DT) do
+      w0 = one(W)
+      wt = MVector{R,Int}(ntuple(j -> 1, R))
+      C = cartan_matrix(DT)
+      while true
+        found = false
+        for s in 1:R
+          if wt[s] > 0
+            rmul!(w0, UInt8(s))
+            pairing = wt[s]
+            for j in 1:R
+              wt[j] -= pairing * C[j, s]
+            end
+            found = true
+            break
+          end
         end
-        found = true
-        break
+        found || break
       end
-    end
-    found || break
+      w0
+    end::WeylGroupElem{DT,R}
   end
-
-  _longest_element_cache[DT] = w0
-  return w0
 end
 
 # ─── Descent sets and Bruhat tools ──────────────────────────────────────────
@@ -572,6 +566,7 @@ end
 # ─── Dimension of simple module (Weyl dimension formula) ────────────────────
 
 const _weyl_dimension_data_cache = Dict{Type,Any}()
+const _weyl_dimension_data_lock = ReentrantLock()
 
 function _weyl_dimension_data_from_roots(d, pos_roots, ::Val{R}) where {R}
   denom = BigInt(1)
@@ -602,14 +597,16 @@ end
 function _weyl_dimension_data_cached(
   ::Type{DT}, ::Val{R}, ::Val{N}
 ) where {DT<:DynkinType,R,N}
-  return get!(_weyl_dimension_data_cache, DT) do
-    d = _cartan_symmetrizer_data(DT)
-    C = _cartan_matrix_data(DT)
-    pos_roots = _positive_roots_runtime(C, R)
-    _weyl_dimension_data_from_roots(
-      d, pos_roots, Val(R)
-    )
-  end::Tuple{BigInt,NTuple{N,SVector{R,Int}}}
+  lock(_weyl_dimension_data_lock) do
+    get!(_weyl_dimension_data_cache, DT) do
+      d = _cartan_symmetrizer_data(DT)
+      C = _cartan_matrix_data(DT)
+      pos_roots = _positive_roots_runtime(C, R)
+      _weyl_dimension_data_from_roots(
+        d, pos_roots, Val(R)
+      )
+    end::Tuple{BigInt,NTuple{N,SVector{R,Int}}}
+  end
 end
 
 @generated function _weyl_dimension_data(::Type{DT}) where {DT<:DynkinType}
