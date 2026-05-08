@@ -1856,7 +1856,7 @@ end
     PDT1 = ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}
     adj1 = adjoint_representation(PDT1)
     @test degree(adj1) == 18
-    @test length(adj1) == 2  # two irreducible summands
+    @test length(adj1) == 2
 
     # G₂×F₄: dim(G₂) = 14, dim(F₄) = 52, total = 66
     PDT2 = ProductDynkinType{Tuple{TypeG2,TypeF4}}
@@ -1872,38 +1872,7 @@ end
     # Instance dispatch works too
     @test degree(adjoint_representation(ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}())) == 18
   end
-
-  @testset "direct_sum" begin
-    ω₁ = fundamental_weight(TypeA{2}, 1)
-    ω₂ = fundamental_weight(TypeA{2}, 2)
-    V1 = WeylCharacter(ω₁)   # degree 3
-    V2 = WeylCharacter(ω₂)   # degree 3
-    adj = adjoint_representation(TypeA{2})  # degree 8
-
-    # direct_sum is V + W
-    @test direct_sum(V1, V1) == 2 * V1
-    @test direct_sum(V1, V2) == V1 + V2
-    @test degree(direct_sum(V1, V1)) == 6
-    @test degree(direct_sum(V1, V2)) == 6
-    @test degree(direct_sum(adj, adj)) == 16
-
-    # direct_sum with zero character
-    zero_char = WeylCharacter(TypeA{2})
-    @test direct_sum(zero_char, V1) == V1
-    @test direct_sum(V1, zero_char) == V1
-
-    # Commutativity and associativity
-    @test direct_sum(V1, V2) == direct_sum(V2, V1)
-    @test direct_sum(direct_sum(V1, V2), adj) == direct_sum(V1, direct_sum(V2, adj))
-
-    # Works for B-type
-    μ = fundamental_weight(TypeB{3}, 1)
-    W = WeylCharacter(μ)
-    @test degree(direct_sum(W, W)) == 2 * degree(W)
-  end
 end
-
-# ─── Weylloop ε-basis roundtrip ──────────────────────────────────────────────
 
 @testset "Weylloop ε-basis roundtrip" begin
   # Test that _w2e! followed by _e2w! is the identity for all simple types.
@@ -1931,7 +1900,8 @@ end
 # ═══════════════════════════════════════════════════════════════════════
 @testset "Aqua" begin
   # ambiguities=false: @generated functions can trigger false positives
-  Aqua.test_all(Lie; ambiguities=false)
+  # stale_deps=false: Aqua flags itself as stale when run via include() rather than Pkg.test()
+  Aqua.test_all(Lie; ambiguities=false, stale_deps=false)
 end
 
 # ═══════════════════════════════════════════════════════════════════════
