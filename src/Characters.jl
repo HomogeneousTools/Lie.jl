@@ -2198,20 +2198,32 @@ the representation into a formal sum of irreducibles.
 
 Supports both effective (non-negative) and virtual (mixed sign) characters.
 
-Uses the "peeling" algorithm: find the highest dominant weight, subtract
-the Freudenthal multiplicities of that irreducible, repeat.
+Uses the "peeling" algorithm: find the highest dominant weight (by height
+`⟨ρ, λ⟩ = ∑ dᵢ λᵢ`, with ties broken in favour of dominant weights), subtract
+the Freudenthal multiplicities of that irreducible, repeat until empty.
+
+Keys are sorted once by (height, dominance) before the main loop, making each
+iteration an O(1) lookup rather than an O(n) `argmax` scan.
 """
 function character_from_weights(
   ::Type{DT}, multiplicities::Dict{SVector{R,Int},Int}
 ) where {DT<:DynkinType,R}
   d = cartan_symmetrizer(DT)
 
+  # Sort all input keys once by (height, dominance) descending so that the
+  # dominant weight of each Weyl orbit is encountered before its non-dominant
+  # siblings (ties in ⟨ρ,λ⟩ exist for minuscule weights in simply-laced types).
+  all_keys = sort!(
+    collect(keys(multiplicities));
+    by=λ -> (sum(d[i] * λ[i] for i in 1:R), all(>=(0), λ) ? 1 : 0),
+    rev=true,
+  )
+
   weights = Dict{WeightLatticeElem{DT,R},Int}()
   mults = copy(multiplicities)
 
-  while !isempty(mults)
-    # Find the highest weight: maximize ⟨λ, ρ⟩ = ∑ dᵢ λᵢ
-    best = argmax(λ -> sum(d[i] * λ[i] for i in 1:R), keys(mults))
+  for best in all_keys
+    (haskey(mults, best) && !iszero(mults[best])) || continue
 
     all(>=(0), best) ||
       error("Highest remaining weight is not dominant — input is not Weyl-group invariant")
