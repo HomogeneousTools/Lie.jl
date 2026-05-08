@@ -24,6 +24,25 @@ stored as an `SVector{R,Int}` of coordinates in the fundamental weight basis (ω
 
 The pairing with the i-th simple coroot is simply `w[i]`:
 ``⟨αᵢ∨, λ⟩ = λᵢ``
+
+## Constructors
+
+    WeightLatticeElem(::Type{DT}, v::AbstractVector{<:Integer})
+
+When `v` has fewer entries than `rank(DT)`, the remaining coordinates are
+silently filled with zeros. When `v` has more entries than `rank(DT)`, a
+warning is emitted and only the first `rank(DT)` entries are used.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> WeightLatticeElem(TypeA{3}, [1, 2])   # padded with one zero
+ω1 + 2ω2
+
+julia> WeightLatticeElem(TypeA{3}, [1, 2, 3])  # exact length
+ω1 + 2ω2 + 3ω3
+```
 """
 struct WeightLatticeElem{DT<:DynkinType,R}
   vec::SVector{R,Int}
@@ -40,7 +59,15 @@ end
 
 function WeightLatticeElem(::Type{DT}, v::AbstractVector{<:Integer}) where {DT<:DynkinType}
   R = rank(DT)
-  return WeightLatticeElem(DT, SVector{R,Int}(v...))
+  n = length(v)
+  if n > R
+    @warn "weight vector has length $n but $(DT) has rank $R; truncating to first $R entries"
+    return WeightLatticeElem(DT, SVector{R,Int}(v[1:R]...))
+  elseif n < R
+    return WeightLatticeElem(DT, SVector{R,Int}(v..., ntuple(_ -> 0, R - n)...))
+  else
+    return WeightLatticeElem(DT, SVector{R,Int}(v...))
+  end
 end
 
 coefficients(w::WeightLatticeElem) = w.vec
