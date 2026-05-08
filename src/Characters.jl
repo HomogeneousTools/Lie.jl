@@ -2495,8 +2495,12 @@ end
 """
     adjoint_representation(::Type{DT}) -> WeylCharacter{DT}
 
-Return the irreducible character of the adjoint representation of the
-Lie algebra of type `DT`. The highest weight is the highest root `θ`.
+Return the character of the adjoint representation of the Lie algebra of type `DT`.
+The highest weight is the highest root `θ`.
+
+For a simple type, the adjoint is a single irreducible. For a product type
+`DT = T₁ × T₂ × ⋯`, the adjoint is the direct sum of the factor adjoints, each
+embedded in the product weight space with zeros in the other factor slots.
 
 # Examples
 ```jldoctest
@@ -2507,6 +2511,12 @@ julia> degree(adjoint_representation(TypeA{3}))
 
 julia> degree(adjoint_representation(TypeE{8}))
 248
+
+julia> PDT = ProductDynkinType{Tuple{TypeA{2},TypeB{2}}};
+
+julia> degree(adjoint_representation(PDT))
+18
+
 ```
 """
 function adjoint_representation(::Type{DT}) where {DT<:SimpleDynkinType}
@@ -2520,3 +2530,23 @@ function adjoint_representation(::Type{DT}) where {DT<:SimpleDynkinType}
 end
 
 adjoint_representation(dt::DynkinType) = adjoint_representation(typeof(dt))
+
+function adjoint_representation(::Type{PDT}) where {Ts,PDT<:ProductDynkinType{Ts}}
+  R = rank(PDT)
+  result = WeylCharacter{PDT,R}(Dict{WeightLatticeElem{PDT,R},Int}())
+  offset = 0
+  for T in Ts.parameters
+    r = rank(T)
+    RS_T = RootSystem(T)
+    θ = highest_root(RS_T)
+    C = cartan_matrix(T)
+    θ_w_local = C * θ.vec  # SVector{r,Int} in fundamental weight coords of T
+    # Embed into the product weight space: zeros for all other factor slots
+    full_vec = zeros(Int, R)
+    for j in 1:r
+      full_vec[offset + j] = Int(θ_w_local[j])
+    end
+    λ = WeightLatticeElem{PDT,R}(SVector{R,Int}(full_vec))
+    result = result + WeylCharacter(λ)
+    offset += r
+  end
