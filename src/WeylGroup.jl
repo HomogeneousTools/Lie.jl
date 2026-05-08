@@ -775,12 +775,19 @@ end
 degree(dt::DynkinType, v::AbstractVector{<:Integer}) = degree(typeof(dt), v)
 
 """
-    weyl_dimension(args...) -> BigInt
+    weyl_dimension(λ::WeightLatticeElem) -> BigInt
+    weyl_dimension(::Type{DT}, λ::WeightLatticeElem) -> BigInt
+    weyl_dimension(::Type{DT}, v::AbstractVector{<:Integer}) -> BigInt
+    weyl_dimension(dt::DynkinType, v) -> BigInt
 
 Synonym for [`degree`](@ref). Computes the dimension of the irreducible
 representation via the Weyl dimension formula.
 """
-weyl_dimension(args...) = degree(args...)
+weyl_dimension(λ::WeightLatticeElem) = degree(λ)
+weyl_dimension(::Type{DT}, λ::WeightLatticeElem) where {DT<:DynkinType} = degree(DT, λ)
+weyl_dimension(::Type{DT}, v::AbstractVector{<:Integer}) where {DT<:DynkinType} =
+  degree(DT, v)
+weyl_dimension(dt::DynkinType, v) = degree(typeof(dt), v)
 
 # ─── Singularity ─────────────────────────────────────────────────────────────
 
