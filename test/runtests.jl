@@ -38,8 +38,43 @@ using StaticArrays
 end
 
 # ═══════════════════════════════════════════════════════════════════════
-#  Cartan matrices
+#  Dynkin diagram layouts
 # ═══════════════════════════════════════════════════════════════════════
+@testset "Dynkin diagrams" begin
+  # Simple A-type: linear chain
+  @test dynkin_diagram(TypeA{1}) == "○\n1"
+  @test dynkin_diagram(TypeA{3}) == "○───○───○\n1   2   3"
+  @test dynkin_diagram(TypeA{5}) == "○───○───○───○───○\n1   2   3   4   5"
+
+  # B-type: double bond with arrow pointing right (to short root)
+  @test dynkin_diagram(TypeB{2}) == "○═>═○\n1   2"
+  @test dynkin_diagram(TypeB{3}) == "○───○═>═○\n1   2   3"
+
+  # C-type: double bond with arrow pointing left (to long root)
+  @test dynkin_diagram(TypeC{2}) == "○═<═○\n1   2"
+  @test dynkin_diagram(TypeC{4}) == "○───○───○═<═○\n1   2   3   4"
+
+  # D-type: forked tail (Bourbaki orientation — top node is N, fork from N-2)
+  @test dynkin_diagram(TypeD{4}) == "        ○ 4\n       /\n○───○───○\n1   2   3"
+  @test dynkin_diagram(TypeD{5}) == "            ○ 5\n           /\n○───○───○───○\n1   2   3   4"
+
+  # E-type: node 2 branches off node 4 (Bourbaki)
+  @test dynkin_diagram(TypeE{6}) == "        ○ 2\n        |\n○───○───○───○───○\n1   3   4   5   6"
+  @test dynkin_diagram(TypeE{7}) == "        ○ 2\n        |\n○───○───○───○───○───○\n1   3   4   5   6   7"
+  @test dynkin_diagram(TypeE{8}) == "        ○ 2\n        |\n○───○───○───○───○───○───○\n1   3   4   5   6   7   8"
+
+  # F₄ and G₂
+  @test dynkin_diagram(TypeF4) == "○───○═>═○───○\n1   2   3   4"
+  @test dynkin_diagram(TypeG2) == "○≡≡≡○\n1   2"
+
+  # Product type: labelled sections separated by blank lines
+  PT = ProductDynkinType{Tuple{TypeA{1},TypeB{2}}}()
+  @test dynkin_diagram(PT) == "A1:\n○\n1\n\nB2:\n○═>═○\n1   2"
+
+  # Instance dispatch matches type dispatch
+  @test dynkin_diagram(TypeA{3}()) == dynkin_diagram(TypeA{3})
+  @test dynkin_diagram(TypeE{6}()) == dynkin_diagram(TypeE{6})
+end
 @testset "Cartan matrices" begin
   # A₂
   C_A2 = cartan_matrix(TypeA{2})
