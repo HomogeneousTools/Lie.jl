@@ -193,7 +193,7 @@ julia> degree(V)  # dim of standard representation
 julia> degree(V^2)  # dim of V ⊗ V = Sym²V ⊕ ⋀²V
 9
 
-julia> degree(symmetric_power(ω₁, 2))  # dim of Sym²V
+julia> degree(Sym(2, V))  # dim of Sym²V
 6
 
 julia> # E₈ adjoint has dimension 248
@@ -430,7 +430,7 @@ julia> ω₁ = fundamental_weight(TypeA{2}, 1);
 
 julia> V = WeylCharacter(ω₁);
 
-julia> V * V == Sym(2, ω₁) + ⋀(2, ω₁)
+julia> V * V == Sym(2, V) + ⋀(2, V)
 true
 
 julia> V^3  # right-to-left tensor power
@@ -1507,6 +1507,83 @@ function _newton_girard_divide!(result::WeylCharacter, k::Integer)
 end
 
 """
+    symmetric_power(V::WeylCharacter{DT,R}, k::Integer) -> WeylCharacter{DT,R}
+
+Compute the `k`-th symmetric power ``\\mathrm{Sym}^k(V)`` of a virtual character `V`.
+
+For an irreducible character ``V = \\mathrm{V}(λ)`` this delegates to the
+weight-level [`symmetric_power(λ, k)`](@ref). For a general virtual character
+``V = \\sum_i m_i \\mathrm{V}(λ_i)`` the Newton–Girard recurrence is applied at the
+level of characters, with the Adams operator applied component-wise:
+
+``k \\cdot \\mathrm{Sym}^k(V) = \\sum_{r=1}^{k} ψ^r(V) \\cdot \\mathrm{Sym}^{k-r}(V)``
+
+Results are memoized.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> ω₁ = fundamental_weight(TypeA{2}, 1);
+
+julia> V = WeylCharacter(ω₁);
+
+julia> symmetric_power(V, 2)
+A2(2, 0)
+
+julia> symmetric_power(V, 3)
+A2(3, 0)
+
+julia> symmetric_power(V, 0) == WeylCharacter(zero(ω₁))
+true
+
+julia> # Sym²(V ⊕ V) = 3·Sym²V ⊕ ⋀²V (dimension identity: C(6+1,2) = 21)
+       symmetric_power(2 * V, 2) == 3 * symmetric_power(V, 2) + exterior_power(V, 2)
+true
+```
+"""
+function symmetric_power(V::WeylCharacter{DT,R}, k::Integer) where {DT,R}
+  k < 0 && return WeylCharacter(DT)
+  k == 0 && return WeylCharacter(WeightLatticeElem{DT,R}(zero(SVector{R,Int})))
+  k == 1 && return V
+  is_irreducible(V) && return symmetric_power(highest_weight(V), k)
+
+  cache_key = (DT, V, k)
+  cached = get(_symmetric_power_cache, cache_key, nothing)
+  cached !== nothing && return cached::WeylCharacter{DT,R}
+
+  result = _symmetric_power_newton_girard_char(V, k)
+  _symmetric_power_cache[cache_key] = result
+  return result
+end
+
+# Newton–Girard for a general virtual character V (not just a single irreducible).
+# The dominant part of ψ^r(V) = Σᵢ mᵢ ψ^r(V(λᵢ)) is accumulated inline:
+# for each dominant weight μ of V(λᵢ), r·μ is also dominant (r ≥ 1), so the
+# dominant-weight dict can be passed directly to _brauer_klimyk_dominant.
+function _symmetric_power_newton_girard_char(V::WeylCharacter{DT,R}, k::Integer) where {DT,R}
+  result = WeylCharacter(DT)
+  adams = Dict{SVector{R,Int},Int}()
+  for r in 1:k
+    # Build dominant part of ψ^r(V): {r·μ ↦ Σᵢ mᵢ · m_λᵢ(μ)} for dominant μ
+    empty!(adams)
+    for (λ, m_λ) in V.terms
+      for (μ_vec, m_μ) in dominant_character(λ)
+        key = r * μ_vec
+        adams[key] = get(adams, key, 0) + m_λ * m_μ
+      end
+    end
+    prev = symmetric_power(V, k - r)
+    for (μ, m) in prev.terms
+      bk = _brauer_klimyk_dominant(adams, μ)
+      addmul!(result, bk, m)
+    end
+  end
+  _newton_girard_divide!(result, k)
+  return result
+end
+
+"""
     exterior_power(λ::WeightLatticeElem{DT,R}, k::Integer) -> WeylCharacter{DT,R}
 
 Compute the `k`-th exterior power ``\\bigwedge^k \\mathrm{V}(λ)`` of the irreducible
@@ -1575,9 +1652,85 @@ function _exterior_power_newton_girard(λ::WeightLatticeElem{DT,R}, k::Integer) 
 end
 
 """
-    Sym(k::Integer, λ::WeightLatticeElem) -> WeylCharacter
+    exterior_power(V::WeylCharacter{DT,R}, k::Integer) -> WeylCharacter{DT,R}
 
-Shorthand for `symmetric_power(λ, k)`.
+Compute the `k`-th exterior power ``\\bigwedge^k(V)`` of a virtual character `V`.
+
+For an irreducible character ``V = \\mathrm{V}(λ)`` this delegates to the
+weight-level [`exterior_power(λ, k)`](@ref). For a general virtual character
+``V = \\sum_i m_i \\mathrm{V}(λ_i)`` the Newton–Girard recurrence is applied at the
+level of characters, with the Adams operator applied component-wise:
+
+``k \\cdot \\bigwedge\\nolimits^k(V) = \\sum_{r=1}^{k} (-1)^{r-1} ψ^r(V) \\cdot \\bigwedge\\nolimits^{k-r}(V)``
+
+Results are memoized.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> ω₁ = fundamental_weight(TypeA{3}, 1);
+
+julia> V = WeylCharacter(ω₁);
+
+julia> exterior_power(V, 2)
+A3(0, 1, 0)
+
+julia> exterior_power(V, 4)   # top exterior power = trivial (det)
+A3(0, 0, 0)
+
+julia> exterior_power(V, 5)   # exceeds dimension = 0
+0
+
+julia> exterior_power(V, 2) == exterior_power(ω₁, 2)
+true
+```
+"""
+function exterior_power(V::WeylCharacter{DT,R}, k::Integer) where {DT,R}
+  k < 0 && return WeylCharacter(DT)
+  k == 0 && return WeylCharacter(WeightLatticeElem{DT,R}(zero(SVector{R,Int})))
+  k == 1 && return V
+  is_irreducible(V) && return exterior_power(highest_weight(V), k)
+
+  cache_key = (DT, V, k)
+  cached = get(_exterior_power_cache, cache_key, nothing)
+  cached !== nothing && return cached::WeylCharacter{DT,R}
+
+  result = _exterior_power_newton_girard_char(V, k)
+  _exterior_power_cache[cache_key] = result
+  return result
+end
+
+# Newton–Girard for a general virtual character V (not just a single irreducible).
+# Mirror of _symmetric_power_newton_girard_char with alternating signs.
+function _exterior_power_newton_girard_char(V::WeylCharacter{DT,R}, k::Integer) where {DT,R}
+  result = WeylCharacter(DT)
+  adams = Dict{SVector{R,Int},Int}()
+  for r in 1:k
+    # Build dominant part of ψ^r(V): {r·μ ↦ Σᵢ mᵢ · m_λᵢ(μ)} for dominant μ
+    empty!(adams)
+    for (λ, m_λ) in V.terms
+      for (μ_vec, m_μ) in dominant_character(λ)
+        key = r * μ_vec
+        adams[key] = get(adams, key, 0) + m_λ * m_μ
+      end
+    end
+    prev = exterior_power(V, k - r)
+    sign = iseven(r) ? -1 : 1
+    for (μ, m) in prev.terms
+      bk = _brauer_klimyk_dominant(adams, μ)
+      addmul!(result, bk, sign * m)
+    end
+  end
+  _newton_girard_divide!(result, k)
+  return result
+end
+
+"""
+    Sym(k::Integer, λ::WeightLatticeElem) -> WeylCharacter
+    Sym(k::Integer, V::WeylCharacter) -> WeylCharacter
+
+Compute the `k`-th symmetric power.  Shorthand for [`symmetric_power`](@ref).
 
 # Examples
 ```jldoctest
@@ -1588,16 +1741,26 @@ julia> ω₁ = fundamental_weight(TypeA{2}, 1);
 julia> Sym(2, ω₁)
 A2(2, 0)
 
-julia> degree(highest_weight(Sym(3, ω₁)))
+julia> V = WeylCharacter(ω₁);
+
+julia> Sym(2, V)
+A2(2, 0)
+
+julia> Sym(2, V) == Sym(2, ω₁)
+true
+
+julia> degree(highest_weight(Sym(3, V)))
 10
 ```
 """
 Sym(k::Integer, λ::WeightLatticeElem) = symmetric_power(λ, k)
+Sym(k::Integer, V::WeylCharacter) = symmetric_power(V, k)
 
 """
     ⋀(k::Integer, λ::WeightLatticeElem) -> WeylCharacter
+    ⋀(k::Integer, V::WeylCharacter) -> WeylCharacter
 
-Shorthand for `exterior_power(λ, k)`.
+Compute the `k`-th exterior power.  Shorthand for [`exterior_power`](@ref).
 
 # Examples
 ```jldoctest
@@ -1607,9 +1770,15 @@ julia> ω₁ = fundamental_weight(TypeA{3}, 1);
 
 julia> ⋀(2, ω₁) == WeylCharacter(fundamental_weight(TypeA{3}, 2))
 true
+
+julia> V = WeylCharacter(ω₁);
+
+julia> ⋀(2, V) == WeylCharacter(fundamental_weight(TypeA{3}, 2))
+true
 ```
 """
 ⋀(k::Integer, λ::WeightLatticeElem) = exterior_power(λ, k)
+⋀(k::Integer, V::WeylCharacter) = exterior_power(V, k)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  Plethysm — Schur functor / composition of symmetric functions

@@ -38,22 +38,22 @@ Pkg.add(url="https://github.com/…/Lie.jl")
 ```jldoctest quickstart
 julia> using Lie
 
-julia> import Lie: borel_weil_bott
-
 julia> ω₁ = fundamental_weight(TypeA{3}, 1)
 ω1
 
 julia> degree(ω₁)   # dimension of the standard representation
 4
 
-julia> tensor_product(ω₁, ω₁)   # V(ω₁) ⊗ V(ω₁) = Sym²V ⊕ ⋀²V
+julia> V = WeylCharacter(ω₁);
+
+julia> tensor_product(V, V)   # V(ω₁) ⊗ V(ω₁) = Sym²V ⊕ ⋀²V
 A3(2, 0, 0) + A3(0, 1, 0)
+
+julia> Sym(2, V) + ⋀(2, V) == V * V   # Newton identity
+true
 
 julia> length(weyl_orbit(TypeA{3}, ω₁))
 4
-
-julia> borel_weil_bott(ω₁)
-(0, ω1)
 ```
 
 ## Contents

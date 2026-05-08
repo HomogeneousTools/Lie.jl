@@ -290,7 +290,7 @@ character_from_weights
 
 ## Exterior powers
 
-The ``k``-th exterior power ``\bigwedge^k \mathrm{V}(\lambda)`` is computed
+The ``k``-th exterior power ``\bigwedge^k \mathrm{V}`` is computed
 via the **Newton–Girard recurrence**, which relates exterior powers to
 Adams operators (power-sum symmetric functions):
 
@@ -303,17 +303,19 @@ This is the representation-ring analogue of the classical identity
 relating elementary symmetric polynomials ``e_k`` to power-sum
 polynomials ``p_r``.
 
+Both `WeightLatticeElem` and `WeylCharacter` are accepted:
+
 ```jldoctest chars
-julia> ⋀(2, ω₁)   # ⋀²V(ω₁) of A₃ = V(ω₂)
+julia> ⋀(2, V)   # ⋀²V(ω₁) of A₃ = V(ω₂)
 A3(0, 1, 0)
 
-julia> ⋀(3, ω₁)   # ⋀³V(ω₁) of A₃ = V(ω₃)
+julia> ⋀(3, V)   # ⋀³V(ω₁) of A₃ = V(ω₃)
 A3(0, 0, 1)
 
-julia> ⋀(4, ω₁)   # top exterior power = trivial (det)
+julia> ⋀(4, V)   # top exterior power = trivial (det)
 A3(0, 0, 0)
 
-julia> ⋀(5, ω₁)   # exceeds dim = 0
+julia> ⋀(5, V)   # exceeds dim = 0
 0
 ```
 
@@ -322,7 +324,7 @@ julia> ⋀(5, ω₁)   # exceeds dim = 0
 ``\dim \bigwedge^k \mathrm{V} = \binom{\dim \mathrm{V}}{k}``:
 
 ```jldoctest chars
-julia> r = ⋀(2, ω₁);
+julia> r = ⋀(2, V);
 
 julia> sum(m * degree(μ) for (μ, m) in r.terms) == binomial(4, 2)
 true
@@ -335,7 +337,7 @@ For ``\mathrm{A}_n``, ``\bigwedge^k \mathrm{V}(\omega_1) = \mathrm{V}(\omega_k)`
 ```jldoctest chars
 julia> ω = [fundamental_weight(TypeA{5}, i) for i in 1:5];
 
-julia> all(⋀(k, ω[1]) == WeylCharacter(ω[k]) for k in 1:5)
+julia> all(⋀(k, WeylCharacter(ω[1])) == WeylCharacter(ω[k]) for k in 1:5)
 true
 ```
 
@@ -360,7 +362,7 @@ exterior_power
 
 ## Symmetric powers
 
-The ``k``-th symmetric power ``\mathrm{Sym}^k \mathrm{V}(\lambda)`` is
+The ``k``-th symmetric power ``\mathrm{Sym}^k \mathrm{V}`` is
 likewise computed via the **Newton–Girard recurrence**:
 
 ```math
@@ -371,14 +373,16 @@ This is the representation-ring analogue of the identity
 ``k \, h_k = \sum_{r=1}^{k} p_r \, h_{k-r}``
 for complete homogeneous symmetric polynomials ``h_k``.
 
+Both `WeightLatticeElem` and `WeylCharacter` are accepted:
+
 ```jldoctest chars
-julia> Sym(2, ω₁)   # Sym² of std rep of A₃
+julia> Sym(2, V)   # Sym² of std rep of A₃
 A3(2, 0, 0)
 
-julia> Sym(0, ω₁)   # Sym⁰ = trivial
+julia> Sym(0, V)   # Sym⁰ = trivial
 A3(0, 0, 0)
 
-julia> Sym(1, ω₁)   # Sym¹ = identity
+julia> Sym(1, V)   # Sym¹ = identity
 A3(1, 0, 0)
 ```
 
@@ -387,7 +391,7 @@ A3(1, 0, 0)
 For ``\mathrm{A}_n``, ``\mathrm{Sym}^k \mathrm{V}(\omega_1) = \mathrm{V}(k\omega_1)``:
 
 ```jldoctest chars
-julia> all(Sym(k, ω₁) == WeylCharacter(k * ω₁) for k in 1:5)
+julia> all(Sym(k, V) == WeylCharacter(k * ω₁) for k in 1:5)
 true
 ```
 
@@ -396,7 +400,7 @@ true
 ``\dim \mathrm{Sym}^k \mathrm{V} = \binom{\dim \mathrm{V} + k - 1}{k}``:
 
 ```jldoctest chars
-julia> r = Sym(3, ω₁);
+julia> r = Sym(3, V);
 
 julia> sum(m * degree(μ) for (μ, m) in r.terms) == binomial(4 + 2, 3)
 true
@@ -405,12 +409,25 @@ true
 ### Newton identity: V ⊗ V = Sym²V ⊕ ⋀²V
 
 ```jldoctest chars
-julia> tensor_product(ω₁, ω₁) == Sym(2, ω₁) + ⋀(2, ω₁)
+julia> V * V == Sym(2, V) + ⋀(2, V)
 true
 
 julia> ω₁_g2 = fundamental_weight(TypeG2, 1);
 
-julia> tensor_product(ω₁_g2, ω₁_g2) == Sym(2, ω₁_g2) + ⋀(2, ω₁_g2)
+julia> W_g2 = WeylCharacter(ω₁_g2);
+
+julia> W_g2 * W_g2 == Sym(2, W_g2) + ⋀(2, W_g2)
+true
+```
+
+### Reducible character example
+
+`Sym` and `⋀` also accept general `WeylCharacter` values (not just
+irreducibles). Scaling ``V \mapsto 2V`` adds a copy, so:
+``\mathrm{Sym}^2(2V) = 3\,\mathrm{Sym}^2(V) \oplus \bigwedge^2(V)``:
+
+```jldoctest chars
+julia> symmetric_power(2 * V, 2) == 3 * Sym(2, V) + ⋀(2, V)
 true
 ```
 
@@ -439,10 +456,10 @@ s_\lambda(\mathrm{V}) = \frac{1}{n!} \sum_{\kappa \vdash n}
 ```
 
 ```jldoctest chars
-julia> plethysm([2], ω₁) == Sym(2, ω₁)   # one-row partition = Sym
+julia> plethysm([2], ω₁) == Sym(2, V)   # one-row partition = Sym
 true
 
-julia> plethysm([1, 1], ω₁) == ⋀(2, ω₁)  # one-column partition = ⋀
+julia> plethysm([1, 1], ω₁) == ⋀(2, V)  # one-column partition = ⋀
 true
 
 julia> plethysm([2, 1], ω₁)               # mixed symmetry S_{(2,1)}
@@ -455,12 +472,10 @@ julia> degree(plethysm([2, 1], ω₁))       # adjoint rep of A₃
 ### Plethysm on non-simply-laced types
 
 ```jldoctest chars
-julia> ω₁_g2 = fundamental_weight(TypeG2, 1);
-
-julia> plethysm([2], ω₁_g2) == Sym(2, ω₁_g2)
+julia> plethysm([2], ω₁_g2) == Sym(2, W_g2)
 true
 
-julia> plethysm([1, 1], ω₁_g2) == ⋀(2, ω₁_g2)
+julia> plethysm([1, 1], ω₁_g2) == ⋀(2, W_g2)
 true
 ```
 
@@ -496,7 +511,9 @@ julia> ω₃_b3 = fundamental_weight(TypeB{3}, 3);
 julia> degree(ω₃_b3)   # 8-dim spin rep
 8
 
-julia> r = ⋀(2, ω₃_b3);
+julia> spin = WeylCharacter(ω₃_b3);
+
+julia> r = ⋀(2, spin);
 
 julia> sum(m * degree(μ) for (μ, m) in r.terms) == binomial(8, 2)
 true
@@ -505,12 +522,10 @@ true
 ### G₂: 7-dimensional representation
 
 ```jldoctest chars
-julia> ω₁_g2 = fundamental_weight(TypeG2, 1);
-
 julia> degree(ω₁_g2)
 7
 
-julia> r = Sym(2, ω₁_g2);
+julia> r = Sym(2, W_g2);
 
 julia> is_effective(r)
 true
@@ -527,7 +542,7 @@ julia> ω₈_e8 = fundamental_weight(TypeE{8}, 8);
 julia> degree(ω₈_e8)   # 248-dim adjoint
 248
 
-julia> r = ⋀(2, ω₈_e8);
+julia> r = ⋀(2, WeylCharacter(ω₈_e8));
 
 julia> length(r.terms)   # 2 irreducible components
 2

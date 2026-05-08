@@ -1080,6 +1080,31 @@ using StaticArrays
       r_adj = ⋀(2, adj)
       @test is_effective(r_adj)
       @test sum(m * degree(μ) for (μ, m) in r_adj.terms) == binomial(15, 2)
+
+      # ─── WeylCharacter overloads ──────────────────────────────────
+      # Delegation: ⋀(k, V) == ⋀(k, λ) when V is irreducible
+      ω₁_v = fundamental_weight(TypeA{3}, 1)
+      V_ext = WeylCharacter(ω₁_v)
+      @test ⋀(2, V_ext) == ⋀(2, ω₁_v)
+      @test ⋀(3, V_ext) == ⋀(3, ω₁_v)
+      @test ⋀(4, V_ext) == ⋀(4, ω₁_v)
+      @test ⋀(5, V_ext) == ⋀(5, ω₁_v)
+
+      # Newton identity via WeylCharacter
+      for λ in [
+        fundamental_weight(TypeA{3}, 1),
+        fundamental_weight(TypeB{3}, 1),
+        fundamental_weight(TypeG2, 1),
+      ]
+        Vλ = WeylCharacter(λ)
+        @test Vλ * Vλ == Sym(2, Vλ) + ⋀(2, Vλ)
+      end
+
+      # Reducible character: ⋀²(V₁ ⊕ V₂) = ⋀²V₁ ⊕ (V₁ ⊗ V₂) ⊕ ⋀²V₂
+      ω₂_v = fundamental_weight(TypeA{3}, 2)
+      V1 = WeylCharacter(ω₁_v)
+      V2 = WeylCharacter(ω₂_v)
+      @test ⋀(2, V1 + V2) == ⋀(2, V1) + V1 * V2 + ⋀(2, V2)
     end
 
     # ─── Symmetric powers ───────────────────────────────────────────
@@ -1133,6 +1158,27 @@ using StaticArrays
       r = Sym(2, ω₁_c3)
       @test is_effective(r)
       @test sum(m * degree(μ) for (μ, m) in r.terms) == binomial(6 + 1, 2)
+
+      # ─── WeylCharacter overloads ──────────────────────────────────
+      # Delegation: Sym(k, V) == Sym(k, λ) when V is irreducible
+      ω₁_v = fundamental_weight(TypeA{3}, 1)
+      V_sym = WeylCharacter(ω₁_v)
+      @test Sym(2, V_sym) == Sym(2, ω₁_v)
+      @test Sym(3, V_sym) == Sym(3, ω₁_v)
+
+      # Boundary cases
+      z3 = WeightLatticeElem(TypeA{3}, SVector(0, 0, 0))
+      @test Sym(0, V_sym) == WeylCharacter(z3)
+      @test Sym(1, V_sym) == V_sym
+
+      # Reducible character: Sym²(2V) = 3·Sym²V + ⋀²V
+      @test Sym(2, 2 * V_sym) == 3 * Sym(2, V_sym) + ⋀(2, V_sym)
+
+      # Reducible: Sym²(V₁ ⊕ V₂) = Sym²V₁ + V₁⊗V₂ + Sym²V₂
+      ω₂_v = fundamental_weight(TypeA{3}, 2)
+      V1 = WeylCharacter(ω₁_v)
+      V2 = WeylCharacter(ω₂_v)
+      @test Sym(2, V1 + V2) == Sym(2, V1) + V1 * V2 + Sym(2, V2)
     end
 
     # ─── Adams operators ─────────────────────────────────────────────
