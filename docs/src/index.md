@@ -58,6 +58,10 @@ julia> length(weyl_orbit(TypeA{3}, ω₁))
 
 ## Contents
 
+```@docs
+Lie.Lie
+```
+
 ```@contents
 Pages = [
     "types.md",

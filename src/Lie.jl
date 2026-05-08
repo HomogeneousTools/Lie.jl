@@ -2,6 +2,18 @@
 #  Lie.jl — computations with semisimple Lie algebras
 # ═══════════════════════════════════════════════════════════════════════════════
 
+"""
+    Lie
+
+Julia package for computations with semisimple Lie algebras over ℂ.
+
+Provides root systems, Weyl groups, and weight-lattice arithmetic for all
+classical and exceptional Dynkin types (A, B, C, D, E₆, E₇, E₈, F₄, G₂)
+as well as their direct products.
+
+See the [online documentation](https://homogeneoustools.github.io/Lie.jl/) for
+usage examples and mathematical background.
+"""
 module Lie
 
 using LRUCache
