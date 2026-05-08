@@ -2198,20 +2198,25 @@ the representation into a formal sum of irreducibles (a virtual character if
 some multiplicities are negative).
 
 Uses the "peeling" algorithm: at each step find the dominant weight with the
-largest height score `⟨ρ, λ⟩ = ∑ dᵢ λᵢ` (with ties broken in favour of
-dominant weights — necessary for minuscule representations of simply-laced
-types), subtract the Freudenthal multiplicities of that irreducible, and repeat
-until `mults` is empty.
+largest root-basis height `ht_root(λ) = (col-sums of C⁻¹)·λ` (with ties
+broken in favour of dominant weights — necessary for minuscule representations
+of simply-laced types), subtract the Freudenthal multiplicities of that
+irreducible, and repeat until `mults` is empty.
 
-The `argmax` over `mults` is an O(n) scan per iteration but avoids the need to
-maintain a sorted heap as Freudenthal subtraction may introduce entirely new
-keys (e.g. when decomposing virtual characters).
+The root-basis height is the unique correct linear height for the peeling order:
+it is strictly positive on positive roots, strictly larger on the dominant
+weight of each Weyl orbit than on any non-dominant orbit member, and handles
+all Lie types (including G₂ where the Cartan symmetrizer gives the wrong order).
 """
 function character_from_weights(
   ::Type{DT}, multiplicities::Dict{SVector{R,Int},Int}
 ) where {DT<:DynkinType,R}
-  d = cartan_symmetrizer(DT)
-  score = λ -> (sum(d[i] * λ[i] for i in 1:R), all(>=(0), λ) ? 1 : 0)
+  Cinv = cartan_matrix_inverse(DT)
+  # Root-basis height: ht_root(λ) = Σᵢ (Σⱼ (C⁻¹)ⱼᵢ) λᵢ = (col sums of C⁻¹)·λ
+  # This is strictly positive for positive roots and correctly identifies the
+  # dominant weight as the unique maximum in each Weyl orbit.
+  col_sums = SVector{R,Rational{Int}}(ntuple(i -> sum(Cinv[j, i] for j in 1:R), Val(R)))
+  score = λ -> (sum(col_sums[i] * λ[i] for i in 1:R), all(>=(0), λ) ? 1 : 0)
 
   weights = Dict{WeightLatticeElem{DT,R},Int}()
   mults = copy(multiplicities)
