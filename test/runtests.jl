@@ -1706,3 +1706,26 @@ end
     @test degree(adjoint_representation(TypeA{3}())) == 15
   end
 end
+
+# ─── Weylloop ε-basis roundtrip ──────────────────────────────────────────────
+
+@testset "Weylloop ε-basis roundtrip" begin
+  # Test that _w2e! followed by _e2w! is the identity for all simple types.
+  # Uses deterministic pseudo-random weight vectors to avoid a Random dependency.
+  simple_types = [
+    TypeA{4}, TypeB{3}, TypeC{3}, TypeD{5},
+    TypeE{6}, TypeE{7}, TypeE{8}, TypeF4, TypeG2,
+  ]
+  for DT in simple_types
+    R = rank(DT)
+    ED = Lie._weylloop_eps_dim(DT)
+    e = zeros(Int, ED)
+    w2 = zeros(Int, R)
+    for trial in 1:100
+      w = [((trial * 7 + i * 13) % 11) - 5 for i in 1:R]
+      Lie._w2e!(DT, e, w)
+      Lie._e2w!(DT, w2, e)
+      @test w2 == w
+    end
+  end
+end
