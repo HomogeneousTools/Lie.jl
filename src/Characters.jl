@@ -303,9 +303,15 @@ Base.:*(V::WeylCharacter, a::Integer) = a * V
 
 Compute the `n`-th tensor power of `V`.
 
-Uses right-to-left sequential multiplication `V * (V * (V * V))` rather
-than repeated squaring, because the Brauer–Klimyk algorithm is faster
-when one factor is small (the original irreducible) and the other grows.
+**Algorithm choice:** uses right-to-left sequential multiplication
+`V ⊗ (V ⊗ (V ⊗ ⋯))` rather than repeated squaring.
+
+With Brauer–Klimyk, the cost of `A ⊗ B` is proportional to
+`|A| × Weyl-orbit-size(B)` (or vice versa). Sequential multiplication
+keeps one factor always equal to the original small `V`, so every step is
+`O(|V| × orbit_size(V^{r−1}))`. Repeated squaring would let both factors
+grow: the intermediate result `V^{n/2}` can be much larger than `V` itself,
+making each squaring step significantly more expensive.
 
 # Examples
 ```jldoctest
