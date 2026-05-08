@@ -785,8 +785,9 @@ representation via the Weyl dimension formula.
 """
 weyl_dimension(λ::WeightLatticeElem) = degree(λ)
 weyl_dimension(::Type{DT}, λ::WeightLatticeElem) where {DT<:DynkinType} = degree(DT, λ)
-weyl_dimension(::Type{DT}, v::AbstractVector{<:Integer}) where {DT<:DynkinType} =
-  degree(DT, v)
+weyl_dimension(::Type{DT}, v::AbstractVector{<:Integer}) where {DT<:DynkinType} = degree(
+  DT, v
+)
 weyl_dimension(dt::DynkinType, v) = degree(typeof(dt), v)
 
 # ─── Singularity ─────────────────────────────────────────────────────────────
