@@ -1995,17 +1995,17 @@ end
     # Each fundamental weight lives in one factor
     @test degree(ω[1]) == 3    # A₂ standard
     @test degree(ω[2]) == 3    # A₂ dual standard
-    @test degree(ω[3]) == 4    # B₂ standard (= SO(5) vector = C₂ standard)
-    @test degree(ω[4]) == 4    # B₂ spinor = 4
+    @test degree(ω[3]) == 5    # B₂ vector (= SO(5) standard, ω₁ of B₂)
+    @test degree(ω[4]) == 4    # B₂ spinor (= ω₂ of B₂)
 
     # Freudenthal formula consistency
     for i in 1:4
       @test degree(ω[i]) == sum(values(freudenthal_formula(ω[i])))
     end
 
-    # tensor product: V(ω₁) ⊗ V(ω₃) has dim 3×4 = 12
+    # tensor product: V(ω₁) ⊗ V(ω₃) has dim 3×5 = 15
     V1 = WeylCharacter(ω[1]); V3 = WeylCharacter(ω[3])
-    @test degree(V1 * V3) == 12
+    @test degree(V1 * V3) == 15
 
     # V(ω₁) ⊗ V(ω₁) decomposes in A₂ factor only
     @test degree(V1 * V1) == 9   # 3⊗3 in A₂
@@ -2013,8 +2013,8 @@ end
     # Sym² and ⋀² of fundamental reps
     @test degree(symmetric_power(ω[1], 2)) == 6
     @test degree(exterior_power(ω[1], 2)) == 3
-    @test degree(symmetric_power(ω[3], 2)) == 10
-    @test degree(exterior_power(ω[3], 2)) == 6  # adjoint of B₂ = SO(5)
+    @test degree(symmetric_power(ω[3], 2)) == 15  # Sym²(5) for SO(5) = 14-dim + trivial
+    @test degree(exterior_power(ω[3], 2)) == 10   # adjoint of B₂ = so(5) = 10-dim
 
     # dual involution
     for i in 1:4
