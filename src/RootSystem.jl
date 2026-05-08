@@ -79,7 +79,7 @@ height(r::RootSpaceElem) = sum(r.vec)
 function Base.show(io::IO, r::RootSpaceElem{DT,R}) where {DT,R}
   if get(io, :compact, _compact_display[])
     print(io, _type_name(DT), "[", join(r.vec, ","), "]")
-    return
+    return nothing
   end
   terms = String[]
   for i in 1:R

@@ -104,7 +104,7 @@ julia> ω₁
 ω1
 ```
 """
-function compact_display!(val::Bool = true)
+function compact_display!(val::Bool=true)
   _compact_display[] = val
 end
 
