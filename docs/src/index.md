@@ -1,8 +1,15 @@
 # Lie.jl
 
-A Julia package for computations with semisimple Lie algebras: root systems,
-Weyl groups, weight lattices, and representation-theoretic operations.
-It is heavily optimized, and uses various Julia features making this possible.
+A Julia package for computations with finite-dimensional complex semisimple
+Lie algebras via their root data: root systems, Weyl groups, weight lattices,
+and highest-weight representation-theoretic operations.
+It is heavily optimized and uses Julia's type system to specialize many finite
+root-data computations.
+
+Lie.jl is a finite-type root-data and highest-weight package. It does not
+construct concrete Lie algebra elements, brackets, Chevalley bases, ideals,
+subalgebras, homomorphisms, arbitrary-field Lie algebras, or module
+homomorphisms.
 
 Lie.jl is inspired by (and partially ported) from [LiE](http://wwwmathlabo.univ-poitiers.fr/~maavl/LiE/),
 a computer algebra system for Lie group computations written in C.
@@ -14,6 +21,24 @@ which runs on the proprietary [Mathematica](https://www.wolfram.com/mathematica/
 
 Note that Lie.jl is less feature-complete than any of the aforementioned packages.
 Porting more features is planned.
+
+## Relationship to OSCAR
+
+Lie.jl overlaps partly with OSCAR's [stable Lie Theory](https://docs.oscar-system.org/stable/LieTheory/intro/)
+module, but the emphasis is different. OSCAR stable provides intentionally
+minimal combinatorial scaffolding: Cartan matrices, root systems, Weyl groups,
+and weight lattices, represented with OSCAR/AbstractAlgebra parent objects and
+integer matrices. Lie.jl focuses on finite-type complex semisimple root data
+with type-level Dynkin types, `StaticArrays`-based weights and roots, optimized
+Weyl orbit traversal, and highest-weight representation-ring computations.
+
+OSCAR's [experimental Lie Algebras](https://docs.oscar-system.org/stable/Experimental/LieAlgebras/introduction/)
+module is broader on the algebraic side: it has concrete finite-dimensional Lie
+algebra objects, brackets, ideals, subalgebras, homomorphisms, modules, and
+module homomorphisms. That module is explicitly experimental, so its API carries
+stability caveats. Use OSCAR when you need integrated algebraic objects; use
+Lie.jl when you need lightweight, optimized highest-weight and character
+computations.
 
 ## Features
 
