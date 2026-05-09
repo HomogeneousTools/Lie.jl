@@ -221,8 +221,7 @@ julia> # Virtual character: V(ω1) - V(ω2) has degree 0 (both dim 3)
        degree(V - WeylCharacter(fundamental_weight(TypeA{2}, 2)))
 0
 
-julia> # E8 adjoint has dimension 248
-       ω8 = fundamental_weight(TypeE{8}, 8);
+julia> ω8 = fundamental_weight(TypeE{8}, 8);
 
 julia> degree(WeylCharacter(ω8))
 248
