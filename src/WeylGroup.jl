@@ -24,6 +24,17 @@ export right_coset_reps, left_coset_reps
     WeylGroup{DT,R}
 
 The Weyl group of a root system of Dynkin type `DT` with rank `R`.
+
+Lie.jl writes Weyl group actions on the right: `λ * x` denotes the usual action
+of the Weyl group element `x` on the weight or root `λ`.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> weyl_order(TypeA{2})
+6
+```
 """
 struct WeylGroup{DT<:DynkinType,R}
   root_system::RootSystem{DT,R}
