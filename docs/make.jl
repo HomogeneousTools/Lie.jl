@@ -45,8 +45,7 @@ function build_pdf_docs()
       doctest=false,
       remotes=nothing,
       format=Documenter.LaTeX(;
-        platform="tectonic",
-        tectonic=tectonic(),
+        platform="native",
       ),
     )
     pdf_files = filter(path -> endswith(path, ".pdf"), readdir(build_dir; join=true))
