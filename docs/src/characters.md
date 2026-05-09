@@ -93,6 +93,16 @@ add!
 addmul!
 ```
 
+## Character data terminology
+
+Lie.jl uses three related but distinct character representations:
+
+| Name | Julia representation | Meaning |
+|---|---|---|
+| `WeylCharacter` | `Dict{WeightLatticeElem,Int}` in the `terms` field | irreducible decomposition in the representation ring |
+| Full weight character | `Dict{SVector{R,Int},Int}` from [`freudenthal_formula`](@ref) | multiplicity of every weight |
+| Dominant character | `Dict{SVector{R,Int},Int}` from [`dominant_character`](@ref) | multiplicity on dominant representatives of Weyl orbits |
+
 ## Character polynomials
 
 A **character polynomial** of a finite-dimensional representation is a formal sum

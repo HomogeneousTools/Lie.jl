@@ -33,32 +33,16 @@ export adjoint_representation
     WeylCharacter{DT,R}
 
 An element of the representation ring (Grothendieck ring) of a semisimple
-Lie algebra of Dynkin type `DT` with rank `R`. Each character is a formal
-ℤ-linear combination of irreducible representations, mathematically
-represented as a **character polynomial**.
-
-A character polynomial of a finite-dimensional representation is the sum
-```
-χ(λ) = ∑_μ m(μ) e^μ
-```
-where the sum runs over all weights μ in the weight lattice, m(μ) is the
-multiplicity of weight μ, and e^μ is a formal exponential.
+Lie algebra of Dynkin type `DT` with rank `R`.
 
 Computationally, this is stored as a `Dict{WeightLatticeElem{DT,R}, Int}`
-mapping dominant highest weights to their integer multiplicities. Positive
-multiplicities correspond to actual irreducible representations; negative
-multiplicities arise in virtual differences (elements of the Grothendieck group).
+mapping dominant highest weights to irreducible multiplicities. Positive
+multiplicities correspond to actual representations; negative multiplicities
+arise in virtual differences.
 
-Since character polynomials are invariant under the Weyl group W (as
-`χ(w·μ) = χ(μ)` for all w ∈ W and all weights μ), and each W-orbit of
-weights contains exactly one dominant weight, the character polynomial can
-be more compactly represented as a **dominant character polynomial** — the
-restriction that omits all non-dominant weights. This is the standard internal
-representation in Lie.jl.
-
-Use [`dominant_character`](@ref) to compute the dominant character polynomial
-(which omits all non-dominant weights), and [`freudenthal_formula`](@ref) to
-expand to the full character (all W-orbit elements listed explicitly).
+This is distinct from the full weight-multiplicity character returned by
+[`freudenthal_formula`](@ref) and the dominant-representative weight
+multiplicity dictionary returned by [`dominant_character`](@ref).
 
 # Examples
 ```jldoctest
@@ -583,20 +567,12 @@ end
 """
     dominant_character(λ::WeightLatticeElem{DT,R}) -> Dict{SVector{R,Int}, Int}
 
-Compute the **dominant character polynomial** of the irreducible representation
+Compute the **dominant character** of the irreducible representation
 ``\\mathrm{V}(λ)`` using Freudenthal's recursion.
 
-A **character polynomial** of a representation is the formal sum `χ = ∑_μ m(μ) e^μ`,
-where m(μ) is the multiplicity of each weight μ. Since character polynomials are
-invariant under the Weyl group W (i.e., `χ(w·μ) = χ(μ)` for all w ∈ W), and
-each W-orbit of weights contains a unique dominant representative, the full
-character can be more compactly represented by listing only the dominant weights.
-
-The **dominant character polynomial** is the restriction of the full character to
-dominant weights only. Formally, it is the mapping `μ ↦ m(μ)` for each dominant
-weight μ in the character, where m(μ) is the multiplicity (shared by all weights
-in the W-orbit of μ). This compact representation captures all information of the
-full character due to W-invariance.
+The result records the weight multiplicity on the unique dominant representative
+of each Weyl orbit of weights in ``\\mathrm{V}(λ)``. It is a compact form of the
+full weight character, not an irreducible decomposition.
 
 This function computes the dominant character using Freudenthal's recursion formula
 and returns a `Dict{SVector{R,Int}, Int}` with dominant weight coordinates as keys
