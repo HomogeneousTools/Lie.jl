@@ -34,6 +34,15 @@ When `v` has fewer entries than `rank(DT)`, the remaining coordinates are
 silently filled with zeros. When `v` has more entries than `rank(DT)`, a
 warning is emitted and only the first `rank(DT)` entries are used.
 
+## Length handling
+
+The `AbstractVector` constructor is meant as a convenience for interactive work.
+For library code, tests, and reproducible computations, prefer the exact-length
+`SVector` or `NTuple` constructors so dimension mismatches are caught
+immediately. Padding can change the intended weight by implicitly adding zero
+coordinates, while truncation discards trailing coordinates after emitting a
+warning.
+
 # Examples
 ```jldoctest
 julia> using Lie
@@ -42,6 +51,11 @@ julia> WeightLatticeElem(TypeA{3}, [1, 2])   # padded with one zero
 ω1 + 2ω2
 
 julia> WeightLatticeElem(TypeA{3}, [1, 2, 3])  # exact length
+ω1 + 2ω2 + 3ω3
+
+julia> using Test
+
+julia> @test_logs (:warn, r"truncating to first 3 entries") WeightLatticeElem(TypeA{3}, [1, 2, 3, 4])
 ω1 + 2ω2 + 3ω3
 ```
 """
