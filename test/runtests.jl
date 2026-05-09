@@ -23,6 +23,8 @@ using LinearAlgebra: det
   PT = ProductDynkinType{Tuple{TypeA{3},TypeD{5}}}
   @test rank(PT) == 8
   @test n_components(PT) == 2
+  @test component_type(PT, Val(1)) == TypeA{3}
+  @test component_type(PT, 2) == TypeD{5}
 
   PT2 = ProductDynkinType{Tuple{TypeA{3},TypeD{5},TypeE{6}}}
   @test rank(PT2) == 14
