@@ -775,12 +775,21 @@ function dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
       end
 
       denom_S = first_term_S - second_term_S
-      iszero(denom_S) && error("Denominator in Freudenthal's formula is zero")
+      iszero(denom_S) && throw(
+        DomainError(
+          μ_vec,
+          "Freudenthal formula for type $(_type_name(DT)) and highest weight $λ has zero denominator at μ=$(WeightLatticeElem{DT,R}(μ_vec))",
+        ),
+      )
 
       numerator = 2 * S * Σ
       mult, rem = divrem(numerator, denom_S)
-      iszero(rem) ||
-        error("Freudenthal formula gave non-integer multiplicity for μ=$(μ_vec)")
+      iszero(rem) || throw(
+        DomainError(
+          (numerator=numerator, denominator=denom_S),
+          "Freudenthal formula for type $(_type_name(DT)) and highest weight $λ gave a non-integer multiplicity at μ=$(WeightLatticeElem{DT,R}(μ_vec)): $numerator / $denom_S",
+        ),
+      )
       dom_mults[idx] = mult
     end
   end
@@ -1260,8 +1269,10 @@ export lr_tensor_product
 #  Tensor product — irreducible ⊗ irreducible
 # ═══════════════════════════════════════════════════════════════════════════════
 
-# Cache for tensor products of irreducibles.
-# Key: (DT, λ, μ), Value: WeylCharacter.  Uses canonical key ordering.
+# Module-private LRU caches. Keep cache traffic centralized in the typed
+# `_get_*_cache` / `_set_*_cache!` helpers so callers do not reach into
+# `Any`-typed storage directly.
+# Key: (DT, λ, μ), Value: WeylCharacter. Uses canonical key ordering.
 const _tensor_cache = let b = _default_cache_budget()
   LRU{Tuple{Type,Any,Any},Any}(;
     maxsize=_cache_maxsize(b, _DEFAULT_TENSOR_FRAC),
@@ -1565,7 +1576,12 @@ end
 function _newton_girard_divide!(result::WeylCharacter, k::Integer)
   for λv in keys(result.terms)
     q, r = divrem(result.terms[λv], k)
-    iszero(r) || error("Newton–Girard: non-integer coefficient after division by k=$k")
+    iszero(r) || throw(
+      DomainError(
+        (coefficient=result.terms[λv], divisor=k),
+        "Newton–Girard recurrence produced a non-integer coefficient at highest weight $λv: $(result.terms[λv]) / $k",
+      ),
+    )
     result.terms[λv] = q
   end
 end
@@ -2169,7 +2185,12 @@ function plethysm(λ::Vector{<:Integer}, μ::WeightLatticeElem{DT,R}) where {DT,
   result = WeylCharacter(DT)
   for (ν, val) in big_result
     q, r = divrem(val, n_fac)
-    iszero(r) || error("Plethysm: non-integer coefficient after division by $n!")
+    iszero(r) || throw(
+      DomainError(
+        (coefficient=val, divisor=n_fac),
+        "Plethysm for partition $λ and highest weight $μ produced a non-integer coefficient at $ν: $val / $n_fac",
+      ),
+    )
     iszero(q) && continue
     result.terms[ν] = Int(q)
   end
@@ -2266,8 +2287,11 @@ function character_from_weights(
   while !isempty(mults)
     best = argmax(score, keys(mults))
 
-    all(>=(0), best) ||
-      error("Highest remaining weight is not dominant — input is not Weyl-group invariant")
+    all(>=(0), best) || throw(
+      ArgumentError(
+        "character_from_weights for type $(_type_name(DT)) expected Weyl-invariant multiplicities, but the highest remaining weight $(WeightLatticeElem{DT,R}(best)) is not dominant",
+      ),
+    )
 
     coeff = mults[best]
     best_wt = WeightLatticeElem{DT,R}(best)

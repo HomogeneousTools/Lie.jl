@@ -856,7 +856,12 @@ function degree(::Type{DT}, hw::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R
   end
 
   result, rem = divrem(numer, denom)
-  iszero(rem) || error("Weyl dimension formula gave non-integer result")
+  iszero(rem) || throw(
+    DomainError(
+      (numerator=numer, denominator=denom),
+      "Weyl dimension formula for type $(_type_name(DT)) and highest weight $hw gave the non-integer value $numer / $denom",
+    ),
+  )
   return result
 end
 
