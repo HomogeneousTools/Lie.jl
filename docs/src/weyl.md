@@ -215,8 +215,8 @@ true
 ```
 
 !!! note
-    `borel_weil_bott` is not exported. Use `import Lie: borel_weil_bott`
-    to access it.
+    `borel_weil_bott` is not exported. It is rather a feature for `PartialFlagVarieties.jl`.
+    Use `import Lie: borel_weil_bott` to access it.
 
 ```@docs
 Lie.borel_weil_bott
