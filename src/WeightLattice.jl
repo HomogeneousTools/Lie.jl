@@ -209,6 +209,14 @@ is_dominant(w::WeightLatticeElem) = all(>=(0), w.vec)
 Convert a root space element to weight coordinates.
 Since αᵢ = ∑ⱼ Cⱼᵢ ωⱼ, the weight coordinates of v = ∑ vᵢ αᵢ are:
 ``w_j = ∑_i C_{ji} v_i = (C v)_j``
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> WeightLatticeElem(RootSpaceElem(TypeA{2}, [1, 0]))
+2ω1 - ω2
+```
 """
 function WeightLatticeElem(r::RootSpaceElem{DT,R}) where {DT,R}
   C = cartan_matrix(DT)
@@ -225,6 +233,17 @@ Throws an `ArgumentError` when the weight does not lie in the root lattice,
 since the inverse Cartan-matrix coordinates are then non-integral.
 
 ``v = C^{-1} w``
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> RootSpaceElem(WeightLatticeElem(TypeA{2}, [2, -1]))
+α1
+
+julia> RootSpaceElem(fundamental_weight(TypeA{2}, 1))
+ERROR: ArgumentError: Weight does not lie in the root lattice
+```
 """
 function RootSpaceElem(w::WeightLatticeElem{DT,R}) where {DT,R}
   Cinv = cartan_matrix_inverse(DT)

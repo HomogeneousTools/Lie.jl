@@ -198,5 +198,6 @@ julia> ρ_as_root = RootSpaceElem(weyl_vector(TypeA{2}))
 α1 + α2
 ```
 
-For type ``\mathrm{A}_n``, every fundamental weight is in the root lattice
-(with rational coefficients via ``C^{-1}``).
+Every weight lies in the rational span of the simple roots via ``C^{-1}``.
+It lies in the root lattice only when those rational simple-root coordinates
+are integral; otherwise `RootSpaceElem(w)` throws an `ArgumentError`.
