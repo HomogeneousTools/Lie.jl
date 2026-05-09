@@ -142,6 +142,19 @@ Base.isone(V::WeylCharacter{DT,R}) where {DT,R} =
 
 True when all multiplicities are non-negative, i.e. `V` corresponds to
 an actual (not merely virtual) representation.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> V = WeylCharacter(fundamental_weight(TypeA{2}, 1));
+
+julia> is_effective(V - 2V)
+false
+
+julia> is_effective(V - V)
+true
+```
 """
 is_effective(V::WeylCharacter) = all(>=(0), values(V.terms))
 

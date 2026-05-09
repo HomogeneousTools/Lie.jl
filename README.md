@@ -59,7 +59,6 @@ weyl_order(TypeA{3})                # 24
 V = WeylCharacter(ω₁)
 V * V                    # tensor product as ring multiplication
 dual(V)                  # contragredient
-is_effective(V - V)      # false (zero character, but not a "negative" rep)
 ```
 
 ## Code formatting
@@ -89,6 +88,7 @@ rejects your change due to formatting.  After cloning, activate it once with:
 
 ```bash
 git config core.hooksPath .git-hooks
+is_effective(V - V)      # true (the zero character is effective)
 ```
 
 If the hook fails, run the formatter, stage the result, and re-commit:
