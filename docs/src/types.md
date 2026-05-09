@@ -205,17 +205,17 @@ cartan_determinant
 
 ## Dimension
 
-The dimension of the Lie algebra (or Lie group) equals
+The dimension of the semisimple Lie algebra equals
 ``r + 2n`` where ``r`` is the rank and ``n`` is the number of positive roots:
 
 ```jldoctest types
-julia> dimension(TypeA{3})   # dim(SL₄) = 15
+julia> dimension(TypeA{3})   # dim sl₄(C) = 15
 15
 
 julia> dimension(TypeE{8})   # dim(E₈) = 248
 248
 
-julia> dimension(ProductDynkinType{Tuple{TypeA{1}, TypeA{1}}}())   # dim(SL₂ × SL₂) = 6
+julia> dimension(ProductDynkinType{Tuple{TypeA{1}, TypeA{1}}}())   # dim(sl₂(C) ⊕ sl₂(C)) = 6
 6
 ```
 

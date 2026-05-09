@@ -292,13 +292,13 @@ Note: for the adjoint representation dimension (same number), use
 ```jldoctest
 julia> using Lie
 
-julia> dimension(TypeA{3})  # 𝔰𝔩₄ has dimension 15
+julia> dimension(TypeA{3})  # sl_4(C) has dimension 15
 15
 
-julia> dimension(TypeE{8})  # 𝔢₈ has dimension 248
+julia> dimension(TypeE{8})  # e_8(C) has dimension 248
 248
 
-julia> dimension(ProductDynkinType{Tuple{TypeA{1}, TypeA{1}}}())  # 𝔰𝔩₂ ⊕ 𝔰𝔩₂ has dimension 6
+julia> dimension(ProductDynkinType{Tuple{TypeA{1}, TypeA{1}}}())  # sl_2(C) ⊕ sl_2(C)
 6
 ```
 """
