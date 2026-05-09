@@ -11,14 +11,30 @@ export dynkin_diagram, DynkinDiagram
 """
     DynkinType
 
-Abstract supertype for all Dynkin types (simple and semisimple).
+Abstract supertype for finite Dynkin types (simple and semisimple).
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> TypeA{2} <: DynkinType
+true
+```
 """
 abstract type DynkinType end
 
 """
     SimpleDynkinType <: DynkinType
 
-Abstract supertype for simple (irreducible) Dynkin types.
+Abstract supertype for simple (irreducible) finite Dynkin types.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> TypeG2 <: SimpleDynkinType
+true
+```
 """
 abstract type SimpleDynkinType <: DynkinType end
 
@@ -182,9 +198,12 @@ struct TypeG2 <: SimpleDynkinType end
 Product of simple Dynkin types, representing a semisimple Lie algebra.
 `Ts` is a `Tuple` type of `SimpleDynkinType` subtypes.
 
-# Example
-```julia
-ProductDynkinType{Tuple{TypeA{3}, TypeD{5}, TypeE{6}}}()   # A₃ × D₅ × E₆
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> ProductDynkinType{Tuple{TypeA{3}, TypeD{5}, TypeE{6}}}()   # A₃ × D₅ × E₆
+A3 × D5 × E6
 ```
 """
 struct ProductDynkinType{Ts<:Tuple} <: DynkinType
@@ -311,6 +330,14 @@ dimension(dt::DynkinType) = dimension(typeof(dt))
     n_components(::Type{ProductDynkinType{Ts}}) -> Int
 
 Number of simple factors in a product type.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> n_components(ProductDynkinType{Tuple{TypeA{2}, TypeB{2}}})
+2
+```
 """
 function n_components(::Type{ProductDynkinType{Ts}}) where {Ts}
   return length(fieldtypes(Ts))
@@ -320,18 +347,44 @@ n_components(::Type{<:SimpleDynkinType}) = 1
 n_components(dt::DynkinType) = n_components(typeof(dt))
 
 """
-    component_type(::Type{ProductDynkinType{Ts}}, i) -> Type
+    component_type(::Type{ProductDynkinType{Ts}}, ::Val{I}) -> Type
+    component_type(::Type{ProductDynkinType{Ts}}, i::Integer) -> Type
 
-Return the i-th simple Dynkin type in a product.
+Return the `i`-th simple Dynkin type in a product.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> PT = ProductDynkinType{Tuple{TypeA{2}, TypeB{2}}};
+
+julia> component_type(PT, Val(1))
+TypeA{2}
+
+julia> component_type(PT, 2)
+TypeB{2}
+```
 """
 function component_type(::Type{ProductDynkinType{Ts}}, ::Val{I}) where {Ts,I}
   return fieldtypes(Ts)[I]
+end
+
+function component_type(::Type{ProductDynkinType{Ts}}, i::Integer) where {Ts}
+  return fieldtypes(Ts)[i]
 end
 
 """
     component_ranks(::Type{ProductDynkinType{Ts}}) -> Tuple
 
 Return a tuple of ranks of the components.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> component_ranks(ProductDynkinType{Tuple{TypeA{2}, TypeB{3}}})
+(2, 3)
+```
 """
 function component_ranks(::Type{ProductDynkinType{Ts}}) where {Ts}
   return map(rank, fieldtypes(Ts))
@@ -342,6 +395,14 @@ end
 
 Return a tuple of starting index offsets for each component in the product type.
 The i-th component occupies indices offset[i]+1 : offset[i]+rank(component_i).
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> component_offsets(ProductDynkinType{Tuple{TypeA{2}, TypeB{3}}})
+(0, 2)
+```
 """
 function component_offsets(::Type{ProductDynkinType{Ts}}) where {Ts}
   rs = map(rank, fieldtypes(Ts))
@@ -377,6 +438,14 @@ Displaying a `DynkinDiagram` in the REPL renders the diagram automatically
 without requiring `println`. Call `string` to recover the raw string.
 
 See also: [`dynkin_diagram`](@ref).
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> occursin(Char(10), string(dynkin_diagram(TypeA{2})))
+true
+```
 """
 struct DynkinDiagram
   str::String

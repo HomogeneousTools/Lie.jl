@@ -26,6 +26,14 @@ import LinearAlgebra: dot
 
 An element of the root space for Dynkin type `DT` of rank `R`,
 stored as an `SVector{R,Int}` of coordinates in the simple root basis.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> RootSpaceElem(TypeA{2}, [1, 1])
+α1 + α2
+```
 """
 struct RootSpaceElem{DT<:DynkinType,R}
   vec::SVector{R,Int}
@@ -51,6 +59,14 @@ end
 
 Return the coordinate vector of a root space element (in the simple root basis)
 or of a weight lattice element (in the fundamental weight basis).
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> coefficients(RootSpaceElem(TypeA{2}, [1, 1])) == [1, 1]
+true
+```
 """
 coefficients(r::RootSpaceElem) = r.vec
 
@@ -75,6 +91,14 @@ Base.iszero(a::RootSpaceElem) = iszero(a.vec)
     height(r::RootSpaceElem) -> Int
 
 Sum of coefficients in the simple root expansion.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> height(RootSpaceElem(TypeA{2}, [1, 1]))
+2
+```
 """
 height(r::RootSpaceElem) = sum(r.vec)
 
@@ -130,6 +154,14 @@ Fields:
   `s_s(α_i)` among positive roots, or 0 if the result is negative.
 - `highest_coroot_idx`: the index of the positive coroot with greatest height
   (= index of the highest short root in `positive_roots_list`).
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> RootSystem(TypeA{2})
+Root system of type A2, rank 2 with 3 positive roots
+```
 """
 struct RootSystem{DT<:DynkinType,R,N}
   positive_roots_list::NTuple{N,SVector{R,Int}}
@@ -144,6 +176,14 @@ end
 Return the root system for Dynkin type `DT`. A single instance is cached per
 Dynkin type, with small ranks using fully generated literals and larger ranks
 using a compact runtime builder.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> RootSystem(TypeA{2}) === RootSystem(TypeA{2})
+true
+```
 """
 const _root_system_cache = Dict{Type,Any}()
 const _root_system_lock = ReentrantLock()
@@ -449,6 +489,14 @@ end
     n_simple_roots(RS::RootSystem) -> Int
 
 Return the number of simple roots, equal to the rank of the root system.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> n_simple_roots(RootSystem(TypeA{2}))
+2
+```
 """
 n_simple_roots(RS::RootSystem{DT,R}) where {DT,R} = R
 
@@ -456,6 +504,14 @@ n_simple_roots(RS::RootSystem{DT,R}) where {DT,R} = R
     n_positive_roots(RS::RootSystem) -> Int
 
 Return the number of positive roots.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> n_positive_roots(RootSystem(TypeA{2}))
+3
+```
 """
 n_positive_roots(RS::RootSystem) = length(RS.positive_roots_list)
 
@@ -463,6 +519,14 @@ n_positive_roots(RS::RootSystem) = length(RS.positive_roots_list)
     n_roots(RS::RootSystem) -> Int
 
 Return the total number of roots (positive and negative).
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> n_roots(RootSystem(TypeA{2}))
+6
+```
 """
 n_roots(RS::RootSystem) = 2 * n_positive_roots(RS)
 
@@ -470,6 +534,14 @@ n_roots(RS::RootSystem) = 2 * n_positive_roots(RS)
     simple_root(RS::RootSystem{DT,R}, i) -> RootSpaceElem
 
 Return the `i`-th simple root.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> simple_root(RootSystem(TypeA{2}), 1)
+α1
+```
 """
 function simple_root(RS::RootSystem{DT,R}, i::Integer) where {DT,R}
   @boundscheck 1 <= i <= R || throw(BoundsError("simple root index $i out of range"))
@@ -480,6 +552,16 @@ end
     simple_roots(RS::RootSystem{DT,R}) -> Vector{RootSpaceElem}
 
 Return all simple roots.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> simple_roots(RootSystem(TypeA{2}))
+2-element Vector{RootSpaceElem{TypeA{2}, 2}}:
+ α1
+ α2
+```
 """
 simple_roots(RS::RootSystem{DT,R}) where {DT,R} = [
   RootSpaceElem{DT,R}(RS.positive_roots_list[i]) for i in 1:R
@@ -489,6 +571,14 @@ simple_roots(RS::RootSystem{DT,R}) where {DT,R} = [
     positive_root(RS::RootSystem{DT,R}, i) -> RootSpaceElem
 
 Return the `i`-th positive root.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> positive_root(RootSystem(TypeA{2}), 3)
+α1 + α2
+```
 """
 function positive_root(RS::RootSystem{DT,R}, i::Integer) where {DT,R}
   return RootSpaceElem{DT,R}(RS.positive_roots_list[i])
@@ -498,6 +588,14 @@ end
     positive_roots(RS::RootSystem{DT,R}) -> Vector{RootSpaceElem}
 
 Return all positive roots.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> length(positive_roots(RootSystem(TypeA{2})))
+3
+```
 """
 positive_roots(RS::RootSystem{DT,R}) where {DT,R} = [
   RootSpaceElem{DT,R}(v) for v in RS.positive_roots_list
@@ -507,6 +605,14 @@ positive_roots(RS::RootSystem{DT,R}) where {DT,R} = [
     negative_root(RS::RootSystem{DT,R}, i) -> RootSpaceElem
 
 Return the `i`-th negative root (negative of the `i`-th positive root).
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> negative_root(RootSystem(TypeA{2}), 1)
+-α1
+```
 """
 negative_root(RS::RootSystem{DT,R}, i::Integer) where {DT,R} = RootSpaceElem{DT,R}(
   -RS.positive_roots_list[i]
@@ -516,6 +622,14 @@ negative_root(RS::RootSystem{DT,R}, i::Integer) where {DT,R} = RootSpaceElem{DT,
     negative_roots(RS::RootSystem{DT,R}) -> Vector{RootSpaceElem}
 
 Return all negative roots.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> length(negative_roots(RootSystem(TypeA{2})))
+3
+```
 """
 negative_roots(RS::RootSystem{DT,R}) where {DT,R} = [
   RootSpaceElem{DT,R}(-v) for v in RS.positive_roots_list
@@ -525,6 +639,14 @@ negative_roots(RS::RootSystem{DT,R}) where {DT,R} = [
     roots(RS::RootSystem) -> Vector{RootSpaceElem}
 
 Return all roots (positive followed by negative).
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> length(roots(RootSystem(TypeA{2})))
+6
+```
 """
 roots(RS::RootSystem) = vcat(positive_roots(RS), negative_roots(RS))
 
@@ -533,6 +655,14 @@ roots(RS::RootSystem) = vcat(positive_roots(RS), negative_roots(RS))
 
 Return the `i`-th root. Indices 1..n_pos are positive roots,
 n_pos+1..2*n_pos are negative roots.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> root(RootSystem(TypeA{2}), 4)
+-α1
+```
 """
 function root(RS::RootSystem{DT,R}, i::Integer) where {DT,R}
   np = n_positive_roots(RS)
@@ -551,6 +681,14 @@ end
     simple_coroots(RS::RootSystem{DT,R}) -> Vector{RootSpaceElem}
 
 Return the simple coroots.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> simple_coroots(RootSystem(TypeA{2})) == simple_roots(RootSystem(TypeA{2}))
+true
+```
 """
 simple_coroots(RS::RootSystem{DT,R}) where {DT,R} = [
   RootSpaceElem{DT,R}(RS.positive_coroots_list[i]) for i in 1:R
@@ -560,6 +698,14 @@ simple_coroots(RS::RootSystem{DT,R}) where {DT,R} = [
     positive_coroots(RS::RootSystem{DT,R}) -> Vector{RootSpaceElem}
 
 Return all positive coroots.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> length(positive_coroots(RootSystem(TypeB{2})))
+4
+```
 """
 positive_coroots(RS::RootSystem{DT,R}) where {DT,R} = [
   RootSpaceElem{DT,R}(v) for v in RS.positive_coroots_list
@@ -572,6 +718,14 @@ positive_coroots(RS::RootSystem{DT,R}) where {DT,R} = [
 
 Return the highest root. Positive roots are ordered by non-decreasing height,
 so the highest root is always the last positive root.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> highest_root(RootSystem(TypeA{2}))
+α1 + α2
+```
 """
 function highest_root(RS::RootSystem{DT,R}) where {DT,R}
   positive_root(RS, n_positive_roots(RS))
@@ -586,6 +740,14 @@ Return the highest coroot θ∨: the positive coroot of greatest height.
 This is the coroot of the highest short root.
 
 The index is precomputed at compile time and stored in `RS.highest_coroot_idx`.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> highest_coroot(RootSystem(TypeA{2}))
+α1 + α2
+```
 """
 function highest_coroot(RS::RootSystem{DT,R}) where {DT,R}
   RootSpaceElem{DT,R}(RS.positive_coroots_list[RS.highest_coroot_idx])
@@ -900,6 +1062,16 @@ end
     is_root(RS::RootSystem{DT,R}, v::RootSpaceElem{DT,R}) -> Bool
 
 Check whether `v` is a root.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> RS = RootSystem(TypeA{2});
+
+julia> is_root(RS, RootSpaceElem(TypeA{2}, [1, 1]))
+true
+```
 """
 function is_root(RS::RootSystem{DT,R}, v::RootSpaceElem{DT,R}) where {DT,R}
   return is_positive_root(RS, v) || is_positive_root(RS, -v)
@@ -911,6 +1083,16 @@ const _positive_roots_set_cache = Dict{Type,Any}()
     is_positive_root(RS::RootSystem{DT,R}, v::RootSpaceElem{DT,R}) -> Bool
 
 Check whether `v` is a positive root.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> RS = RootSystem(TypeA{2});
+
+julia> is_positive_root(RS, RootSpaceElem(TypeA{2}, [-1, 0]))
+false
+```
 """
 function is_positive_root(RS::RootSystem{DT,R}, v::RootSpaceElem{DT,R}) where {DT,R}
   s = get!(_positive_roots_set_cache, DT) do

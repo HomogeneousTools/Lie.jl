@@ -76,6 +76,13 @@ include("CacheConfig.jl")
     clear_all_caches!()
 
 Clear all internal caches used by Lie.jl.  Alias for `clear_caches!`.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> clear_all_caches!()
+```
 """
 clear_all_caches!() = clear_caches!()
 
