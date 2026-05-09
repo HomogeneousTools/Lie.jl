@@ -146,6 +146,19 @@ is_effective(V::WeylCharacter) = all(>=(0), values(V.terms))
     is_irreducible(V::WeylCharacter) -> Bool
 
 True when `V` is a single irreducible with multiplicity 1.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> V = WeylCharacter(fundamental_weight(TypeA{2}, 1));
+
+julia> is_irreducible(V)
+true
+
+julia> is_irreducible(2V)
+false
+```
 """
 is_irreducible(V::WeylCharacter) =
   length(V.terms) == 1 && first(values(V.terms)) == 1
@@ -155,6 +168,16 @@ is_irreducible(V::WeylCharacter) =
 
 Return the highest weight of an irreducible virtual character.
 Throws if `V` is not irreducible.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> V = WeylCharacter(fundamental_weight(TypeA{2}, 1));
+
+julia> highest_weight(V)
+ω1
+```
 """
 function highest_weight(V::WeylCharacter{DT,R}) where {DT,R}
   is_irreducible(V) || error("Character is not irreducible")
@@ -1362,6 +1385,16 @@ end
     dual(V::WeylCharacter{DT,R}) -> WeylCharacter{DT,R}
 
 Dual of a virtual character: each summand ``\\mathrm{V}(λ)`` maps to ``\\mathrm{V}(λ^*)``.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> ω₁ = fundamental_weight(TypeA{2}, 1);
+
+julia> dual(WeylCharacter(ω₁))
+A2(0, 1)
+```
 """
 function dual(V::WeylCharacter{DT,R}) where {DT,R}
   result = Dict{WeightLatticeElem{DT,R},Int}()
@@ -1385,6 +1418,16 @@ weight multiplicities (not decomposed into irreducibles).
 
 The Adams operator scales every weight by `k`: if ``\\mathrm{V}(λ)`` has weight
 multiplicity ``m(μ)``, then ``ψ^k(\\mathrm{V}(λ))`` has ``m(μ)`` at weight ``kμ``.
+
+# Examples
+```jldoctest
+julia> using Lie, StaticArrays
+
+julia> m = adams_operator(fundamental_weight(TypeA{2}, 1), 2);
+
+julia> length(m), m[SVector(2, 0)]
+(3, 1)
+```
 """
 function adams_operator(λ::WeightLatticeElem{DT,R}, k::Integer) where {DT,R}
   k >= 1 ||
@@ -1455,6 +1498,7 @@ end
 end
 
 """
+    symmetric_power(λ::WeightLatticeElem{DT,R}, k::Integer) -> WeylCharacter{DT,R}
 
 Compute the `k`-th symmetric power ``\\mathrm{Sym}^k \\mathrm{V}(λ)`` of the irreducible
 representation with highest weight `λ`, using the Newton–Girard recurrence:
@@ -2196,6 +2240,16 @@ The root-basis height is the unique correct linear height for the peeling order:
 it is strictly positive on positive roots, strictly larger on the dominant
 weight of each Weyl orbit than on any non-dominant orbit member, and handles
 all Lie types (including G₂ where the Cartan symmetrizer gives the wrong order).
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> ω₁ = fundamental_weight(TypeA{2}, 1);
+
+julia> character_from_weights(TypeA{2}, freudenthal_formula(ω₁))
+A2(1, 0)
+```
 """
 function character_from_weights(
   ::Type{DT}, multiplicities::Dict{SVector{R,Int},Int}
@@ -2247,8 +2301,9 @@ Compute the Dynkin index of the irreducible representation ``\\mathrm{V}(λ)``:
 \\ell(λ) = \\frac{\\dim \\mathrm{V}(λ)}{2 \\dim \\mathfrak{g}} \\cdot (λ,\\, λ + 2ρ)
 ```
 
-where `ρ` is the Weyl vector and `\\dim \\mathfrak{g}` is the dimension of
-the Lie algebra.
+where `ρ` is the Weyl vector, `\\dim \\mathfrak{g}` is the dimension of the Lie
+algebra, and the bilinear form is normalized so long roots have squared length
+2.
 
 For the adjoint representation, the Dynkin index equals the dual Coxeter number.
 The result is always a non-negative half-integer.

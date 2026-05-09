@@ -158,6 +158,16 @@ end
     fundamental_weights(::Type{DT}) -> Vector{WeightLatticeElem{DT}}
 
 Return all fundamental weights.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> fundamental_weights(TypeA{2})
+2-element Vector{WeightLatticeElem{TypeA{2}, 2}}:
+ ω1
+ ω2
+```
 """
 function fundamental_weights(::Type{DT}) where {DT<:DynkinType}
   return [fundamental_weight(DT, i) for i in 1:rank(DT)]
@@ -288,6 +298,14 @@ Reflect `w` by the root `β`:
 where `⟨β∨, λ⟩ = 2(β, λ)/(β, β)`.
 
 The argument `β` must be an actual root of the root system.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> reflect(fundamental_weight(TypeA{2}, 1), simple_root(RootSystem(TypeA{2}), 1))
+-ω1 + ω2
+```
 """
 function reflect(w::WeightLatticeElem{DT,R}, β::RootSpaceElem{DT,R}) where {DT,R}
   is_root(RootSystem(DT), β) || throw(ArgumentError("β must be a root"))
@@ -352,6 +370,14 @@ end
     conjugate_dominant_weight_with_elem(w::WeightLatticeElem{DT,R}) -> (WeightLatticeElem, Vector{Int})
 
 Return the dominant weight and the sequence of simple reflections applied.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> conjugate_dominant_weight_with_elem(WeightLatticeElem(TypeA{2}, [-1, 1]))
+(ω1, [1])
+```
 """
 function conjugate_dominant_weight_with_elem(w::WeightLatticeElem{DT,R}) where {DT,R}
   v = MVector{R,Int}(w.vec)
@@ -424,12 +450,20 @@ end
 Compute the inner product `(α, λ)` between a root `α` (in simple root coords)
 and a weight `λ` (in fundamental weight coords).
 
-Following Oscar's convention:
+Following OSCAR's convention:
 ``(α, λ) = ∑ᵢ αᵢ dᵢ λᵢ``
 where `d` is the Cartan symmetrizer.
 
 This works because `(αᵢ, ωⱼ) = dᵢ δᵢⱼ`, which follows from
 `⟨αᵢ∨, ωⱼ⟩ = δᵢⱼ` and `αᵢ∨ = αᵢ/dᵢ` in the bilinear form sense.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> dot(simple_root(RootSystem(TypeA{2}), 1), fundamental_weight(TypeA{2}, 1))
+1//1
+```
 """
 function dot(r::RootSpaceElem{DT,R}, w::WeightLatticeElem{DT,R}) where {DT,R}
   d = cartan_symmetrizer(DT)
@@ -449,6 +483,14 @@ end
 
 Compute the inner product `(λ, μ)` between two weights.
 Both in fundamental weight coords, convert to root coords and use the bilinear form.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> dot(fundamental_weight(TypeA{2}, 1), fundamental_weight(TypeA{2}, 1))
+2//3
+```
 """
 function dot(w1::WeightLatticeElem{DT,R}, w2::WeightLatticeElem{DT,R}) where {DT,R}
   Cinv = cartan_matrix_inverse(DT)

@@ -397,6 +397,16 @@ end
 
 Return the symmetrized Cartan matrix `diag(d) * C`, which is a symmetric
 positive-definite matrix defining the inner product on the root space.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> cartan_bilinear_form(TypeB{2})
+2×2 StaticArraysCore.SMatrix{2, 2, Int64, 4} with indices SOneTo(2)×SOneTo(2):
+  4  -2
+ -2   2
+```
 """
 @generated function cartan_bilinear_form(::Type{DT}) where {DT<:DynkinType}
   R = rank(DT)
@@ -452,6 +462,16 @@ end
     cartan_matrix_inverse(::Type{DT}) -> SMatrix{R,R,Rational{Int}}
 
 Return the inverse of the Cartan matrix over the rationals.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> cartan_matrix_inverse(TypeA{2})
+2×2 StaticArraysCore.SMatrix{2, 2, Rational{Int64}, 4} with indices SOneTo(2)×SOneTo(2):
+ 2//3  1//3
+ 1//3  2//3
+```
 """
 @generated function cartan_matrix_inverse(::Type{DT}) where {DT<:DynkinType}
   R = rank(DT)
@@ -474,6 +494,14 @@ cartan_matrix_inverse(dt::DynkinType) = cartan_matrix_inverse(typeof(dt))
 Return `(S, B_ω_S)` where `B_ω_S = S * Cᵀ⁻¹ B C⁻¹` is the bilinear form
 in the fundamental weight basis, scaled by the smallest positive integer `S`
 that makes all entries integral.  This is a compile-time constant.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> first(omega_bilinear_form_scaled(TypeA{2}))
+3
+```
 """
 @generated function omega_bilinear_form_scaled(::Type{DT}) where {DT<:DynkinType}
   R = rank(DT)
