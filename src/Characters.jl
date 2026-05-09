@@ -802,7 +802,7 @@ function dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
     dom_result[dom_weights[idx].vec] = dom_mults[idx]
   end
 
-  _dominant_character_cache[cache_key] = dom_result
+  _set_dominant_cache!(cache_key, dom_result)
   return dom_result
 end
 
@@ -1332,7 +1332,7 @@ function tensor_product(λ::WeightLatticeElem{DT,R}, μ::WeightLatticeElem{DT,R}
     result = _brauer_klimyk_dominant(dominant_character(μ), λ)
   end
 
-  _tensor_cache[key] = result
+  _set_tensor_cache!(key, result)
   return result
 end
 
@@ -1356,7 +1356,7 @@ function tensor_product(
 
   result = lr_tensor_product(λ, μ)
 
-  _tensor_cache[key] = result
+  _set_tensor_cache!(key, result)
   return result
 end
 
@@ -1507,6 +1507,26 @@ end
   cached::WeylCharacter{DT,rank(DT)}
 end
 
+@inline function _set_tensor_cache!(key, value)
+  _tensor_cache[key] = value
+  return value
+end
+
+@inline function _set_dominant_cache!(key, value)
+  _dominant_character_cache[key] = value
+  return value
+end
+
+@inline function _set_sym_power_cache!(key, value)
+  _symmetric_power_cache[key] = value
+  return value
+end
+
+@inline function _set_ext_power_cache!(key, value)
+  _exterior_power_cache[key] = value
+  return value
+end
+
 """
     symmetric_power(λ::WeightLatticeElem{DT,R}, k::Integer) -> WeylCharacter{DT,R}
 
@@ -1544,7 +1564,7 @@ function symmetric_power(λ::WeightLatticeElem{DT,R}, k::Integer) where {DT,R}
 
   result = _symmetric_power_newton_girard(λ, k)
 
-  _symmetric_power_cache[cache_key] = result
+  _set_sym_power_cache!(cache_key, result)
   return result
 end
 
@@ -1633,7 +1653,7 @@ function symmetric_power(V::WeylCharacter{DT,R}, k::Integer) where {DT,R}
   cached !== nothing && return cached
 
   result = _symmetric_power_newton_girard_char(V, k)
-  _symmetric_power_cache[cache_key] = result
+  _set_sym_power_cache!(cache_key, result)
   return result
 end
 
@@ -1713,7 +1733,7 @@ function exterior_power(λ::WeightLatticeElem{DT,R}, k::Integer) where {DT,R}
 
   result = _exterior_power_newton_girard(λ, k)
 
-  _exterior_power_cache[cache_key] = result
+  _set_ext_power_cache!(cache_key, result)
   return result
 end
 
@@ -1789,7 +1809,7 @@ function exterior_power(V::WeylCharacter{DT,R}, k::Integer) where {DT,R}
   cached !== nothing && return cached
 
   result = _exterior_power_newton_girard_char(V, k)
-  _exterior_power_cache[cache_key] = result
+  _set_ext_power_cache!(cache_key, result)
   return result
 end
 
