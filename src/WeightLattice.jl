@@ -244,6 +244,14 @@ Reflect `w` by the `s`-th simple reflection:
 In the fundamental weight basis, ⟨α_s∨, λ⟩ = λ_s and α_s = ∑_j C_{js} ω_j,
 so the new weight has coordinates:
 ``(s_s(λ))_j = λ_j - λ_s C_{js}``
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> reflect(WeightLatticeElem(TypeA{2}, [2, 1]), 1)
+-2ω1 + 3ω2
+```
 """
 function reflect(w::WeightLatticeElem{DT,R}, s::Integer) where {DT,R}
   C = cartan_matrix(DT)

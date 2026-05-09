@@ -139,7 +139,8 @@ conjugate_dominant_weight_with_length
 Simple reflections act on weights by the formula
 ``s_i(\lambda) = \lambda - \langle \alpha_i^\vee, \lambda \rangle \alpha_i``,
 which in the fundamental weight basis simplifies to
-``s_i(\lambda)_j = \lambda_j - C_{ij} \lambda_i``:
+``(s_i(\lambda))_j = \lambda_j - \lambda_i C_{ji}``, because
+``\alpha_i = \sum_j C_{ji}\omega_j``:
 
 ```jldoctest weights
 julia> reflect(ω₁, 1)   # s₁(ω₁) = ω₁ - ⟨α₁∨, ω₁⟩ α₁ = -ω₁ + ω₂
