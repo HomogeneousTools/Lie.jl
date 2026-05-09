@@ -6,6 +6,10 @@ and highest-weight representation-theoretic operations.
 It is heavily optimized and uses Julia's type system to specialize many finite
 root-data computations.
 
+```@raw html
+<p><a href="Lie.jl.pdf">Download the PDF manual</a>.</p>
+```
+
 Lie.jl is a finite-type root-data and highest-weight package. It does not
 construct concrete Lie algebra elements, brackets, Chevalley bases, ideals,
 subalgebras, homomorphisms, arbitrary-field Lie algebras, or module
