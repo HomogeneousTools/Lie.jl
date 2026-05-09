@@ -20,10 +20,11 @@ export reflect
     WeightLatticeElem{DT,R}
 
 An element of the weight lattice for Dynkin type `DT` of rank `R`,
-stored as an `SVector{R,Int}` of coordinates in the fundamental weight basis (ω₁,…,ωᵣ).
+stored as an `SVector{R,Int}` of coordinates in the fundamental weight basis
+``(\\omega_1, \\ldots, \\omega_r)``.
 
 The pairing with the i-th simple coroot is simply `w[i]`:
-``⟨αᵢ∨, λ⟩ = λᵢ``
+``\\langle \\alpha_i^\\vee, \\lambda \\rangle = \\lambda_i``
 
 ## Constructors
 
@@ -136,7 +137,7 @@ end
 """
     fundamental_weight(::Type{DT}, i) -> WeightLatticeElem{DT}
 
-Return the `i`-th fundamental weight ωᵢ.
+Return the `i`-th fundamental weight ``\\omega_i``.
 
 # Examples
 ```jldoctest
@@ -176,7 +177,8 @@ end
 """
     weyl_vector(::Type{DT}) -> WeightLatticeElem{DT}
 
-Return the Weyl vector ρ = ω₁ + ω₂ + ⋯ + ωᵣ = ½∑_{α>0} α.
+Return the Weyl vector
+``\\rho = \\omega_1 + \\omega_2 + \\cdots + \\omega_r = \\frac{1}{2}\\sum_{\\alpha > 0} \\alpha``.
 
 # Examples
 ```jldoctest
@@ -196,7 +198,7 @@ end
 """
     is_dominant(w::WeightLatticeElem) -> Bool
 
-A weight is dominant iff all its coordinates (pairings with simple coroots) are ≥ 0.
+A weight is dominant iff all its coordinates (pairings with simple coroots) are `>= 0`.
 
 # Examples
 ```jldoctest
@@ -217,8 +219,9 @@ is_dominant(w::WeightLatticeElem) = all(>=(0), w.vec)
     WeightLatticeElem(r::RootSpaceElem{DT,R}) -> WeightLatticeElem{DT,R}
 
 Convert a root space element to weight coordinates.
-Since αᵢ = ∑ⱼ Cⱼᵢ ωⱼ, the weight coordinates of v = ∑ vᵢ αᵢ are:
-``w_j = ∑_i C_{ji} v_i = (C v)_j``
+Since ``\\alpha_i = \\sum_j C_{ji} \\omega_j``, the weight coordinates of
+``v = \\sum_i v_i \\alpha_i`` are
+``w_j = \\sum_i C_{ji} v_i = (Cv)_j``.
 
 # Examples
 ```jldoctest
@@ -268,11 +271,13 @@ end
     reflect(w::WeightLatticeElem{DT,R}, s::Integer) -> WeightLatticeElem{DT,R}
 
 Reflect `w` by the `s`-th simple reflection:
-``s_s(λ) = λ - ⟨α_s∨, λ⟩ α_s``
+``s_s(\\lambda) = \\lambda - \\langle \\alpha_s^\\vee, \\lambda \\rangle \\alpha_s``
 
-In the fundamental weight basis, ⟨α_s∨, λ⟩ = λ_s and α_s = ∑_j C_{js} ω_j,
+In the fundamental weight basis,
+``\\langle \\alpha_s^\\vee, \\lambda \\rangle = \\lambda_s`` and
+``\\alpha_s = \\sum_j C_{js} \\omega_j``,
 so the new weight has coordinates:
-``(s_s(λ))_j = λ_j - λ_s C_{js}``
+``(s_s(\\lambda))_j = \\lambda_j - \\lambda_s C_{js}``
 
 # Examples
 ```jldoctest
@@ -284,8 +289,8 @@ julia> reflect(WeightLatticeElem(TypeA{2}, [2, 1]), 1)
 """
 function reflect(w::WeightLatticeElem{DT,R}, s::Integer) where {DT,R}
   C = cartan_matrix(DT)
-  pairing = w.vec[s]  # = ⟨αₛ∨, λ⟩
-  # Subtract pairing * (s-th column of C, which gives αₛ in ω-basis)
+  pairing = w.vec[s]  # Pairing with the s-th simple coroot.
+  # Subtract pairing times the s-th simple root in the fundamental-weight basis.
   new_vec = SVector{R,Int}(ntuple(j -> w.vec[j] - pairing * C[j, s], R))
   return WeightLatticeElem{DT,R}(new_vec)
 end
@@ -294,10 +299,10 @@ end
     reflect(w::WeightLatticeElem{DT,R}, β::RootSpaceElem{DT,R}) -> WeightLatticeElem{DT,R}
 
 Reflect `w` by the root `β`:
-``s_β(λ) = λ - ⟨β∨, λ⟩ β``
-where `⟨β∨, λ⟩ = 2(β, λ)/(β, β)`.
+``s_\\beta(\\lambda) = \\lambda - \\langle \\beta^\\vee, \\lambda \\rangle \\beta``
+where ``\\langle \\beta^\\vee, \\lambda \\rangle = 2(\\beta, \\lambda) / (\\beta, \\beta)``.
 
-The argument `β` must be an actual root of the root system.
+The argument ``\\beta`` must be an actual root of the root system.
 
 # Examples
 ```jldoctest
@@ -312,7 +317,7 @@ function reflect(w::WeightLatticeElem{DT,R}, β::RootSpaceElem{DT,R}) where {DT,
   C = cartan_matrix(DT)
   d = cartan_symmetrizer(DT)
   β_vec = β.vec
-  # (β, λ) = Σᵢ dᵢ βᵢ λᵢ  and  (β, β) = β' diag(d) C β
+  # Compute (\beta, \lambda) and (\beta, \beta).
   numer = 0
   denom = 0
   @inbounds for i in 1:R
@@ -323,7 +328,7 @@ function reflect(w::WeightLatticeElem{DT,R}, β::RootSpaceElem{DT,R}) where {DT,
     end
     denom += d[i] * β_vec[i] * s
   end
-  # β in weight coords = C * β
+  # beta in fundamental-weight coordinates.
   Cβ = C * β_vec
   coeff = div(2 * numer, denom)
   new_vec = SVector{R,Int}(ntuple(j -> @inbounds(w.vec[j] - coeff * Cβ[j]), R))
@@ -447,15 +452,20 @@ end
 """
     dot(r::RootSpaceElem{DT,R}, w::WeightLatticeElem{DT,R}) -> Rational{Int}
 
-Compute the inner product `(α, λ)` between a root `α` (in simple root coords)
-and a weight `λ` (in fundamental weight coords).
+Compute the inner product ``(\\alpha, \\lambda)`` between a root ``\\alpha``
+(in simple-root coordinates) and a weight ``\\lambda`` (in fundamental-weight coordinates).
 
 Following OSCAR's convention:
-``(α, λ) = ∑ᵢ αᵢ dᵢ λᵢ``
+``(\\alpha, \\lambda) = \\sum_i \\alpha_i d_i \\lambda_i``
 where `d` is the Cartan symmetrizer.
 
-This works because `(αᵢ, ωⱼ) = dᵢ δᵢⱼ`, which follows from
-`⟨αᵢ∨, ωⱼ⟩ = δᵢⱼ` and `αᵢ∨ = αᵢ/dᵢ` in the bilinear form sense.
+This works because
+``(\\alpha_i, \\omega_j) = d_i \\delta_{ij}``,
+which follows from
+``\\langle \\alpha_i^\\vee, \\omega_j \\rangle = \\delta_{ij}``
+and
+``\\alpha_i^\\vee = \\alpha_i / d_i``
+in the bilinear-form sense.
 
 # Examples
 ```jldoctest
@@ -481,8 +491,9 @@ end
 """
     dot(w1::WeightLatticeElem{DT,R}, w2::WeightLatticeElem{DT,R}) -> Rational{Int}
 
-Compute the inner product `(λ, μ)` between two weights.
-Both in fundamental weight coords, convert to root coords and use the bilinear form.
+Compute the inner product ``(\\lambda, \\mu)`` between two weights.
+Both are given in fundamental-weight coordinates; the implementation converts
+to root coordinates and applies the bilinear form there.
 
 # Examples
 ```jldoctest

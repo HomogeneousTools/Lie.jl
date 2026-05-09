@@ -491,7 +491,9 @@ cartan_matrix_inverse(dt::DynkinType) = cartan_matrix_inverse(typeof(dt))
 """
     omega_bilinear_form_scaled(::Type{DT}) -> Tuple{Int, SMatrix{R,R,Int}}
 
-Return `(S, B_ω_S)` where `B_ω_S = S * Cᵀ⁻¹ B C⁻¹` is the bilinear form
+Return ``(S, B_{\\omega,S})`` where
+``B_{\\omega,S} = S (C^{-1})^{\\mathsf T} B C^{-1}``
+is the bilinear form
 in the fundamental weight basis, scaled by the smallest positive integer `S`
 that makes all entries integral.  This is a compile-time constant.
 

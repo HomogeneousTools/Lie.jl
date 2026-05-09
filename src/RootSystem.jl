@@ -736,7 +736,7 @@ end
 """
     highest_coroot(RS::RootSystem{DT,R}) -> RootSpaceElem
 
-Return the highest coroot θ∨: the positive coroot of greatest height.
+Return the highest coroot ``\\theta^\\vee``: the positive coroot of greatest height.
 This is the coroot of the highest short root.
 
 The index is precomputed at compile time and stored in `RS.highest_coroot_idx`.
@@ -797,7 +797,7 @@ end
 
 Return the **Coxeter labels** (also called marks): the coefficients of the
 highest root in the simple root basis:
-``θ = ∑_i m_i α_i``
+``\\theta = \\sum_i m_i \\alpha_i``
 
 These are not the Weyl group exponents; the degrees of fundamental invariants
 are returned by [`degrees_fundamental_invariants`](@ref), and the exponents are
@@ -928,7 +928,8 @@ end
     coxeter_number(::Type{DT}) -> Int
     coxeter_number(dt::DT) -> Int
 
-Return the **Coxeter number** ``h`` of the Dynkin type, defined as ``h = 1 + ∑_i m_i``
+Return the **Coxeter number** ``h`` of the Dynkin type, defined as
+``h = 1 + \\sum_i m_i``
 where ``m_i`` are the Coxeter coefficients (coefficients of the highest root).
 
 The Coxeter number is the order of a Coxeter element (product of all simple reflections)
@@ -957,7 +958,7 @@ coxeter_number(dt::DynkinType) = coxeter_number(typeof(dt))
     dual_coxeter_number(::Type{DT}) -> Int
     dual_coxeter_number(dt::DT) -> Int
 
-Return the **dual Coxeter number** ``h^∨`` of the Dynkin type, which is the Coxeter
+Return the **dual Coxeter number** ``h^\\vee`` of the Dynkin type, which is the Coxeter
 number of the Langlands dual root system.
 
 # Examples
