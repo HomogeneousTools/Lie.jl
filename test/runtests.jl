@@ -1736,6 +1736,15 @@ end
     ω₁ = fundamental_weight(TypeA{2}, 1)
     @test casimir_eigenvalue(ω₁) == dot(ω₁, ω₁ + 2 * ρ)
 
+    # In non-simply-laced types the result is normalized so long roots have length² 2
+    ω₃_b3 = fundamental_weight(TypeB{3}, 3)
+    ρ_b3 = weyl_vector(TypeB{3})
+    θ_b3 = highest_root(RootSystem(TypeB{3}))
+    θ_b3_w = WeightLatticeElem{TypeB{3},3}(cartan_matrix(TypeB{3}) * θ_b3.vec)
+    @test casimir_eigenvalue(ω₃_b3) ==
+      2 * dot(ω₃_b3, ω₃_b3 + 2 * ρ_b3) // dot(θ_b3_w, θ_b3_w)
+    @test casimir_eigenvalue(ω₃_b3) == 21//4
+
     # C₂(0) = 0
     z = zero(WeightLatticeElem{TypeA{2},2})
     @test casimir_eigenvalue(z) == 0

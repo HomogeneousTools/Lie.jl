@@ -579,11 +579,15 @@ true
 ### Casimir eigenvalue
 
 The eigenvalue of the quadratic Casimir element on ``\mathrm{V}(λ)`` is
-``c(λ) = (λ, λ + 2ρ)``:
+``c(λ) = 2(λ, λ + 2ρ)/(\theta,\theta)``, where ``\theta`` is the highest root.
+This normalizes long roots to have squared length 2:
 
 ```jldoctest chars
 julia> casimir_eigenvalue(fundamental_weight(TypeA{3}, 1))
 15//4
+
+julia> casimir_eigenvalue(fundamental_weight(TypeB{3}, 3))
+21//4
 ```
 
 ### Congruency class

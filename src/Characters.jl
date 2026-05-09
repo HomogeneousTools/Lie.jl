@@ -2327,13 +2327,16 @@ julia> casimir_eigenvalue(fundamental_weight(TypeA{2}, 1))
 8//3
 
 julia> casimir_eigenvalue(fundamental_weight(TypeB{3}, 3))
-21//2
+21//4
 ```
 """
 function casimir_eigenvalue(λ::WeightLatticeElem{DT,R}) where {DT,R}
   is_dominant(λ) || throw(ArgumentError("Weight must be dominant"))
   ρ = weyl_vector(DT)
-  return dot(λ, λ + 2 * ρ)
+  RS = RootSystem(DT)
+  θ = highest_root(RS)
+  θ_w = WeightLatticeElem{DT,R}(cartan_matrix(DT) * θ.vec)
+  return 2 * dot(λ, λ + 2 * ρ) // dot(θ_w, θ_w)
 end
 
 """
