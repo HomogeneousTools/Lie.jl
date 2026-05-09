@@ -11,7 +11,7 @@ Provides root systems, Weyl groups, and weight-lattice arithmetic for all
 classical and exceptional Dynkin types (A, B, C, D, E₆, E₇, E₈, F₄, G₂)
 as well as their direct products.
 
-See the [online documentation](https://homogeneoustools.github.io/Lie.jl/) for
+See the [online documentation](https://homogeneous.tools/Lie.jl/) for
 usage examples and mathematical background.
 """
 module Lie
