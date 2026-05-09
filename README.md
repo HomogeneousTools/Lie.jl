@@ -47,7 +47,7 @@ computations.
 
 ```julia
 using Pkg
-Pkg.add(url="https://github.com/HomogeneousTools/Lie.jl")  # adjust URL
+Pkg.add(url="https://github.com/HomogeneousTools/Lie.jl")
 ```
 
 Or for local development:
