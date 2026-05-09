@@ -480,7 +480,7 @@ julia> dynkin_diagram(TypeB{3})
 1   2   3
 
 julia> dynkin_diagram(TypeG2)
-○≡≡≡○
+○≡<≡○
 1   2
 ```
 """
@@ -554,7 +554,7 @@ function dynkin_diagram(::Type{TypeF4})
 end
 
 function dynkin_diagram(::Type{TypeG2})
-  return DynkinDiagram("○≡≡≡○\n1   2")
+  return DynkinDiagram("○≡<≡○\n1   2")
 end
 
 function dynkin_diagram(::Type{ProductDynkinType{Ts}}) where {Ts}

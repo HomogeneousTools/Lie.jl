@@ -72,7 +72,7 @@ end
 
   # F₄ and G₂
   @test dynkin_diagram(TypeF4) == "○───○═>═○───○\n1   2   3   4"
-  @test dynkin_diagram(TypeG2) == "○≡≡≡○\n1   2"
+  @test dynkin_diagram(TypeG2) == "○≡<≡○\n1   2"
 
   # Product type: labelled sections separated by blank lines
   PT = ProductDynkinType{Tuple{TypeA{1},TypeB{2}}}()

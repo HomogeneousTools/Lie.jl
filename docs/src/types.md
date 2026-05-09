@@ -59,7 +59,7 @@ julia> dynkin_diagram(TypeA{4})
 1   2   3   4
 
 julia> dynkin_diagram(TypeG2)
-○≡≡≡○
+○≡<≡○
 1   2
 ```
 
