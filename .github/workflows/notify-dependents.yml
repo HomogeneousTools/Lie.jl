@@ -1,4 +1,4 @@
-name: Notify dependents
+name: notify-dependents
 
 on:
   push:
