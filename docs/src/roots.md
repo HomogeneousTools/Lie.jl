@@ -31,19 +31,19 @@ Roots are stored in the simple root basis as `RootSpaceElem` values.
 Use `coefficients` to extract the underlying coordinate vector:
 
 ```jldoctest roots
-julia> α₁ = simple_root(RS, 1)
+julia> α1 = simple_root(RS, 1)
 α1
 
-julia> α₂ = simple_root(RS, 2)
+julia> α2 = simple_root(RS, 2)
 α2
 
-julia> α₁ + α₂
+julia> α1 + α2
 α1 + α2
 
-julia> 2 * α₁
+julia> 2 * α1
 2α1
 
-julia> coefficients(α₁)
+julia> coefficients(α1)
 3-element StaticArraysCore.SVector{3, Int64} with indices SOneTo(3):
  1
  0
@@ -98,13 +98,13 @@ coefficients
 ## Root queries
 
 ```jldoctest roots
-julia> is_root(RS, α₁ + α₂)
+julia> is_root(RS, α1 + α2)
 true
 
-julia> is_positive_root(RS, α₁ + α₂)
+julia> is_positive_root(RS, α1 + α2)
 true
 
-julia> is_root(RS, 2 * α₁)
+julia> is_root(RS, 2 * α1)
 false
 ```
 
@@ -118,10 +118,10 @@ is_positive_root
 The height of a root is the sum of its simple root coefficients:
 
 ```jldoctest roots
-julia> height(α₁)
+julia> height(α1)
 1
 
-julia> height(α₁ + α₂)
+julia> height(α1 + α2)
 2
 
 julia> height(highest_root(RS))
@@ -138,10 +138,10 @@ The inner product on the root space uses the symmetrised Cartan form
 ``(\alpha, \beta) = \alpha^T \operatorname{diag}(d) \, C \, \beta``:
 
 ```jldoctest roots
-julia> dot(α₁, α₁)
+julia> dot(α1, α1)
 2//1
 
-julia> dot(α₁, α₂)
+julia> dot(α1, α2)
 -1//1
 ```
 
@@ -169,16 +169,16 @@ positive_coroots
 ## Coxeter invariants
 
 The **highest root** is a fundamental invariant of the root system. When expressed in the simple root basis as
-``θ = \sum_i m_i α_i``, the coefficients ``m_i`` are the **Coxeter labels** or
+``\theta = \sum_i m_i \alpha_i``, the coefficients ``m_i`` are the **Coxeter labels** or
 **marks** (returned by [`coxeter_coefficients`](@ref)).
 Because positive roots are sorted by height, `highest_root(RS)` is simply `positive_root(RS, N)` where `N` is the
 number of positive roots — no search needed.
 
-The **highest short root** ``θ_s`` is the short root of greatest height.  For simply-laced types
-(A, D, E) it coincides with ``θ``.  Its index in the positive root list is precomputed at compile time
+The **highest short root** ``\theta_s`` is the short root of greatest height.  For simply-laced types
+(A, D, E) it coincides with ``\theta``.  Its index in the positive root list is precomputed at compile time
 and stored in `RS.highest_coroot_idx`.
 
-The **highest coroot** (or **dominant coroot**) ``θ^\vee`` is the positive coroot of greatest height.
+The **highest coroot** (or **dominant coroot**) ``\theta^\vee`` is the positive coroot of greatest height.
 It equals the coroot of the highest short root, and is stored at the same precomputed index
 `RS.highest_coroot_idx`.
 
@@ -224,35 +224,35 @@ degrees_fundamental_invariants
 
 ## Examples
 
-### A₂
+### A2
 
 ```jldoctest roots
-julia> RS₂ = RootSystem(TypeA{2})
+julia> RS2 = RootSystem(TypeA{2})
 Root system of type A2, rank 2 with 3 positive roots
 
-julia> [positive_root(RS₂, i) for i in 1:3]
+julia> [positive_root(RS2, i) for i in 1:3]
 3-element Vector{RootSpaceElem{TypeA{2}, 2}}:
  α1
  α2
  α1 + α2
 
-julia> highest_root(RS₂)
+julia> highest_root(RS2)
 α1 + α2
 
-julia> highest_short_root(RS₂)
+julia> highest_short_root(RS2)
 α1 + α2
 
-julia> coefficients(highest_coroot(RS₂))
+julia> coefficients(highest_coroot(RS2))
 2-element StaticArraysCore.SVector{2, Int64} with indices SOneTo(2):
  1
  1
 ```
 
-A₂ is simply-laced, so the highest root, highest short root, and highest coroot all coincide.
+``\mathrm{A}_2`` is simply-laced, so the highest root, highest short root, and highest coroot all coincide.
 
-### G₂
+### G2
 
-The exceptional type ``\mathrm{G}_2`` has short roots (length² = 2) and long roots (length² = 6).
+The exceptional type ``\mathrm{G}_2`` has short roots of squared length ``2`` and long roots of squared length ``6``.
 The highest short root and the highest long root are distinct:
 
 ```jldoctest roots
@@ -273,7 +273,7 @@ julia> coefficients(highest_coroot(RS_G2))
  3
 ```
 
-### B₂
+### B2
 
 ```jldoctest roots
 julia> RS_B2 = RootSystem(TypeB{2});

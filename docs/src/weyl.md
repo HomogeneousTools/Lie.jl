@@ -31,20 +31,20 @@ root_system
 ## Generators and multiplication
 
 ```jldoctest weyl
-julia> s₁ = gen(W, 1)
+julia> s1 = gen(W, 1)
 s1
 
-julia> s₂ = gen(W, 2)
+julia> s2 = gen(W, 2)
 s2
 
-julia> s₁ * s₂
+julia> s1 * s2
 s1 * s2
 
-julia> word(s₁)
+julia> word(s1)
 1-element Vector{UInt8}:
  0x01
 
-julia> word(s₁ * s₂)
+julia> word(s1 * s2)
 2-element Vector{UInt8}:
  0x01
  0x02
@@ -55,10 +55,10 @@ julia> word(s₁ * s₂)
 The longest element ``w_0`` has maximal length in the Weyl group:
 
 ```jldoctest weyl
-julia> w₀ = longest_element(W)
+julia> w0 = longest_element(W)
 s1 * s2 * s1 * s3 * s2 * s1
 
-julia> length(word(w₀))
+julia> length(word(w0))
 6
 ```
 
@@ -78,12 +78,12 @@ The Weyl group acts on the weight lattice. Right multiplication
 corresponds to the geometric reflection:
 
 ```jldoctest weyl
-julia> ω₁ = fundamental_weight(TypeA{3}, 1);
+julia> ω1 = fundamental_weight(TypeA{3}, 1);
 
-julia> ω₁ * s₁   # s₁(ω₁) = -ω₁ + ω₂
+julia> ω1 * s1   # s1(ω1) = -ω1 + ω2
 -ω1 + ω2
 
-julia> ω₁ * s₂   # s₂(ω₁) = ω₁ (orthogonal)
+julia> ω1 * s2   # s2(ω1) = ω1 (orthogonal)
 ω1
 ```
 
@@ -96,12 +96,12 @@ Base.:*(::WeightLatticeElem{DT,R}, ::WeylGroupElem{DT,R}) where {DT,R}
 ```jldoctest weyl
 julia> RS = RootSystem(TypeA{3});
 
-julia> α₁ = simple_root(RS, 1);
+julia> α1 = simple_root(RS, 1);
 
-julia> α₁ * s₁   # s₁(α₁) = -α₁
+julia> α1 * s1   # s1(α1) = -α1
 -α1
 
-julia> α₁ * s₂   # s₂(α₁) = α₁ + α₂
+julia> α1 * s2   # s2(α1) = α1 + α2
 α1 + α2
 ```
 
@@ -114,9 +114,9 @@ Base.:*(::RootSpaceElem{DT,R}, ::WeylGroupElem{DT,R}) where {DT,R}
 The orbit of a weight under the full Weyl group:
 
 ```jldoctest weyl
-julia> orbit = weyl_orbit(TypeA{3}, ω₁);
+julia> orbit = weyl_orbit(TypeA{3}, ω1);
 
-julia> length(orbit)   # |W/Stab(ω₁)| = 4 for std rep of A₃
+julia> length(orbit)   # |W/Stab(ω1)| = 4 for std rep of A3
 4
 ```
 
@@ -138,9 +138,9 @@ weyl_orbit
 All dominant weights ``\mu \leq \lambda`` (in the dominance order):
 
 ```jldoctest weyl
-julia> ω₂ = fundamental_weight(TypeA{3}, 2);
+julia> ω2 = fundamental_weight(TypeA{3}, 2);
 
-julia> dw = dominant_weights(TypeA{3}, ω₁ + ω₂);
+julia> dw = dominant_weights(TypeA{3}, ω1 + ω2);
 
 julia> length(dw)
 2
@@ -155,28 +155,28 @@ dominant_weights
 The dimension of the irreducible representation ``\mathrm{V}(\lambda)``:
 
 ```jldoctest weyl
-julia> degree(ω₁)   # standard rep of A₃ (SL₄)
+julia> degree(ω1)   # standard rep of A3 (SL4)
 4
 
-julia> degree(ω₂)   # ⋀² of standard = 6-dim
+julia> degree(ω2)   # ⋀² of standard = 6-dim
 6
 
-julia> degree(ω₁ + ω₂)   # 20-dim rep
+julia> degree(ω1 + ω2)   # 20-dim rep
 20
 
-julia> degree(weyl_vector(TypeA{3}))   # ρ = ω₁+ω₂+ω₃
+julia> degree(weyl_vector(TypeA{3}))   # ρ = ω1+ω2+ω3
 64
 ```
 
 A₂ examples:
 
 ```jldoctest weyl
-julia> ω₁_a2 = fundamental_weight(TypeA{2}, 1);
+julia> ω1_a2 = fundamental_weight(TypeA{2}, 1);
 
-julia> degree(ω₁_a2)
+julia> degree(ω1_a2)
 3
 
-julia> degree(ω₁_a2 + fundamental_weight(TypeA{2}, 2))   # adjoint
+julia> degree(ω1_a2 + fundamental_weight(TypeA{2}, 2))   # adjoint
 8
 ```
 
@@ -200,7 +200,7 @@ a weight on a flag variety:
 ```jldoctest weyl
 julia> import Lie: borel_weil_bott
 
-julia> borel_weil_bott(ω₁)   # dominant weight → degree 0
+julia> borel_weil_bott(ω1)   # dominant weight → degree 0
 (0, ω1)
 
 julia> borel_weil_bott(WeightLatticeElem(TypeA{3}, [-3, 2, 1]))
@@ -245,19 +245,19 @@ inclusion in reduced expressions.  Descent sets record which simple reflections
 reduce the word length.
 
 ```jldoctest weyl
-julia> s₃ = gen(W, 3)
+julia> s3 = gen(W, 3)
 s3
 
-julia> x = s₁ * s₂;
+julia> x = s1 * s2;
 
 julia> right_descent_set(x)
 1-element Vector{Int64}:
  2
 
-julia> bruhat_leq(s₁, x)
+julia> bruhat_leq(s1, x)
 true
 
-julia> bruhat_leq(x, s₁)
+julia> bruhat_leq(x, s1)
 false
 ```
 
@@ -276,9 +276,9 @@ The minimal-length coset representatives for ``W/W_I`` are the elements
 whose right descent sets are disjoint from ``I``.
 
 ```jldoctest weyl
-julia> reps = right_coset_reps(W, [1]);  # W/⟨s₁⟩ for A₃
+julia> reps = right_coset_reps(W, [1]);  # W/⟨s1⟩ for A3
 
-julia> length(reps)   # |A₃|/|A₁×A₁ ... actually just |W|/|W_{1}| = 24/2 = 12
+julia> length(reps)   # |A3|/|A1×A1 ... actually just |W|/|W_{1}| = 24/2 = 12
 12
 
 julia> all(w -> !(1 in right_descent_set(w)), reps)

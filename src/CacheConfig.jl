@@ -82,9 +82,9 @@ LRU caches).
 ```jldoctest
 julia> using Lie
 
-julia> ω₁ = fundamental_weight(TypeA{2}, 1);
+julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
-julia> tensor_product(ω₁, ω₁);  # populates caches
+julia> tensor_product(ω1, ω1);  # populates caches
 
 julia> clear_caches!()
 ```

@@ -48,9 +48,9 @@ multiplicity dictionary returned by [`dominant_character`](@ref).
 ```jldoctest
 julia> using Lie
 
-julia> ω₁ = fundamental_weight(TypeA{2}, 1);
+julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
-julia> V = WeylCharacter(ω₁)
+julia> V = WeylCharacter(ω1)
 A2(1, 0)
 
 julia> V + V == 2 * V
@@ -204,9 +204,9 @@ Returns a `BigInt`.
 ```jldoctest
 julia> using Lie
 
-julia> ω₁ = fundamental_weight(TypeA{2}, 1);
+julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
-julia> V = WeylCharacter(ω₁);
+julia> V = WeylCharacter(ω1);
 
 julia> degree(V)  # dim of standard representation
 3
@@ -217,14 +217,14 @@ julia> degree(V^2)  # dim of V ⊗ V = Sym²V ⊕ ⋀²V
 julia> degree(Sym(2, V))  # dim of Sym²V
 6
 
-julia> # Virtual character: V(ω₁) - V(ω₂) has degree 0 (both dim 3)
+julia> # Virtual character: V(ω1) - V(ω2) has degree 0 (both dim 3)
        degree(V - WeylCharacter(fundamental_weight(TypeA{2}, 2)))
 0
 
-julia> # E₈ adjoint has dimension 248
+julia> # E8 adjoint has dimension 248
        ω₈ = fundamental_weight(TypeE{8}, 8);
 
-julia> degree(WeylCharacter(ω₈))
+julia> degree(WeylCharacter(ω8))
 248
 ```
 """
@@ -337,14 +337,14 @@ making each squaring step significantly more expensive.
 ```jldoctest
 julia> using Lie
 
-julia> ω₁ = fundamental_weight(TypeA{2}, 1);
+julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
-julia> V = WeylCharacter(ω₁);
+julia> V = WeylCharacter(ω1);
 
-julia> V^2 == tensor_product(ω₁, ω₁)
+julia> V^2 == tensor_product(ω1, ω1)
 true
 
-julia> V^0 == WeylCharacter(zero(ω₁))
+julia> V^0 == WeylCharacter(zero(ω1))
 true
 ```
 """
@@ -376,11 +376,11 @@ Add `W` into `V` in-place, modifying `V`. Returns `V`.
 ```jldoctest
 julia> using Lie
 
-julia> ω₁ = fundamental_weight(TypeA{2}, 1);
+julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
-julia> V = WeylCharacter(ω₁); W = WeylCharacter(ω₁);
+julia> V = WeylCharacter(ω1); W = WeylCharacter(ω1);
 
-julia> add!(V, W) == 2 * WeylCharacter(ω₁)
+julia> add!(V, W) == 2 * WeylCharacter(ω1)
 true
 ```
 """
@@ -405,11 +405,11 @@ Add `c * W` into `V` in-place, modifying `V`. Returns `V`.
 ```jldoctest
 julia> using Lie
 
-julia> ω₁ = fundamental_weight(TypeA{2}, 1);
+julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
-julia> V = WeylCharacter(TypeA{2}); W = WeylCharacter(ω₁);
+julia> V = WeylCharacter(TypeA{2}); W = WeylCharacter(ω1);
 
-julia> addmul!(V, W, 3) == 3 * WeylCharacter(ω₁)
+julia> addmul!(V, W, 3) == 3 * WeylCharacter(ω1)
 true
 ```
 """
@@ -449,9 +449,9 @@ Iterates over all pairs `(λ, m)` in `V` and `(μ, n)` in `W`, computes
 ```jldoctest
 julia> using Lie
 
-julia> ω₁ = fundamental_weight(TypeA{2}, 1);
+julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
-julia> V = WeylCharacter(ω₁);
+julia> V = WeylCharacter(ω1);
 
 julia> V * V == Sym(2, V) + ⋀(2, V)
 true
@@ -497,19 +497,19 @@ to its full Weyl orbit.
 ```jldoctest
 julia> using Lie; using StaticArrays
 
-julia> ω₁ = fundamental_weight(TypeA{2}, 1);
+julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
-julia> mults = freudenthal_formula(ω₁);
+julia> mults = freudenthal_formula(ω1);
 
 julia> mults[SVector(1, 0)]
 1
 
-julia> sum(values(mults))  # = dim V(ω₁) = 3
+julia> sum(values(mults))  # = dim V(ω1) = 3
 3
 
-julia> ω₂ = fundamental_weight(TypeA{2}, 2);
+julia> ω2 = fundamental_weight(TypeA{2}, 2);
 
-julia> mults = freudenthal_formula(ω₁ + ω₂);  # adjoint of A₂
+julia> mults = freudenthal_formula(ω1 + ω2);  # adjoint of A2
 
 julia> length(mults)  # 7 distinct weights
 7
@@ -612,17 +612,17 @@ and multiplicities as values. Results are cached per highest weight; clear with
 ```jldoctest
 julia> using Lie; using StaticArrays
 
-julia> ω₁ = fundamental_weight(TypeA{2}, 1);
+julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
-julia> dc = dominant_character(ω₁);
+julia> dc = dominant_character(ω1);
 
-julia> length(dc)   # V(ω₁) of A₂ has 1 dominant weight
+julia> length(dc)   # V(ω1) of A2 has 1 dominant weight
 1
 
-julia> dc[SVector(1, 0)]   # multiplicity of ω₁ itself
+julia> dc[SVector(1, 0)]   # multiplicity of ω1 itself
 1
 
-julia> adj = ω₁ + fundamental_weight(TypeA{2}, 2);
+julia> adj = ω1 + fundamental_weight(TypeA{2}, 2);
 
 julia> dc_adj = dominant_character(adj);
 
@@ -809,9 +809,9 @@ Return the multiplicity of weight `μ` in the irreducible representation
 ```jldoctest
 julia> using Lie
 
-julia> ω₁ = fundamental_weight(TypeA{2}, 1); ω₂ = fundamental_weight(TypeA{2}, 2);
+julia> ω1 = fundamental_weight(TypeA{2}, 1); ω2 = fundamental_weight(TypeA{2}, 2);
 
-julia> weight_multiplicity(ω₁ + ω₂, zero(ω₁))   # zero weight of adjoint
+julia> weight_multiplicity(ω1 + ω2, zero(ω1))   # zero weight of adjoint
 2
 ```
 """
@@ -1221,15 +1221,15 @@ partitions for ``λ`` and ``μ``), and reads off the multiplicities
 ```jldoctest
 julia> using Lie
 
-julia> ω₁ = fundamental_weight(TypeA{2}, 1); ω₂ = fundamental_weight(TypeA{2}, 2);
+julia> ω1 = fundamental_weight(TypeA{2}, 1); ω2 = fundamental_weight(TypeA{2}, 2);
 
-julia> lr_tensor_product(ω₁, ω₁)
+julia> lr_tensor_product(ω1, ω1)
 A2(2, 0) + A2(0, 1)
 
-julia> lr_tensor_product(ω₁, ω₂)
+julia> lr_tensor_product(ω1, ω2)
 A2(1, 1) + A2(0, 0)
 
-julia> lr_tensor_product(ω₁ + ω₂, ω₁)  # 8 ⊗ 3 in A₂
+julia> lr_tensor_product(ω1 + ω2, ω1)  # 8 ⊗ 3 in A2
 A2(2, 1) + A2(1, 0) + A2(0, 2)
 ```
 """
@@ -1294,12 +1294,12 @@ factor has smaller dimension, for efficiency.
 ```jldoctest
 julia> using Lie
 
-julia> ω₁ = fundamental_weight(TypeA{2}, 1); ω₂ = fundamental_weight(TypeA{2}, 2);
+julia> ω1 = fundamental_weight(TypeA{2}, 1); ω2 = fundamental_weight(TypeA{2}, 2);
 
-julia> tensor_product(ω₁, ω₁)
+julia> tensor_product(ω1, ω1)
 A2(2, 0) + A2(0, 1)
 
-julia> ω₁ = fundamental_weight(TypeA{3}, 1); tensor_product(ω₁, ω₁)
+julia> ω1 = fundamental_weight(TypeA{3}, 1); tensor_product(ω1, ω1)
 A3(2, 0, 0) + A3(0, 1, 0)
 ```
 """
@@ -1363,9 +1363,9 @@ Highest weight of the contragredient (dual) representation: `λ* = -w₀(λ)`.
 ```jldoctest
 julia> using Lie
 
-julia> ω₁ = fundamental_weight(TypeA{2}, 1); ω₂ = fundamental_weight(TypeA{2}, 2);
+julia> ω1 = fundamental_weight(TypeA{2}, 1); ω2 = fundamental_weight(TypeA{2}, 2);
 
-julia> dual(ω₁) == ω₂
+julia> dual(ω1) == ω2
 true
 
 julia> [dual(fundamental_weight(TypeA{3}, i)) for i in 1:3]
@@ -1390,9 +1390,9 @@ Dual of a virtual character: each summand ``\\mathrm{V}(λ)`` maps to ``\\mathrm
 ```jldoctest
 julia> using Lie
 
-julia> ω₁ = fundamental_weight(TypeA{2}, 1);
+julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
-julia> dual(WeylCharacter(ω₁))
+julia> dual(WeylCharacter(ω1))
 A2(0, 1)
 ```
 """
@@ -1516,7 +1516,7 @@ Results are memoized for efficiency in recursive calls.
 ```jldoctest
 julia> using Lie
 
-julia> spin = fundamental_weight(TypeB{3}, 3);  # B₃ spin rep, dim 8
+julia> spin = fundamental_weight(TypeB{3}, 3);  # B3 spin rep, dim 8
 
 julia> Sym(6, spin)
 B3(0, 0, 6) + B3(0, 0, 4) + B3(0, 0, 2) + B3(0, 0, 0)
@@ -1589,9 +1589,9 @@ Results are memoized.
 ```jldoctest
 julia> using Lie
 
-julia> ω₁ = fundamental_weight(TypeA{2}, 1);
+julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
-julia> V = WeylCharacter(ω₁);
+julia> V = WeylCharacter(ω1);
 
 julia> symmetric_power(V, 2)
 A2(2, 0)
@@ -1599,7 +1599,7 @@ A2(2, 0)
 julia> symmetric_power(V, 3)
 A2(3, 0)
 
-julia> symmetric_power(V, 0) == WeylCharacter(zero(ω₁))
+julia> symmetric_power(V, 0) == WeylCharacter(zero(ω1))
 true
 
 julia> # Sym²(V ⊕ V) = 3·Sym²V ⊕ ⋀²V (dimension identity: C(6+1,2) = 21)
@@ -1679,7 +1679,7 @@ Results are memoized for efficiency in recursive calls.
 ```jldoctest
 julia> using Lie
 
-julia> spin = fundamental_weight(TypeB{3}, 3);  # B₃ spin rep, dim 8
+julia> spin = fundamental_weight(TypeB{3}, 3);  # B3 spin rep, dim 8
 
 julia> ⋀(6, spin)
 B3(1, 0, 0) + B3(0, 1, 0)
@@ -1746,9 +1746,9 @@ Results are memoized.
 ```jldoctest
 julia> using Lie
 
-julia> ω₁ = fundamental_weight(TypeA{3}, 1);
+julia> ω1 = fundamental_weight(TypeA{3}, 1);
 
-julia> V = WeylCharacter(ω₁);
+julia> V = WeylCharacter(ω1);
 
 julia> exterior_power(V, 2)
 A3(0, 1, 0)
@@ -1759,7 +1759,7 @@ A3(0, 0, 0)
 julia> exterior_power(V, 5)   # exceeds dimension = 0
 0
 
-julia> exterior_power(V, 2) == exterior_power(ω₁, 2)
+julia> exterior_power(V, 2) == exterior_power(ω1, 2)
 true
 ```
 """
@@ -1819,17 +1819,17 @@ Compute the `k`-th symmetric power.  Shorthand for [`symmetric_power`](@ref).
 ```jldoctest
 julia> using Lie
 
-julia> ω₁ = fundamental_weight(TypeA{2}, 1);
+julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
-julia> Sym(2, ω₁)
+julia> Sym(2, ω1)
 A2(2, 0)
 
-julia> V = WeylCharacter(ω₁);
+julia> V = WeylCharacter(ω1);
 
 julia> Sym(2, V)
 A2(2, 0)
 
-julia> Sym(2, V) == Sym(2, ω₁)
+julia> Sym(2, V) == Sym(2, ω1)
 true
 
 julia> degree(highest_weight(Sym(3, V)))
@@ -1849,12 +1849,12 @@ Compute the `k`-th exterior power.  Shorthand for [`exterior_power`](@ref).
 ```jldoctest
 julia> using Lie
 
-julia> ω₁ = fundamental_weight(TypeA{3}, 1);
+julia> ω1 = fundamental_weight(TypeA{3}, 1);
 
-julia> ⋀(2, ω₁) == WeylCharacter(fundamental_weight(TypeA{3}, 2))
+julia> ⋀(2, ω1) == WeylCharacter(fundamental_weight(TypeA{3}, 2))
 true
 
-julia> V = WeylCharacter(ω₁);
+julia> V = WeylCharacter(ω1);
 
 julia> ⋀(2, V) == WeylCharacter(fundamental_weight(TypeA{3}, 2))
 true
@@ -2103,15 +2103,15 @@ s_λ(\\mathrm{V}) = \\frac{1}{n!} \\sum_{κ \\vdash n} χ^λ(κ) \\cdot |\\mathr
 ```jldoctest
 julia> using Lie
 
-julia> ω₁ = fundamental_weight(TypeA{3}, 1);
+julia> ω1 = fundamental_weight(TypeA{3}, 1);
 
-julia> plethysm([2], ω₁) == Sym(2, ω₁)
+julia> plethysm([2], ω1) == Sym(2, ω1)
 true
 
-julia> plethysm([1, 1], ω₁) == ⋀(2, ω₁)
+julia> plethysm([1, 1], ω1) == ⋀(2, ω1)
 true
 
-julia> plethysm([2, 1], ω₁)  # Mixed symmetry: S_{(2,1)} functor
+julia> plethysm([2, 1], ω1)  # Mixed symmetry: S_{(2,1)} functor
 A3(1, 1, 0)
 ```
 """
@@ -2245,9 +2245,9 @@ all Lie types (including G₂ where the Cartan symmetrizer gives the wrong order
 ```jldoctest
 julia> using Lie
 
-julia> ω₁ = fundamental_weight(TypeA{2}, 1);
+julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
-julia> character_from_weights(TypeA{2}, freudenthal_formula(ω₁))
+julia> character_from_weights(TypeA{2}, freudenthal_formula(ω1))
 A2(1, 0)
 ```
 """

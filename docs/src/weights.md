@@ -12,19 +12,19 @@ from a coefficient vector using `WeightLatticeElem`:
 ```jldoctest weights
 julia> using Lie
 
-julia> ω₁ = fundamental_weight(TypeA{3}, 1)
+julia> ω1 = fundamental_weight(TypeA{3}, 1)
 ω1
 
-julia> ω₂ = fundamental_weight(TypeA{3}, 2)
+julia> ω2 = fundamental_weight(TypeA{3}, 2)
 ω2
 
-julia> ω₃ = fundamental_weight(TypeA{3}, 3)
+julia> ω3 = fundamental_weight(TypeA{3}, 3)
 ω3
 
-julia> ω₁ + ω₂
+julia> ω1 + ω2
 ω1 + ω2
 
-julia> 2 * ω₁
+julia> 2 * ω1
 2ω1
 
 julia> WeightLatticeElem(TypeA{3}, [3, 1, 0])
@@ -68,10 +68,10 @@ Pass `:compact => true` via `IOContext` to switch a single `show` call to the
 concise coordinate form `DT[c₁,c₂,…]`:
 
 ```jldoctest weights
-julia> show(IOContext(stdout, :compact => true), ω₁)
+julia> show(IOContext(stdout, :compact => true), ω1)
 A3[1,0,0]
 
-julia> show(IOContext(stdout, :compact => true), 2*ω₁ - ω₃)
+julia> show(IOContext(stdout, :compact => true), 2*ω1 - ω3)
 A3[2,0,-1]
 ```
 
@@ -106,10 +106,10 @@ A weight is **dominant** when all its fundamental weight coordinates
 are non-negative:
 
 ```jldoctest weights
-julia> is_dominant(ω₁)
+julia> is_dominant(ω1)
 true
 
-julia> is_dominant(ω₁ - 2 * ω₂)
+julia> is_dominant(ω1 - 2 * ω2)
 false
 ```
 
@@ -143,10 +143,10 @@ which in the fundamental weight basis simplifies to
 ``\alpha_i = \sum_j C_{ji}\omega_j``:
 
 ```jldoctest weights
-julia> reflect(ω₁, 1)   # s₁(ω₁) = ω₁ - ⟨α₁∨, ω₁⟩ α₁ = -ω₁ + ω₂
+julia> reflect(ω1, 1)   # reflection in the first simple root
 -ω1 + ω2
 
-julia> reflect(ω₁, 2)   # s₂(ω₁) = ω₁ (orthogonal)
+julia> reflect(ω1, 2)   # unchanged because the pairing is zero
 ω1
 ```
 
@@ -162,22 +162,22 @@ and the weight-space inner product:
 ```jldoctest weights
 julia> RS = RootSystem(TypeA{2});
 
-julia> α₁ = simple_root(RS, 1);
+julia> α1 = simple_root(RS, 1);
 
-julia> ω₁ = fundamental_weight(TypeA{2}, 1);
+julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
-julia> ω₂ = fundamental_weight(TypeA{2}, 2);
+julia> ω2 = fundamental_weight(TypeA{2}, 2);
 
-julia> dot(α₁, ω₁)   # ⟨α₁∨, ω₁⟩ = 1
+julia> dot(α1, ω1)   # simple-coroot pairing equals 1
 1//1
 
-julia> dot(α₁, ω₂)   # ⟨α₁∨, ω₂⟩ = 0
+julia> dot(α1, ω2)   # simple-coroot pairing equals 0
 0//1
 
-julia> dot(ω₁, ω₁)   # (ω₁, ω₁) in the invariant bilinear form
+julia> dot(ω1, ω1)   # invariant bilinear form
 2//3
 
-julia> dot(ω₁, ω₂)
+julia> dot(ω1, ω2)
 1//3
 ```
 
@@ -191,7 +191,7 @@ Weights and roots live in different coordinate systems.
 Convert between them:
 
 ```jldoctest weights
-julia> α₁_as_weight = WeightLatticeElem(simple_root(RS, 1))
+julia> α1_as_weight = WeightLatticeElem(simple_root(RS, 1))
 2ω1 - ω2
 
 julia> ρ_as_root = RootSpaceElem(weyl_vector(TypeA{2}))

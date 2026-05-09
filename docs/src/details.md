@@ -271,12 +271,12 @@ This means:
 
 Example:
 ```julia
-julia> ω₇ = fundamental_weight(TypeE{8}, 7);
+julia> ω7 = fundamental_weight(TypeE{8}, 7);
 
-julia> degree(ω₇)  # 147,250 × 2⁶⁰ — too large for Int64
+julia> degree(ω7)  # 147,250 × 2⁶⁰ — too large for Int64
 170141183460469137866240
 
-julia> typeof(degree(ω₇))
+julia> typeof(degree(ω7))
 BigInt
 ```
 

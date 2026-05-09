@@ -10,11 +10,11 @@ highest weights.
 ```jldoctest chars
 julia> using Lie, StaticArrays
 
-julia> ω₁ = fundamental_weight(TypeA{3}, 1);
+julia> ω1 = fundamental_weight(TypeA{3}, 1);
 
-julia> ω₂ = fundamental_weight(TypeA{3}, 2);
+julia> ω2 = fundamental_weight(TypeA{3}, 2);
 
-julia> V = WeylCharacter(ω₁)   # irreducible V(ω₁)
+julia> V = WeylCharacter(ω1)   # irreducible V(ω1)
 A3(1, 0, 0)
 
 julia> WeylCharacter(TypeA{3})   # zero character (additive identity)
@@ -42,9 +42,9 @@ highest_weight
 Characters support addition, subtraction, and scalar multiplication:
 
 ```jldoctest chars
-julia> V₂ = WeylCharacter(ω₂);
+julia> V2 = WeylCharacter(ω2);
 
-julia> V + V₂
+julia> V + V2
 A3(1, 0, 0) + A3(0, 1, 0)
 
 julia> 2 * V
@@ -58,7 +58,7 @@ Characters also support multiplication (tensor product) and exponentiation
 (tensor power):
 
 ```jldoctest chars
-julia> V * V₂ == tensor_product(V, V₂)
+julia> V * V2 == tensor_product(V, V2)
 true
 
 julia> V^3 == V * V * V
@@ -82,7 +82,7 @@ julia> add!(result, V);
 julia> result
 A3(1, 0, 0)
 
-julia> addmul!(result, V₂, 3);
+julia> addmul!(result, V2, 3);
 
 julia> result
 A3(1, 0, 0) + 3*A3(0, 1, 0)
@@ -118,14 +118,14 @@ of characters).
 Since character polynomials are **Weyl group invariant** (i.e., $\chi_\lambda(w \cdot \mu) = \chi_\lambda(\mu)$ for all $w \in W$), the full character is determined by its values on dominant weights. More precisely: each weight orbit under the Weyl group contains exactly one dominant weight, and all weights in an orbit have equal multiplicity.
 
 ```jldoctest chars
-julia> ω₁_a2 = fundamental_weight(TypeA{2}, 1);
+julia> ω1_a2 = fundamental_weight(TypeA{2}, 1);
 
-julia> full_mults = freudenthal_formula(ω₁_a2);
+julia> full_mults = freudenthal_formula(ω1_a2);
 
 julia> length(full_mults)   # includes all W-orbit members
 3
 
-julia> dom_mults = dominant_character(ω₁_a2);
+julia> dom_mults = dominant_character(ω1_a2);
 
 julia> length(dom_mults)   # only dominant weights
 1
@@ -151,11 +151,11 @@ reconstructing the full character from the dominant character is straightforward
 This dominant character corresponds to the `domchar` output in LiE.
 
 ```jldoctest chars
-julia> ω₁_a2 = fundamental_weight(TypeA{2}, 1);
+julia> ω1_a2 = fundamental_weight(TypeA{2}, 1);
 
-julia> dc = dominant_character(ω₁_a2);
+julia> dc = dominant_character(ω1_a2);
 
-julia> length(dc)   # only 1 dominant weight for V(ω₁) of A₂
+julia> length(dc)   # only 1 dominant weight for V(ω1) of A2
 1
 
 julia> dc[SVector(1, 0)]  # the highest weight itself
@@ -175,12 +175,12 @@ representation ``\mathrm{V}(\lambda)``. Returns a
 fundamental weight basis) to their multiplicities:
 
 ```jldoctest chars
-julia> m = freudenthal_formula(ω₁);
+julia> m = freudenthal_formula(ω1);
 
-julia> length(m)   # V(ω₁) of A₃ has 4 weights
+julia> length(m)   # V(ω1) of A3 has 4 weights
 4
 
-julia> sum(values(m)) == degree(ω₁)   # total = dimension
+julia> sum(values(m)) == degree(ω1)   # total = dimension
 true
 ```
 
@@ -208,19 +208,19 @@ weight_multiplicity
 The default tensor product algorithm works for all types:
 
 ```jldoctest chars
-julia> tensor_product(ω₁, ω₁)   # V ⊗ V = Sym²V ⊕ ⋀²V
+julia> tensor_product(ω1, ω1)   # V ⊗ V = Sym²V ⊕ ⋀²V
 A3(2, 0, 0) + A3(0, 1, 0)
 
-julia> tensor_product(ω₁, ω₂)
+julia> tensor_product(ω1, ω2)
 A3(1, 1, 0) + A3(0, 0, 1)
 ```
 
 Tensor product of a weight with the trivial representation:
 
 ```jldoctest chars
-julia> ω₃ = fundamental_weight(TypeA{3}, 3);
+julia> ω3 = fundamental_weight(TypeA{3}, 3);
 
-julia> tensor_product(ω₁, ω₃)   # V(ω₁) ⊗ V(ω₃) contains trivial
+julia> tensor_product(ω1, ω3)   # V(ω1) ⊗ V(ω3) contains trivial
 A3(1, 0, 1) + A3(0, 0, 0)
 ```
 
@@ -231,11 +231,11 @@ tensor product algorithm.  It is used automatically by
 `tensor_product` for type A inputs:
 
 ```jldoctest chars
-julia> ω₁_a4 = fundamental_weight(TypeA{4}, 1);
+julia> ω1_a4 = fundamental_weight(TypeA{4}, 1);
 
-julia> ω₂_a4 = fundamental_weight(TypeA{4}, 2);
+julia> ω2_a4 = fundamental_weight(TypeA{4}, 2);
 
-julia> lr_tensor_product(ω₁_a4, ω₂_a4)
+julia> lr_tensor_product(ω1_a4, ω2_a4)
 A4(1, 1, 0, 0) + A4(0, 0, 1, 0)
 ```
 
@@ -261,13 +261,13 @@ lr_tensor_product
 The dual (contragredient) representation:
 
 ```jldoctest chars
-julia> dual(WeylCharacter(ω₁))
+julia> dual(WeylCharacter(ω1))
 A3(0, 0, 1)
 
-julia> dual(WeylCharacter(ω₃))
+julia> dual(WeylCharacter(ω3))
 A3(1, 0, 0)
 
-julia> dual(WeylCharacter(ω₂))   # self-dual for A₃
+julia> dual(WeylCharacter(ω2))   # self-dual for A3
 A3(0, 1, 0)
 ```
 
@@ -283,11 +283,11 @@ weight coordinates to multiplicities (not decomposed into irreducibles).
 Use [`character_from_weights`](@ref) to convert it to a `WeylCharacter`:
 
 ```jldoctest chars
-julia> ω₁_a2 = fundamental_weight(TypeA{2}, 1);
+julia> ω1_a2 = fundamental_weight(TypeA{2}, 1);
 
-julia> ψ₂ = adams_operator(ω₁_a2, 2);
+julia> ψ2 = adams_operator(ω1_a2, 2);
 
-julia> length(ψ₂)   # number of distinct weights
+julia> length(ψ2)   # number of distinct weights
 3
 ```
 
@@ -295,9 +295,9 @@ The Newton identity connects Adams operators to symmetric/exterior powers:
 ``\psi^2(\mathrm{V}) = \mathrm{Sym}^2(\mathrm{V}) - \bigwedge^2(\mathrm{V})``:
 
 ```jldoctest chars
-julia> ψ₂_char = character_from_weights(TypeA{2}, ψ₂);
+julia> ψ2_char = character_from_weights(TypeA{2}, ψ2);
 
-julia> ψ₂_char == Sym(2, ω₁_a2) - ⋀(2, ω₁_a2)
+julia> ψ2_char == Sym(2, ω1_a2) - ⋀(2, ω1_a2)
 true
 ```
 
@@ -324,10 +324,10 @@ polynomials ``p_r``.
 Both `WeightLatticeElem` and `WeylCharacter` are accepted:
 
 ```jldoctest chars
-julia> ⋀(2, V)   # ⋀²V(ω₁) of A₃ = V(ω₂)
+julia> ⋀(2, V)   # ⋀²V(ω1) of A3 = V(ω2)
 A3(0, 1, 0)
 
-julia> ⋀(3, V)   # ⋀³V(ω₁) of A₃ = V(ω₃)
+julia> ⋀(3, V)   # ⋀³V(ω1) of A3 = V(ω3)
 A3(0, 0, 1)
 
 julia> ⋀(4, V)   # top exterior power = trivial (det)
@@ -362,7 +362,7 @@ true
 ### Non-minuscule exterior powers
 
 ```jldoctest chars
-julia> adj = ω₁ + ω₃;   # adjoint of A₃ (15-dim)
+julia> adj = ω1 + ω3;   # adjoint of A3 (15-dim)
 
 julia> r = ⋀(2, adj);
 
@@ -394,7 +394,7 @@ for complete homogeneous symmetric polynomials ``h_k``.
 Both `WeightLatticeElem` and `WeylCharacter` are accepted:
 
 ```jldoctest chars
-julia> Sym(2, V)   # Sym² of std rep of A₃
+julia> Sym(2, V)   # Sym² of std rep of A3
 A3(2, 0, 0)
 
 julia> Sym(0, V)   # Sym⁰ = trivial
@@ -409,7 +409,7 @@ A3(1, 0, 0)
 For ``\mathrm{A}_n``, ``\mathrm{Sym}^k \mathrm{V}(\omega_1) = \mathrm{V}(k\omega_1)``:
 
 ```jldoctest chars
-julia> all(Sym(k, V) == WeylCharacter(k * ω₁) for k in 1:5)
+julia> all(Sym(k, V) == WeylCharacter(k * ω1) for k in 1:5)
 true
 ```
 
@@ -430,9 +430,9 @@ true
 julia> V * V == Sym(2, V) + ⋀(2, V)
 true
 
-julia> ω₁_g2 = fundamental_weight(TypeG2, 1);
+julia> ω1_g2 = fundamental_weight(TypeG2, 1);
 
-julia> W_g2 = WeylCharacter(ω₁_g2);
+julia> W_g2 = WeylCharacter(ω1_g2);
 
 julia> W_g2 * W_g2 == Sym(2, W_g2) + ⋀(2, W_g2)
 true
@@ -474,26 +474,26 @@ s_\lambda(\mathrm{V}) = \frac{1}{n!} \sum_{\kappa \vdash n}
 ```
 
 ```jldoctest chars
-julia> plethysm([2], ω₁) == Sym(2, V)   # one-row partition = Sym
+julia> plethysm([2], ω1) == Sym(2, V)   # one-row partition = Sym
 true
 
-julia> plethysm([1, 1], ω₁) == ⋀(2, V)  # one-column partition = ⋀
+julia> plethysm([1, 1], ω1) == ⋀(2, V)  # one-column partition = ⋀
 true
 
-julia> plethysm([2, 1], ω₁)               # mixed symmetry S_{(2,1)}
+julia> plethysm([2, 1], ω1)               # mixed symmetry S_{(2,1)}
 A3(1, 1, 0)
 
-julia> degree(plethysm([2, 1], ω₁))       # mixed-symmetry representation of A₃
+julia> degree(plethysm([2, 1], ω1))       # mixed-symmetry representation of A3
 20
 ```
 
 ### Plethysm on non-simply-laced types
 
 ```jldoctest chars
-julia> plethysm([2], ω₁_g2) == Sym(2, W_g2)
+julia> plethysm([2], ω1_g2) == Sym(2, W_g2)
 true
 
-julia> plethysm([1, 1], ω₁_g2) == ⋀(2, W_g2)
+julia> plethysm([1, 1], ω1_g2) == ⋀(2, W_g2)
 true
 ```
 
@@ -515,7 +515,7 @@ julia> V_rec = character_from_weights(TypeA{3}, m);
 julia> is_irreducible(V_rec)
 true
 
-julia> highest_weight(V_rec) == ω₁
+julia> highest_weight(V_rec) == ω1
 true
 ```
 
@@ -524,12 +524,12 @@ true
 ### B₃: spin representation
 
 ```jldoctest chars
-julia> ω₃_b3 = fundamental_weight(TypeB{3}, 3);
+julia> ω3_b3 = fundamental_weight(TypeB{3}, 3);
 
-julia> degree(ω₃_b3)   # 8-dim spin rep
+julia> degree(ω3_b3)   # 8-dim spin rep
 8
 
-julia> spin = WeylCharacter(ω₃_b3);
+julia> spin = WeylCharacter(ω3_b3);
 
 julia> r = ⋀(2, spin);
 
@@ -540,7 +540,7 @@ true
 ### G₂: 7-dimensional representation
 
 ```jldoctest chars
-julia> degree(ω₁_g2)
+julia> degree(ω1_g2)
 7
 
 julia> r = Sym(2, W_g2);
@@ -555,12 +555,12 @@ true
 ### E₈: adjoint representation
 
 ```jldoctest chars
-julia> ω₈_e8 = fundamental_weight(TypeE{8}, 8);
+julia> ω8_e8 = fundamental_weight(TypeE{8}, 8);
 
-julia> degree(ω₈_e8)   # 248-dim adjoint
+julia> degree(ω8_e8)   # 248-dim adjoint
 248
 
-julia> r = ⋀(2, WeylCharacter(ω₈_e8));
+julia> r = ⋀(2, WeylCharacter(ω8_e8));
 
 julia> length(r.terms)   # 2 irreducible components
 2

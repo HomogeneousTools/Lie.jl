@@ -211,13 +211,13 @@ The dimension of the semisimple Lie algebra equals
 ``r + 2n`` where ``r`` is the rank and ``n`` is the number of positive roots:
 
 ```jldoctest types
-julia> dimension(TypeA{3})   # dim sl₄(C) = 15
+julia> dimension(TypeA{3})   # dim sl_4(C) = 15
 15
 
-julia> dimension(TypeE{8})   # dim(E₈) = 248
+julia> dimension(TypeE{8})   # dim(E_8) = 248
 248
 
-julia> dimension(ProductDynkinType{Tuple{TypeA{1}, TypeA{1}}}())   # dim(sl₂(C) ⊕ sl₂(C)) = 6
+julia> dimension(ProductDynkinType{Tuple{TypeA{1}, TypeA{1}}}())   # dim(sl_2(C) + sl_2(C)) = 6
 6
 ```
 
@@ -247,10 +247,10 @@ the determinant encodes how the roots and weights are related:
 ```jldoctest types
 julia> using Lie
 
-julia> cartan_determinant(TypeA{3})   # A₃: det = 4 = n+1
+julia> cartan_determinant(TypeA{3})   # A3: det = 4 = n+1
 4
 
-julia> cartan_determinant(TypeB{2})   # B₂ multiply-laced
+julia> cartan_determinant(TypeB{2})   # B2 multiply-laced
 2
 
 julia> cartan_determinant(TypeG2)

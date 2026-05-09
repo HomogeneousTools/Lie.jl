@@ -102,12 +102,12 @@ The per-call `IOContext(:compact => true)` override always takes precedence.
 ```jldoctest compact
 julia> using Lie
 
-julia> ω₁ = fundamental_weight(TypeA{3}, 1);
+julia> ω1 = fundamental_weight(TypeA{3}, 1);
 
 julia> compact_display!(true)
 true
 
-julia> ω₁
+julia> ω1
 A3[1,0,0]
 
 julia> fundamental_weights(TypeA{3})
@@ -119,7 +119,7 @@ julia> fundamental_weights(TypeA{3})
 julia> compact_display!(false)
 false
 
-julia> ω₁
+julia> ω1
 ω1
 ```
 """
