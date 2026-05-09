@@ -866,7 +866,7 @@ highest short root of the dual root system (Langlands dual). The dual Coxeter nu
 is ``h^\\vee = 1 + \\sum_i n_i^\\vee``.
 
 For simply-laced types (A, D, E) all roots have the same length, so these equal the
-Coxeter coefficients. For B, C, F₄, G₂ they differ.
+Coxeter coefficients. For B, C, F4, and G2 they differ.
 
 # Examples
 ```jldoctest

@@ -373,7 +373,7 @@ const _longest_element_lock = ReentrantLock()
 """
     longest_element(W::WeylGroup{DT,R}) -> WeylGroupElem{DT,R}
 
-Compute the longest element w₀ of the Weyl group.
+Compute the longest element w0 of the Weyl group.
 Uses the iterative algorithm: repeatedly find a simple reflection that increases length.
 The result is cached per Dynkin type.
 
@@ -383,9 +383,9 @@ julia> using Lie
 
 julia> W = weyl_group(TypeA{2});
 
-julia> w₀ = longest_element(W);
+julia> w0 = longest_element(W);
 
-julia> length(w₀)
+julia> length(w0)
 3
 ```
 """
@@ -910,10 +910,10 @@ This is a convenience wrapper: `degree(DT, v) == degree(WeightLatticeElem(DT, v)
 ```jldoctest
 julia> using Lie
 
-julia> degree(TypeA{2}, [1, 0])  # standard representation of A₂
+julia> degree(TypeA{2}, [1, 0])  # standard representation of A2
 3
 
-julia> degree(TypeE{8}, [0, 0, 0, 0, 0, 0, 0, 1])  # adjoint of E₈
+julia> degree(TypeE{8}, [0, 0, 0, 0, 0, 0, 0, 1])  # adjoint of E8
 248
 ```
 """
