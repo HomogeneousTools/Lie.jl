@@ -465,7 +465,7 @@ true
 julia> plethysm([2, 1], ω₁)               # mixed symmetry S_{(2,1)}
 A3(1, 1, 0)
 
-julia> degree(plethysm([2, 1], ω₁))       # adjoint rep of A₃
+julia> degree(plethysm([2, 1], ω₁))       # mixed-symmetry representation of A₃
 20
 ```
 
