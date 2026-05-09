@@ -1,6 +1,6 @@
 name = "Lie"
 uuid = "c99f5fee-6cdb-4bf1-806f-d7690e6ee6f7"
-version = "1.0.0-rc.1"
+version = "1.0.0-rc.2"
 authors = ["Pieter Belmans <p.belmans@uu.nl>"]
 
 [deps]
