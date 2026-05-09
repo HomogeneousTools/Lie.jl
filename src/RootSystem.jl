@@ -633,12 +633,13 @@ end
     coxeter_coefficients(::Type{DT}) -> SVector{R,Int}
     coxeter_coefficients(dt::DT) -> SVector{R,Int}
 
-Return the **Coxeter coefficients** (exponents of the Dynkin diagram), which are the coefficients
-of the highest root in the simple root basis:
+Return the **Coxeter labels** (also called marks): the coefficients of the
+highest root in the simple root basis:
 ``θ = ∑_i m_i α_i``
 
-These appear in the defining relations of the corresponding Lie algebra and are related to the
-exponents of the invariant polynomials in the algebra of invariants of the Weyl group.
+These are not the Weyl group exponents; the degrees of fundamental invariants
+are returned by [`degrees_fundamental_invariants`](@ref), and the exponents are
+those degrees minus 1.
 
 # Examples
 ```jldoctest

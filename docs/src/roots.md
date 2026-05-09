@@ -169,7 +169,8 @@ positive_coroots
 ## Coxeter invariants
 
 The **highest root** is a fundamental invariant of the root system. When expressed in the simple root basis as
-``θ = \sum_i m_i α_i``, the coefficients ``m_i`` are called the **Coxeter coefficients**.
+``θ = \sum_i m_i α_i``, the coefficients ``m_i`` are the **Coxeter labels** or
+**marks** (returned by [`coxeter_coefficients`](@ref)).
 Because positive roots are sorted by height, `highest_root(RS)` is simply `positive_root(RS, N)` where `N` is the
 number of positive roots — no search needed.
 
@@ -184,7 +185,7 @@ It equals the coroot of the highest short root, and is stored at the same precom
 The **Coxeter number** ``h = 1 + \sum_i m_i`` is the order of a Coxeter element in the Weyl group.
 
 For the **dual root system** (Langlands dual, swapping B↔C), the corresponding invariants are the
-**dual Coxeter coefficients** and **dual Coxeter number** ``h^\vee``.
+**dual Coxeter labels** and **dual Coxeter number** ``h^\vee``.
 
 ```jldoctest roots
 julia> c_coeff = coxeter_coefficients(TypeA{3})
