@@ -124,8 +124,8 @@ julia> TypeA{0}()
 ERROR: ArgumentError: TypeA{N} requires N ≥ 1, got N=0
 [...]
 
-julia> TypeD{3}()
-ERROR: ArgumentError: TypeD{N} requires N ≥ 4, got N=3
+julia> TypeD{2}()
+ERROR: ArgumentError: TypeD{N} requires N ≥ 3, got N=2
 [...]
 ```
 

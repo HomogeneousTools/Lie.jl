@@ -117,7 +117,7 @@ TypeC(n::Integer) = TypeC{n}()
 
 Dynkin type ``\\mathrm{D}_N``: the root-system type of
 ``\\mathfrak{so}_{2N}(\\mathbb{C})`` and groups isogenous to
-``\\mathrm{Spin}_{2N}`` or ``\\mathrm{SO}_{2N}``. Valid for ``N \\ge 4``.
+``\\mathrm{Spin}_{2N}`` or ``\\mathrm{SO}_{2N}``. Valid for ``N \\ge 3``.
 
 # Examples
 ```jldoctest
@@ -130,7 +130,7 @@ julia> rank(TypeD{4})
 struct TypeD{N} <: SimpleDynkinType
   function TypeD{N}() where {N}
     N::Int
-    N >= 4 || throw(ArgumentError("TypeD{N} requires N ≥ 4, got N=$N"))
+    N >= 3 || throw(ArgumentError("TypeD{N} requires N ≥ 3, got N=$N"))
     new{N}()
   end
 end
@@ -232,7 +232,7 @@ end
 is_valid_dynkin_type(::Type{TypeA{N}}) where {N} = N >= 1
 is_valid_dynkin_type(::Type{TypeB{N}}) where {N} = N >= 2
 is_valid_dynkin_type(::Type{TypeC{N}}) where {N} = N >= 2
-is_valid_dynkin_type(::Type{TypeD{N}}) where {N} = N >= 4
+is_valid_dynkin_type(::Type{TypeD{N}}) where {N} = N >= 3
 is_valid_dynkin_type(::Type{TypeE{N}}) where {N} = N in (6, 7, 8)
 is_valid_dynkin_type(::Type{TypeF4}) = true
 is_valid_dynkin_type(::Type{TypeG2}) = true
@@ -244,7 +244,7 @@ end
 _invalid_dynkin_type_message(::Type{TypeA{N}}) where {N} = "TypeA{$N} requires N ≥ 1, got N=$N"
 _invalid_dynkin_type_message(::Type{TypeB{N}}) where {N} = "TypeB{$N} requires N ≥ 2, got N=$N"
 _invalid_dynkin_type_message(::Type{TypeC{N}}) where {N} = "TypeC{$N} requires N ≥ 2, got N=$N"
-_invalid_dynkin_type_message(::Type{TypeD{N}}) where {N} = "TypeD{$N} requires N ≥ 4, got N=$N"
+_invalid_dynkin_type_message(::Type{TypeD{N}}) where {N} = "TypeD{$N} requires N ≥ 3, got N=$N"
 _invalid_dynkin_type_message(::Type{TypeE{N}}) where {N} = "TypeE{$N} requires N ∈ {6,7,8}, got N=$N"
 _invalid_dynkin_type_message(::Type{TypeF4}) = "TypeF4 is valid"
 _invalid_dynkin_type_message(::Type{TypeG2}) = "TypeG2 is valid"

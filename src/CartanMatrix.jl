@@ -85,7 +85,7 @@ end
 #   C[n-1,n] = C[n,n-1] = 0
 
 @generated function cartan_matrix(::Type{TypeD{N}}) where {N}
-  N >= 4 || return :(throw(ArgumentError($(_invalid_dynkin_type_message(TypeD{N})))))
+  N >= 3 || return :(throw(ArgumentError($(_invalid_dynkin_type_message(TypeD{N})))))
   N >= 17 && return :(_cartan_matrix_runtime($(TypeD{N})))
   entries = Int[]
   for j in 1:N, i in 1:N

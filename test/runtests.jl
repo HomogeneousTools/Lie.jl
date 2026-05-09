@@ -12,6 +12,7 @@ using LinearAlgebra: det
   @test rank(TypeA{3}) == 3
   @test rank(TypeB{4}) == 4
   @test rank(TypeC{5}) == 5
+  @test rank(TypeD{3}) == 3
   @test rank(TypeD{6}) == 6
   @test rank(TypeE{6}) == 6
   @test rank(TypeE{7}) == 7
@@ -33,12 +34,12 @@ using LinearAlgebra: det
   @test_throws ArgumentError TypeA{0}()
   @test_throws ArgumentError TypeB{1}()
   @test_throws ArgumentError TypeC{1}()
-  @test_throws ArgumentError TypeD{3}()
+  @test_throws ArgumentError TypeD{2}()
   @test_throws ArgumentError TypeE{5}()
   @test_throws ArgumentError rank(TypeA{0})
   @test_throws ArgumentError rank(TypeB{1})
   @test_throws ArgumentError rank(TypeC{1})
-  @test_throws ArgumentError rank(TypeD{3})
+  @test_throws ArgumentError rank(TypeD{2})
   @test_throws ArgumentError rank(TypeE{9})
   @test_throws ArgumentError n_positive_roots(TypeD{2})
   @test_throws ArgumentError dimension(TypeA{0})
@@ -71,6 +72,7 @@ end
   @test dynkin_diagram(TypeC{4}) == "○───○───○═<═○\n1   2   3   4"
 
   # D-type: forked tail (Bourbaki orientation — top node is N, fork from N-2)
+  @test dynkin_diagram(TypeD{3}) == "    ○ 3\n   /\n○───○\n1   2"
   @test dynkin_diagram(TypeD{4}) == "        ○ 4\n       /\n○───○───○\n1   2   3"
   @test dynkin_diagram(TypeD{5}) ==
     "            ○ 5\n           /\n○───○───○───○\n1   2   3   4"
@@ -124,6 +126,10 @@ end
   # G2
   C_G2 = cartan_matrix(TypeG2)
   @test C_G2 == [2 -3; -1 2]
+
+  # D3 (Bourbaki: node 1 branches to 2 and 3)
+  C_D3 = cartan_matrix(TypeD{3})
+  @test C_D3 == [2 -1 -1; -1 2 0; -1 0 2]
 
   # F4  (Bourbaki: 1 - 2 >=> 3 - 4, so C[3,2] = -2)
   C_F4 = cartan_matrix(TypeF4)
