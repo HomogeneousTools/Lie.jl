@@ -10,7 +10,7 @@ these caches is important for benchmarking and memory management.
 
 ### Available caches
 
-Lie.jl maintains nine internal caches. Five are unbounded `Dict` caches for
+Lie.jl maintains ten internal caches. Six are unbounded `Dict` caches for
 small singletons and lookup tables; four are bounded `LRU` caches (from
 [LRUCache.jl](https://github.com/JuliaCollections/LRUCache.jl)) whose total
 memory budget is configurable at runtime via [`configure_caches!`](@ref).
@@ -22,23 +22,21 @@ memory budget is configurable at runtime via [`configure_caches!`](@ref).
 | Longest Weyl element | `Lie._longest_element_cache` | `Dict` | Cached longest element `w₀` per Dynkin type |
 | Coset representatives | `Lie._coset_reps_cache` | `Dict` | Weyl orbit coset reps for exceptional types |
 | Dominant character (type) | `Lie._dominant_character_type_cache` | `Dict` | Type-level Freudenthal intermediates |
+| Weyl dimension data | `Lie._weyl_dimension_data_cache` | `Dict` | Dimension formula denominator and scaled roots |
 | Dominant character | `Lie._dominant_character_cache` | `LRU` | Dominant weight multiplicities from Freudenthal's formula |
 | Tensor product | `Lie._tensor_cache` | `LRU` | Tensor product decompositions |
 | Symmetric power | `Lie._symmetric_power_cache` | `LRU` | Symmetric power decompositions |
 | Exterior power | `Lie._exterior_power_cache` | `LRU` | Exterior power decompositions |
 
-The five `Dict` caches are unbounded and persist for the lifetime of the Julia
+The six `Dict` caches are unbounded and persist for the lifetime of the Julia
 session.  The four `LRU` caches have a configurable memory budget (default:
 25 % of system RAM, minimum 256 MiB) and automatically evict least-recently-used
 entries when the budget is exceeded.
 
 !!! note "Why the dominant character cache matters"
-    Benchmarks show that the dominant character cache (formerly called the
-    Freudenthal cache) provides a **2×–30× speedup** for downstream operations.
-    Tensor products see 5×–30× improvement, symmetric/exterior powers 1.4×–14×,
-    and plethysms 2.9×–5.7×. This is because many operations (Newton–Girard
-    recurrence, Brauer–Klimyk, plethysm) call [`dominant_character`](@ref)
-    repeatedly for the same highest weights.
+    The dominant character cache is the main performance lever for downstream
+    operations. Tensor products, symmetric/exterior powers, and plethysms call
+    [`dominant_character`](@ref) repeatedly for the same highest weights.
 
 ### Inspecting caches
 
@@ -85,20 +83,9 @@ This is particularly useful for:
 - **Memory management** — free memory after large computations (e.g., after computing many E₈ tensor products)
 - **Reproducible testing** — ensure tests start from a clean state
 
-You can also clear individual caches with `empty!`:
-
-```julia
-empty!(Lie._tensor_cache)               # LRU cache
-empty!(Lie._dominant_character_cache)    # LRU cache
-empty!(Lie._root_system_cache)           # Dict cache (rarely needed)
-```
-
-!!! tip "When to clear individual caches"
-    The `Dict` caches (root system, positive roots set, longest element, coset
-    reps, dominant character type) are typically small and cheap to populate.
-    The four `LRU` caches (dominant character, tensor, symmetric/exterior power)
-    can grow large and may benefit from selective clearing between different
-    computation phases.
+Individual cache variables have underscored names and are internal
+implementation details. Prefer the public [`clear_caches!`](@ref) and
+[`configure_caches!`](@ref) APIs.
 
 ### Configuring cache budgets
 
@@ -138,7 +125,7 @@ disappear in three ways:
 - An LRU cache evicts least-recently-used entries when its memory budget is exceeded
 - Your Julia session ends
 
-Automatic eviction only affects the four bounded LRU caches.  The five
+Automatic eviction only affects the four bounded LRU caches.  The six
 unbounded `Dict` caches persist until cleared or session end.
 
 This design is safe because:
@@ -246,12 +233,8 @@ budget, or [`clear_caches!`](@ref) to free memory immediately.
 | `symmetric_power(λ, k)` | O(k²·T) | T = cost of one tensor product |
 | `weyl_orbit(λ)` | O(W·R·R) | W = orbit size ≤ Weyl order, R = rank |
 
-For E₈:
-- Weyl group order: 696,729,600
-- Positive roots: 120
-- Typical Freudenthal run (e.g., fundamental weight): 0.01–1s
-- Hot tensor product (both weights small): 0.0001–0.1s
-- Cold tensor product (one large): 1–100s
+For reproducible performance measurements, see the benchmark scripts in
+`benchmark/`.
 
 ## Type stability
 
@@ -299,17 +282,19 @@ BigInt
 
 ## Thread safety
 
-!!! warning "Caches are NOT thread-safe"
-    The internal caches — both the unbounded `Dict` caches and the bounded
-    `LRU` caches — have no synchronization.  Concurrent writes from multiple
-    threads can lead to race conditions.
+!!! warning "Some caches are not thread-safe"
+    The small `Dict` singleton/type-data caches are protected by locks where
+    they are populated through public APIs. The bounded `LRU` character caches
+    are not synchronized, so concurrent cache-populating calls such as
+    [`dominant_character`](@ref), [`tensor_product`](@ref),
+    [`symmetric_power`](@ref), or [`exterior_power`](@ref) can race.
 
     **Safe:** Using Lie.jl from a single thread (the default)
 
     **Safe:** Read-only operations from multiple threads after warming up caches
 
-    **Unsafe:** Calling cache-populating operations (e.g., `freudenthal_formula`,
-    `tensor_product`) from multiple threads simultaneously
+    **Unsafe:** Calling LRU-cache-populating representation operations from
+    multiple threads simultaneously
 
 If you need parallel computation, populate caches in a single-threaded warm-up phase,
 then perform read-only operations in parallel.
