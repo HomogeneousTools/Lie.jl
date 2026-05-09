@@ -27,7 +27,17 @@ abstract type SimpleDynkinType <: DynkinType end
 """
     TypeA{N} <: SimpleDynkinType
 
-Dynkin type ``\\mathrm{A}_N`` (``\\mathrm{SL}_{N+1}``). Valid for ``N \\ge 1``.
+Dynkin type ``\\mathrm{A}_N``: the root-system type of
+``\\mathfrak{sl}_{N+1}(\\mathbb{C})`` and groups isogenous to
+``\\mathrm{SL}_{N+1}``. Valid for ``N \\ge 1``.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> rank(TypeA{3})
+3
+```
 """
 struct TypeA{N} <: SimpleDynkinType
   function TypeA{N}() where {N}
@@ -41,7 +51,17 @@ TypeA(n::Integer) = TypeA{n}()
 """
     TypeB{N} <: SimpleDynkinType
 
-Dynkin type ``\\mathrm{B}_N`` (``\\mathrm{SO}_{2N+1}``). Valid for ``N \\ge 2``.
+Dynkin type ``\\mathrm{B}_N``: the root-system type of
+``\\mathfrak{so}_{2N+1}(\\mathbb{C})`` and groups isogenous to
+``\\mathrm{Spin}_{2N+1}`` or ``\\mathrm{SO}_{2N+1}``. Valid for ``N \\ge 2``.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> rank(TypeB{3})
+3
+```
 """
 struct TypeB{N} <: SimpleDynkinType
   function TypeB{N}() where {N}
@@ -55,7 +75,17 @@ TypeB(n::Integer) = TypeB{n}()
 """
     TypeC{N} <: SimpleDynkinType
 
-Dynkin type ``\\mathrm{C}_N`` (``\\mathrm{Sp}_{2N}``). Valid for ``N \\ge 2``.
+Dynkin type ``\\mathrm{C}_N``: the root-system type of
+``\\mathfrak{sp}_{2N}(\\mathbb{C})`` and groups isogenous to
+``\\mathrm{Sp}_{2N}``. Valid for ``N \\ge 2``.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> rank(TypeC{3})
+3
+```
 """
 struct TypeC{N} <: SimpleDynkinType
   function TypeC{N}() where {N}
@@ -69,7 +99,17 @@ TypeC(n::Integer) = TypeC{n}()
 """
     TypeD{N} <: SimpleDynkinType
 
-Dynkin type ``\\mathrm{D}_N`` (``\\mathrm{SO}_{2N}``). Valid for ``N \\ge 4``.
+Dynkin type ``\\mathrm{D}_N``: the root-system type of
+``\\mathfrak{so}_{2N}(\\mathbb{C})`` and groups isogenous to
+``\\mathrm{Spin}_{2N}`` or ``\\mathrm{SO}_{2N}``. Valid for ``N \\ge 4``.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> rank(TypeD{4})
+4
+```
 """
 struct TypeD{N} <: SimpleDynkinType
   function TypeD{N}() where {N}
@@ -85,7 +125,15 @@ TypeD(n::Integer) = TypeD{n}()
 """
     TypeE{N} <: SimpleDynkinType
 
-Dynkin type ``\\mathrm{E}_N`` for ``N \\in \\{6,7,8\\}``.
+Exceptional Dynkin type ``\\mathrm{E}_N`` for ``N \\in \\{6,7,8\\}``.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> n_positive_roots(TypeE{6})
+36
+```
 """
 struct TypeE{N} <: SimpleDynkinType
   function TypeE{N}() where {N}
@@ -99,14 +147,30 @@ TypeE(n::Integer) = TypeE{n}()
 """
     TypeF4 <: SimpleDynkinType
 
-Dynkin type ``\\mathrm{F}_4``.
+Exceptional Dynkin type ``\\mathrm{F}_4``.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> rank(TypeF4)
+4
+```
 """
 struct TypeF4 <: SimpleDynkinType end
 
 """
     TypeG2 <: SimpleDynkinType
 
-Dynkin type ``\\mathrm{G}_2``.
+Exceptional Dynkin type ``\\mathrm{G}_2``.
+
+# Examples
+```jldoctest
+julia> using Lie
+
+julia> rank(TypeG2)
+2
+```
 """
 struct TypeG2 <: SimpleDynkinType end
 
