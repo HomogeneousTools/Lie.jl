@@ -133,7 +133,9 @@ ERROR: ArgumentError: TypeD{N} requires N ≥ 4, got N=3
 
 The Cartan matrix ``C_{ij} = \langle \alpha_i^\vee, \alpha_j \rangle``
 is computed at compile time via `@generated` functions, returning a
-`StaticArrays.SMatrix`. The conventions follow Bourbaki.
+`StaticArrays.SMatrix`. The conventions follow Bourbaki. With this convention,
+column ``i`` of ``C`` gives the simple root ``\alpha_i`` in the fundamental
+weight basis: ``\alpha_i = \sum_j C_{ji}\omega_j``.
 
 ```jldoctest types
 julia> cartan_matrix(TypeA{3})

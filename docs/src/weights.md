@@ -174,7 +174,7 @@ julia> dot(α₁, ω₁)   # ⟨α₁∨, ω₁⟩ = 1
 julia> dot(α₁, ω₂)   # ⟨α₁∨, ω₂⟩ = 0
 0//1
 
-julia> dot(ω₁, ω₁)   # (ω₁, ω₁) in the Killing form
+julia> dot(ω₁, ω₁)   # (ω₁, ω₁) in the invariant bilinear form
 2//3
 
 julia> dot(ω₁, ω₂)
