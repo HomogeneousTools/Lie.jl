@@ -117,9 +117,8 @@ julia --project=. benchmark/bench.jl --compare
 ```
 
 Benchmark results track minimum time, allocation count, and memory usage across
-9 categories (w₀ action, conjugation, Weyl orbits, dimension formula,
-Freudenthal, tensor products, exterior/symmetric powers, Borel–Weil–Bott,
-infrastructure). Results are saved as JSON for regression tracking.
+explicit warm and cold benchmark categories. Results are saved as JSON for
+regression tracking.
 
 ## Dependencies
 
