@@ -255,3 +255,4 @@ julia> cartan_determinant(TypeB{2})   # B₂ multiply-laced
 
 julia> cartan_determinant(TypeG2)
 1
+```

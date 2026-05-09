@@ -288,3 +288,4 @@ julia> coefficients(highest_coroot(RS_B2))
 2-element StaticArraysCore.SVector{2, Int64} with indices SOneTo(2):
  2
  1
+```
