@@ -2,8 +2,9 @@
 
 ## Dynkin types
 
-Every semisimple Lie algebra is classified by its **Dynkin type**,
-a combinatorial datum that encodes the root system.
+Over ``\mathbb{C}``, every finite-dimensional semisimple Lie algebra is
+classified up to isomorphism by its **Dynkin type**, a combinatorial datum that
+encodes the root system.
 Lie.jl represents types at the Julia type level — `TypeA{3}`, `TypeB{4}`, etc. —
 so that rank and root counts are compile-time constants, enabling
 zero-cost dispatch and `@generated` specialisation.
