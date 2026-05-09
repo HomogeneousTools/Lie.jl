@@ -23,7 +23,7 @@ using LinearAlgebra: det
   PT = ProductDynkinType{Tuple{TypeA{3},TypeD{5}}}
   @test rank(PT) == 8
   @test n_components(PT) == 2
-  @test component_type(PT, Val(1)) == TypeA{3}
+  @test component_type(PT, 1) == TypeA{3}
   @test component_type(PT, 2) == TypeD{5}
 
   PT2 = ProductDynkinType{Tuple{TypeA{3},TypeD{5},TypeE{6}}}
@@ -70,7 +70,7 @@ end
   @test dynkin_diagram(TypeE{8}) ==
     "        ○ 2\n        |\n○───○───○───○───○───○───○\n1   3   4   5   6   7   8"
 
-  # F₄ and G₂
+  # F4 and G2
   @test dynkin_diagram(TypeF4) == "○───○═>═○───○\n1   2   3   4"
   @test dynkin_diagram(TypeG2) == "○≡<≡○\n1   2"
 
@@ -92,31 +92,31 @@ end
   @test string(dynkin_diagram(TypeF4)) == "○───○═>═○───○\n1   2   3   4"
 end
 @testset "Cartan matrices" begin
-  # A₂
+  # A2
   C_A2 = cartan_matrix(TypeA{2})
   @test C_A2 == [2 -1; -1 2]
 
-  # B₂: C[2,1] = -2
+  # B2: C[2,1] = -2
   C_B2 = cartan_matrix(TypeB{2})
   @test C_B2 == [2 -1; -2 2]
 
-  # C₂: C[1,2] = -2
+  # C2: C[1,2] = -2
   C_C2 = cartan_matrix(TypeC{2})
   @test C_C2 == [2 -2; -1 2]
 
-  # B₃
+  # B3
   C_B3 = cartan_matrix(TypeB{3})
   @test C_B3 == [2 -1 0; -1 2 -1; 0 -2 2]
 
-  # G₂
+  # G2
   C_G2 = cartan_matrix(TypeG2)
   @test C_G2 == [2 -3; -1 2]
 
-  # F₄  (Bourbaki: 1 - 2 >=> 3 - 4, so C[3,2] = -2)
+  # F4  (Bourbaki: 1 - 2 >=> 3 - 4, so C[3,2] = -2)
   C_F4 = cartan_matrix(TypeF4)
   @test C_F4 == [2 -1 0 0; -1 2 -1 0; 0 -2 2 -1; 0 0 -1 2]
 
-  # A₁ (simplest case)
+  # A1 (simplest case)
   C_A1 = cartan_matrix(TypeA{1})
   @test C_A1[1, 1] == 2
 
@@ -197,29 +197,29 @@ end
   # Highest root
   RS_A2 = RootSystem(TypeA{2})
   hr = highest_root(RS_A2)
-  @test coefficients(hr) == [1, 1]  # α₁ + α₂
+  @test coefficients(hr) == [1, 1]  # alpha1 + alpha2
 
   RS_B2 = RootSystem(TypeB{2})
   hr_B2 = highest_root(RS_B2)
   @test height(hr_B2) == sum(coefficients(hr_B2))
 
   # Highest short root
-  # For B₂: short roots have length 1 (±eᵢ); highest is e₁ = α₁+α₂
+  # For B2: short roots have length 1 (±eᵢ); highest is e1 = alpha1+alpha2
   hsr_B2 = highest_short_root(RS_B2)
-  @test coefficients(hsr_B2) == [1, 1]  # B₂ highest short root = α₁+α₂
+  @test coefficients(hsr_B2) == [1, 1]  # B2 highest short root = alpha1+alpha2
 
-  # For A₂ (simply-laced): highest short root = highest root
+  # For A2 (simply-laced): highest short root = highest root
   hsr_A2 = highest_short_root(RS_A2)
   @test coefficients(hsr_A2) == coefficients(hr)
 
-  # For G₂: short roots have length² = 2; highest is 2α₁+α₂
+  # For G2: short roots have length² = 2; highest is 2alpha1+alpha2
   RS_G2 = RootSystem(TypeG2)
   hsr_G2 = highest_short_root(RS_G2)
   @test coefficients(hsr_G2) == [2, 1]
 
   # Highest coroot and Coxeter coefficients
   hcr_A2 = highest_coroot(RS_A2)
-  @test coefficients(hcr_A2) == [1, 1]  # Same coroot structure for A₂
+  @test coefficients(hcr_A2) == [1, 1]  # Same coroot structure for A2
 
   c_A2 = coxeter_coefficients(TypeA{2})
   @test c_A2 == [1, 1]
@@ -232,7 +232,7 @@ end
   @test c_B2 == [1, 2]  # Type B: [1, 2, ..., 2]
 
   c_G2 = coxeter_coefficients(TypeG2)
-  @test c_G2 == [3, 2]  # G₂ Coxeter coefficients
+  @test c_G2 == [3, 2]  # G2 Coxeter coefficients
 
   # Product type: must return SVector (not Vector), matching simple-type contract
   c_prod = coxeter_coefficients(ProductDynkinType{Tuple{TypeA{2},TypeB{3}}}())
@@ -241,16 +241,16 @@ end
 
   # Dual Coxeter coefficients: highest short root of the dual root system
   dc_B2 = dual_coxeter_coefficients(TypeB{2})
-  @test dc_B2 == [1, 1]  # B₂∨=C₂; highest short root of C₂ has coefficients [1,1]
+  @test dc_B2 == [1, 1]  # B2∨=C2; highest short root of C2 has coefficients [1,1]
 
   dc_C2 = dual_coxeter_coefficients(TypeC{2})
-  @test dc_C2 == [1, 1]  # C₂∨=B₂; highest short root of B₂ (=e₁) has coefficients [1,1]
+  @test dc_C2 == [1, 1]  # C2∨=B2; highest short root of B2 (=e1) has coefficients [1,1]
 
   dc_G2 = dual_coxeter_coefficients(TypeG2)
-  @test dc_G2 == [1, 2]  # G₂ self-dual; highest short root of G₂∨ has coefficients [1,2]
+  @test dc_G2 == [1, 2]  # G2 self-dual; highest short root of G2∨ has coefficients [1,2]
 
   dc_F4 = dual_coxeter_coefficients(TypeF4)
-  @test dc_F4 == [1, 2, 3, 2]  # F₄ self-dual; highest short root coefficients [1,2,3,2]
+  @test dc_F4 == [1, 2, 3, 2]  # F4 self-dual; highest short root coefficients [1,2,3,2]
 
   # Coxeter number: h = 1 + ∑ cᵢ
   h_A1 = coxeter_number(TypeA{1})
@@ -392,14 +392,14 @@ end
   RS = RootSystem(DT)
   α1 = simple_root(RS, 1)
   w_α1 = WeightLatticeElem(α1)
-  @test w_α1 == WeightLatticeElem(DT, [2, -1])  # α₁ = 2ω₁ - ω₂
+  @test w_α1 == WeightLatticeElem(DT, [2, -1])  # alpha1 = 2omega1 - omega2
   @test_throws ArgumentError RootSpaceElem(ω1)
 
   # Reflection
   w = WeightLatticeElem(DT, [2, 1])
   w_reflected = reflect(w, 1)
   @test w_reflected == WeightLatticeElem(DT, [-2, 3])
-  # s₁(2ω₁ + ω₂) = (2ω₁ + ω₂) - 2*(α₁) = (2ω₁ + ω₂) - 2*(2ω₁ - ω₂) = -2ω₁ + 3ω₂
+  # s1(2omega1 + omega2) = (2omega1 + omega2) - 2*(alpha1) = (2omega1 + omega2) - 2*(2omega1 - omega2) = -2omega1 + 3omega2
   @test_throws ArgumentError reflect(w, RootSpaceElem(DT, [2, 0]))
 
   # Conjugation to dominant chamber
@@ -416,7 +416,7 @@ end
     @test length(word) == len
   end
 
-  # Compact show: explicit IOContext(:compact => true) → "DT[c₁,c₂,…]"
+  # Compact show: explicit IOContext(:compact => true) → "DT[c1,c2,…]"
   io = IOBuffer()
   show(IOContext(io, :compact => true), ω1)
   @test String(take!(io)) == "A2[1,0]"
@@ -479,7 +479,7 @@ end
 #  Weyl group
 # ═══════════════════════════════════════════════════════════════════════
 @testset "Weyl group" begin
-  @testset "A₂" begin
+  @testset "A2" begin
     W = weyl_group(TypeA{2})
     RS = root_system(W)
     s = gens(W)
@@ -488,17 +488,17 @@ end
     @test s[1] * s[1] == one(W)
     @test s[2] * s[2] == one(W)
 
-    # Order of W(A₂) = 6
+    # Order of W(A2) = 6
     @test weyl_order(TypeA{2}) == 6
 
     # Longest element
     w0 = longest_element(W)
     @test length(w0) == n_positive_roots(RS)  # length = # positive roots = 3
 
-    # w₀² = 1
+    # w0² = 1
     @test w0 * w0 == one(W)
 
-    # Action on weights: w₀(ρ) = -ρ
+    # Action on weights: w0(ρ) = -ρ
     ρ = weyl_vector(TypeA{2})
     @test ρ * w0 == -ρ
 
@@ -506,10 +506,10 @@ end
     α1 = simple_root(RS, 1)
     α2 = simple_root(RS, 2)
     @test α1 * s[1] == -α1
-    @test α1 * s[2] == α1 + α2  # s₂(α₁) = α₁ + α₂ in type A₂
+    @test α1 * s[2] == α1 + α2  # s2(alpha1) = alpha1 + alpha2 in type A2
   end
 
-  @testset "B₂" begin
+  @testset "B2" begin
     W = weyl_group(TypeB{2})
     RS = root_system(W)
     w0 = longest_element(W)
@@ -522,7 +522,7 @@ end
     @test ρ * w0 == -ρ
   end
 
-  @testset "G₂" begin
+  @testset "G2" begin
     W = weyl_group(TypeG2)
     RS = root_system(W)
     w0 = longest_element(W)
@@ -550,7 +550,7 @@ end
   @testset "Weyl orbit" begin
     ω1 = fundamental_weight(TypeA{2}, 1)
     orb = weyl_orbit(ω1)
-    @test length(orb) == 3  # Orbit of ω₁ in A₂ has 3 elements
+    @test length(orb) == 3  # Orbit of omega1 in A2 has 3 elements
 
     ρ = weyl_vector(TypeA{2})
     orb_ρ = weyl_orbit(ρ)
@@ -634,54 +634,54 @@ end
 #  Weyl dimension formula
 # ═══════════════════════════════════════════════════════════════════════
 @testset "Dimension formula" begin
-  # A₁: dim V(nω₁) = n+1
+  # A1: dim V(nomega1) = n+1
   for n in 1:10
     hw = WeightLatticeElem(TypeA{1}, [n])
     @test degree(hw) == n + 1
   end
 
-  # A₂: dim V(ω₁) = 3 (standard rep)
+  # A2: dim V(omega1) = 3 (standard rep)
   @test degree(fundamental_weight(TypeA{2}, 1)) == 3
 
-  # A₂: dim V(ω₂) = 3 (dual standard rep)
+  # A2: dim V(omega2) = 3 (dual standard rep)
   @test degree(fundamental_weight(TypeA{2}, 2)) == 3
 
-  # A₂: dim V(ω₁ + ω₂) = 8 (adjoint rep)
+  # A2: dim V(omega1 + omega2) = 8 (adjoint rep)
   @test degree(WeightLatticeElem(TypeA{2}, [1, 1])) == 8
 
-  # A₃: dim V(ω₁) = 4
+  # A3: dim V(omega1) = 4
   @test degree(fundamental_weight(TypeA{3}, 1)) == 4
 
-  # A₃: dim V(ω₂) = 6 (exterior square)
+  # A3: dim V(omega2) = 6 (exterior square)
   @test degree(fundamental_weight(TypeA{3}, 2)) == 6
 
-  # B₂: dim V(ω₁) = 5 (standard rep of SO(5))
+  # B2: dim V(omega1) = 5 (standard rep of SO(5))
   @test degree(fundamental_weight(TypeB{2}, 1)) == 5
 
-  # B₂: dim V(ω₂) = 4 (spin rep)
+  # B2: dim V(omega2) = 4 (spin rep)
   @test degree(fundamental_weight(TypeB{2}, 2)) == 4
 
-  # B₃: dim V(ω₁) = 7 (standard rep of SO(7))
+  # B3: dim V(omega1) = 7 (standard rep of SO(7))
   @test degree(fundamental_weight(TypeB{3}, 1)) == 7
 
-  # C₂: dim V(ω₁) = 4 (standard rep of Sp(4))
+  # C2: dim V(omega1) = 4 (standard rep of Sp(4))
   @test degree(fundamental_weight(TypeC{2}, 1)) == 4
 
-  # G₂: dim V(ω₁) = 7 (standard rep)
+  # G2: dim V(omega1) = 7 (standard rep)
   @test degree(fundamental_weight(TypeG2, 1)) == 7
 
-  # G₂: dim V(ω₂) = 14 (adjoint rep)
+  # G2: dim V(omega2) = 14 (adjoint rep)
   @test degree(fundamental_weight(TypeG2, 2)) == 14
 
-  # D₄: dim V(ω₁) = 8 (standard rep of SO(8))
+  # D4: dim V(omega1) = 8 (standard rep of SO(8))
   @test degree(fundamental_weight(TypeD{4}, 1)) == 8
 
   # Higher-rank cached Weyl-dimension data still uses the same public formula.
   @test degree(fundamental_weight(TypeA{10}, 1)) == 11
   @test degree(fundamental_weight(TypeA{17}, 1)) == 18
 
-  # E₈: all fundamental representations
-  @testset "E₈ fundamental representations" begin
+  # E8: all fundamental representations
+  @testset "E8 fundamental representations" begin
     expected_dims = [3875, 147250, 6696000, 6899079264,
       146325270, 2450240, 30380, 248]
     for (i, expected) in enumerate(expected_dims)
@@ -689,7 +689,7 @@ end
     end
   end
 
-  # E₈: high-dimensional representation 3ω₃ + 5ω₈
+  # E8: high-dimensional representation 3omega3 + 5omega8
   @test degree(WeightLatticeElem(TypeE{8}, [0, 0, 3, 0, 0, 0, 0, 5])) ==
     big"18190674254761844256000000"
 
@@ -701,14 +701,14 @@ end
 #  Dominant weights
 # ═══════════════════════════════════════════════════════════════════════
 @testset "Dominant weights" begin
-  # A₂, hw = ω₁ + ω₂: adjoint rep has 2 dominant weights
+  # A2, hw = omega1 + omega2: adjoint rep has 2 dominant weights
   hw = WeightLatticeElem(TypeA{2}, [1, 1])
   dw = dominant_weights(hw)
   @test length(dw) == 2
   @test hw in dw
   @test WeightLatticeElem(TypeA{2}, [0, 0]) in dw
 
-  # A₁, hw = 3ω₁: dominant weights are 3ω, ω
+  # A1, hw = 3omega1: dominant weights are 3ω, ω
   hw1 = WeightLatticeElem(TypeA{1}, [3])
   dw1 = dominant_weights(hw1)
   @test length(dw1) == 2
@@ -744,21 +744,21 @@ end
 end
 
 @testset "Borel–Weil–Bott" begin
-  # ── A₂ ──────────────────────────────────────────────────────────────
+  # ── A2 ──────────────────────────────────────────────────────────────
   # Dominant weight: degree 0, representation is itself
-  @testset "A₂" begin
+  @testset "A2" begin
     ω1 = fundamental_weight(TypeA{2}, 1)
     ω2 = fundamental_weight(TypeA{2}, 2)
     ρ = weyl_vector(TypeA{2})
 
-    # ω₁ is dominant: H⁰ = V(ω₁), dim = 3
+    # omega1 is dominant: H⁰ = V(omega1), dim = 3
     result = borel_weil_bott(ω1)
     @test result !== nothing
     d, μ = result
     @test d == 0
     @test μ == ω1
 
-    # ω₂ is dominant: H⁰ = V(ω₂), dim = 3
+    # omega2 is dominant: H⁰ = V(omega2), dim = 3
     result = borel_weil_bott(ω2)
     @test result !== nothing
     d, μ = result
@@ -768,7 +768,7 @@ end
     # λ = -ρ: λ + ρ = 0, singular → nothing
     @test borel_weil_bott(-ρ) === nothing
 
-    # λ = [-2, 1]: λ+ρ = [-1, 2], s₁ gives [1, 1], d=1, μ = [0, 0]
+    # λ = [-2, 1]: λ+ρ = [-1, 2], s1 gives [1, 1], d=1, μ = [0, 0]
     λ = WeightLatticeElem(TypeA{2}, [-2, 1])
     result = borel_weil_bott(λ)
     @test result !== nothing
@@ -776,7 +776,7 @@ end
     @test d == 1
     @test μ == WeightLatticeElem(TypeA{2}, [0, 0])  # trivial rep
 
-    # λ = [-3, 3]: λ+ρ = [-2, 4], s₁ gives [2, 2], d=1, μ = [1, 1]
+    # λ = [-3, 3]: λ+ρ = [-2, 4], s1 gives [2, 2], d=1, μ = [1, 1]
     λ = WeightLatticeElem(TypeA{2}, [-3, 3])
     result = borel_weil_bott(λ)
     @test result !== nothing
@@ -788,9 +788,9 @@ end
     @test borel_weil_bott(WeightLatticeElem(TypeA{2}, [-3, 1])) === nothing
   end
 
-  # ── A₁ ──────────────────────────────────────────────────────────────
-  @testset "A₁" begin
-    # nω₁ dominant: degree 0, result is nω₁
+  # ── A1 ──────────────────────────────────────────────────────────────
+  @testset "A1" begin
+    # nomega1 dominant: degree 0, result is nomega1
     for n in 0:5
       result = borel_weil_bott(WeightLatticeElem(TypeA{1}, [n]))
       @test result !== nothing
@@ -802,7 +802,7 @@ end
     # λ = -1: λ+ρ = 0, singular
     @test borel_weil_bott(WeightLatticeElem(TypeA{1}, [-1])) === nothing
 
-    # λ = -3: λ+ρ = -2, s₁ → 2, dominant, d=1, μ = 2-1 = 1
+    # λ = -3: λ+ρ = -2, s1 → 2, dominant, d=1, μ = 2-1 = 1
     result = borel_weil_bott(WeightLatticeElem(TypeA{1}, [-3]))
     @test result !== nothing
     d, μ = result
@@ -810,8 +810,8 @@ end
     @test μ == WeightLatticeElem(TypeA{1}, [1])
   end
 
-  # ── B₂ ──────────────────────────────────────────────────────────────
-  @testset "B₂" begin
+  # ── B2 ──────────────────────────────────────────────────────────────
+  @testset "B2" begin
     # Dominant weight: degree 0
     ω1 = fundamental_weight(TypeB{2}, 1)
     result = borel_weil_bott(ω1)
@@ -835,8 +835,8 @@ end
       end
     end
   end
-  # ── E₈ example ──────────────────────────────────────────────────────────────────────────
-  @testset "E₈" begin
+  # ── E8 example ──────────────────────────────────────────────────────────────────────────
+  @testset "E8" begin
     λ = WeightLatticeElem(TypeE{8}, [-5, 3, -2, -3, 5, -8, 2, 1])
     # λ+ρ conjugates to a singular weight, so all cohomology vanishes
     @test borel_weil_bott(λ) === nothing
@@ -870,7 +870,7 @@ end
   PT = ProductDynkinType{Tuple{TypeA{2},TypeB{3}}}
 
   @test rank(PT) == 5
-  @test n_positive_roots(PT) == 3 + 9  # A₂ has 3, B₃ has 9
+  @test n_positive_roots(PT) == 3 + 9  # A2 has 3, B3 has 9
 
   RS = RootSystem(PT)
   @test n_positive_roots(RS) == 12
@@ -892,14 +892,14 @@ end
 
   # ─── WeylCharacter basics ─────────────────────────────────────
   @testset "WeylCharacter basics" begin
-    ω₁ = fundamental_weight(TypeA{2}, 1)
-    ω₂ = fundamental_weight(TypeA{2}, 2)
-    V1 = WeylCharacter(ω₁)
-    V2 = WeylCharacter(ω₂)
+    omega1 = fundamental_weight(TypeA{2}, 1)
+    omega2 = fundamental_weight(TypeA{2}, 2)
+    V1 = WeylCharacter(omega1)
+    V2 = WeylCharacter(omega2)
 
     @test is_effective(V1)
     @test is_irreducible(V1)
-    @test highest_weight(V1) == ω₁
+    @test highest_weight(V1) == omega1
     @test !iszero(V1)
     @test iszero(WeylCharacter(TypeA{2}))
 
@@ -913,53 +913,53 @@ end
 
   # ─── add! and addmul! ────────────────────────────────────────
   @testset "add! and addmul!" begin
-    ω₁ = fundamental_weight(TypeA{2}, 1)
-    ω₂ = fundamental_weight(TypeA{2}, 2)
+    omega1 = fundamental_weight(TypeA{2}, 1)
+    omega2 = fundamental_weight(TypeA{2}, 2)
 
     # add! is equivalent to +
-    V = WeylCharacter(ω₁)
-    W = WeylCharacter(ω₂)
+    V = WeylCharacter(omega1)
+    W = WeylCharacter(omega2)
     expected = V + W
     add!(V, W)
     @test V == expected
 
     # add! with self-cancellation
-    V2 = WeylCharacter(ω₁)
-    add!(V2, -WeylCharacter(ω₁))
+    V2 = WeylCharacter(omega1)
+    add!(V2, -WeylCharacter(omega1))
     @test iszero(V2)
 
     # addmul! basic
     V3 = WeylCharacter(TypeA{2})
-    addmul!(V3, WeylCharacter(ω₁), 5)
-    @test V3 == 5 * WeylCharacter(ω₁)
+    addmul!(V3, WeylCharacter(omega1), 5)
+    @test V3 == 5 * WeylCharacter(omega1)
 
     # addmul! with negative coefficient
-    V4 = WeylCharacter(ω₁) + WeylCharacter(ω₂)
-    addmul!(V4, WeylCharacter(ω₁), -1)
-    @test V4 == WeylCharacter(ω₂)
+    V4 = WeylCharacter(omega1) + WeylCharacter(omega2)
+    addmul!(V4, WeylCharacter(omega1), -1)
+    @test V4 == WeylCharacter(omega2)
 
     # addmul! with c=0 is identity
-    V5 = WeylCharacter(ω₁)
-    addmul!(V5, WeylCharacter(ω₂), 0)
-    @test V5 == WeylCharacter(ω₁)
+    V5 = WeylCharacter(omega1)
+    addmul!(V5, WeylCharacter(omega2), 0)
+    @test V5 == WeylCharacter(omega1)
 
     # add! returns the modified object
-    V6 = WeylCharacter(ω₁)
-    @test add!(V6, WeylCharacter(ω₂)) === V6
+    V6 = WeylCharacter(omega1)
+    @test add!(V6, WeylCharacter(omega2)) === V6
 
     # addmul! returns the modified object
-    V7 = WeylCharacter(ω₁)
-    @test addmul!(V7, WeylCharacter(ω₂), 2) === V7
+    V7 = WeylCharacter(omega1)
+    @test addmul!(V7, WeylCharacter(omega2), 2) === V7
   end
 
   # ─── Dominant character ─────────────────────────────────────────
   @testset "Dominant character" begin
-    # A₂ standard: V(ω₁) has dim 3, only 1 dominant weight (ω₁ itself)
+    # A2 standard: V(omega1) has dim 3, only 1 dominant weight (omega1 itself)
     dc = dominant_character(fundamental_weight(TypeA{2}, 1))
     @test length(dc) == 1
     @test dc[SVector(1, 0)] == 1
 
-    # A₂ adjoint: V(ω₁+ω₂) has dim 8, dominant weights are ω₁+ω₂ and 0
+    # A2 adjoint: V(omega1+omega2) has dim 8, dominant weights are omega1+omega2 and 0
     dc_adj = dominant_character(
       fundamental_weight(TypeA{2}, 1) + fundamental_weight(TypeA{2}, 2)
     )
@@ -982,7 +982,7 @@ end
       @test sum(values(full)) == degree(λ)
     end
 
-    # E₈ adjoint: V(ω₈) dim 248
+    # E8 adjoint: V(omega8) dim 248
     dc_e8 = dominant_character(fundamental_weight(TypeE{8}, 8))
     @test dc_e8[SVector(0, 0, 0, 0, 0, 0, 0, 1)] == 1  # highest weight
     @test haskey(dc_e8, SVector(0, 0, 0, 0, 0, 0, 0, 0))  # zero weight
@@ -1000,7 +1000,7 @@ end
     @test info1.dominant_character.length == info0.dominant_character.length + 1
     @test info2.dominant_character.length == info1.dominant_character.length
 
-    # Higher weight: A₃ V(ρ) dim 20
+    # Higher weight: A3 V(ρ) dim 20
     ρ = weyl_vector(TypeA{3})
     dc_rho = dominant_character(ρ)
     full_rho = freudenthal_formula(ρ)
@@ -1011,74 +1011,74 @@ end
 
   # ─── Freudenthal formula: simply-laced ───────────────────────────
   @testset "Freudenthal (simply-laced)" begin
-    # A₂ standard: dim 3
+    # A2 standard: dim 3
     m = freudenthal_formula(fundamental_weight(TypeA{2}, 1))
     @test sum(values(m)) == 3
     @test all(v == 1 for v in values(m))  # all multiplicities 1
 
-    # A₂ adjoint: dim 8, with zero weight multiplicity 2
+    # A2 adjoint: dim 8, with zero weight multiplicity 2
     m_adj = freudenthal_formula(
       fundamental_weight(TypeA{2}, 1) + fundamental_weight(TypeA{2}, 2)
     )
     @test sum(values(m_adj)) == 8
     @test m_adj[SVector(0, 0)] == 2  # zero weight has multiplicity 2
 
-    # D₄ fundamental: dim 8
+    # D4 fundamental: dim 8
     m_d4 = freudenthal_formula(fundamental_weight(TypeD{4}, 1))
     @test sum(values(m_d4)) == 8
 
-    # E₆ fundamental ω₁: dim 27
+    # E6 fundamental omega1: dim 27
     m_e6 = freudenthal_formula(fundamental_weight(TypeE{6}, 1))
     @test sum(values(m_e6)) == 27
 
-    # E₈ fundamental ω₈: dim 248
+    # E8 fundamental omega8: dim 248
     m_e8 = freudenthal_formula(fundamental_weight(TypeE{8}, 8))
     @test sum(values(m_e8)) == 248
   end
 
   # ─── Freudenthal formula: non-simply-laced ───────────────────────
   @testset "Freudenthal (non-simply-laced)" begin
-    # B₂: std (dim 5), spin (dim 4)
+    # B2: std (dim 5), spin (dim 4)
     @test sum(values(freudenthal_formula(fundamental_weight(TypeB{2}, 1)))) == 5
     @test sum(values(freudenthal_formula(fundamental_weight(TypeB{2}, 2)))) == 4
 
-    # B₃: std (dim 7), spin (dim 8)
+    # B3: std (dim 7), spin (dim 8)
     @test sum(values(freudenthal_formula(fundamental_weight(TypeB{3}, 1)))) == 7
     @test sum(values(freudenthal_formula(fundamental_weight(TypeB{3}, 3)))) == 8
 
-    # C₃: std (dim 6)
+    # C3: std (dim 6)
     @test sum(values(freudenthal_formula(fundamental_weight(TypeC{3}, 1)))) == 6
 
-    # G₂: 7-dim and 14-dim
+    # G2: 7-dim and 14-dim
     @test sum(values(freudenthal_formula(fundamental_weight(TypeG2, 1)))) == 7
     @test sum(values(freudenthal_formula(fundamental_weight(TypeG2, 2)))) == 14
 
-    # F₄: 52-dim and 26-dim
+    # F4: 52-dim and 26-dim
     @test sum(values(freudenthal_formula(fundamental_weight(TypeF4, 1)))) == 52
     @test sum(values(freudenthal_formula(fundamental_weight(TypeF4, 4)))) == 26
   end
 
   # ─── Tensor products ─────────────────────────────────────────────
   @testset "Tensor products" begin
-    # A₂: V(ω₁) ⊗ V(ω₁) = V(2ω₁) + V(ω₂)
-    ω₁ = fundamental_weight(TypeA{2}, 1)
-    ω₂ = fundamental_weight(TypeA{2}, 2)
-    V₁ = WeylCharacter(ω₁)
-    tp = V₁ * V₁
-    @test tp == WeylCharacter(2 * ω₁) + WeylCharacter(ω₂)
+    # A2: V(omega1) ⊗ V(omega1) = V(2omega1) + V(omega2)
+    omega1 = fundamental_weight(TypeA{2}, 1)
+    omega2 = fundamental_weight(TypeA{2}, 2)
+    V1 = WeylCharacter(omega1)
+    tp = V1 * V1
+    @test tp == WeylCharacter(2 * omega1) + WeylCharacter(omega2)
 
-    # A₂: V(ω₁) ⊗ V(ω₂) = V(ω₁+ω₂) + V(0)
-    tp2 = V₁ * WeylCharacter(ω₂)
+    # A2: V(omega1) ⊗ V(omega2) = V(omega1+omega2) + V(0)
+    tp2 = V1 * WeylCharacter(omega2)
     @test tp2 ==
-      WeylCharacter(ω₁ + ω₂) +
+      WeylCharacter(omega1 + omega2) +
           WeylCharacter(WeightLatticeElem(TypeA{2}, SVector(0, 0)))
 
-    # B₂: V(ω₁) ⊗ V(ω₁) = V(2ω₁) + V(ω₂) + V(0) (dims: 25 = 14+10+1)
-    ω₁_b = fundamental_weight(TypeB{2}, 1)
-    ω₂_b = fundamental_weight(TypeB{2}, 2)
-    tp_b = WeylCharacter(ω₁_b) * WeylCharacter(ω₁_b)
+    # B2: V(omega1) ⊗ V(omega1) = V(2omega1) + V(omega2) + V(0) (dims: 25 = 14+10+1)
+    omega1_b = fundamental_weight(TypeB{2}, 1)
+    omega2_b = fundamental_weight(TypeB{2}, 2)
+    tp_b = WeylCharacter(omega1_b) * WeylCharacter(omega1_b)
     @test tp_b ==
-      WeylCharacter(2 * ω₁_b) +
+      WeylCharacter(2 * omega1_b) +
           WeylCharacter(WeightLatticeElem(TypeB{2}, SVector(0, 2))) +
           WeylCharacter(WeightLatticeElem(TypeB{2}, SVector(0, 0)))
 
@@ -1086,15 +1086,15 @@ end
     @test sum(degree(k) * v for (k, v) in tp.terms) == 9
 
     # Tensor product of virtual (non-effective) characters
-    # V(ω₁) - V(ω₂) tensored with V(ω₁):
-    # = V(ω₁) ⊗ V(ω₁) - V(ω₂) ⊗ V(ω₁)
-    # = [V(2ω₁) + V(ω₂)] - [V(ω₁+ω₂) + V(0)]
-    virtual = WeylCharacter(ω₁) - WeylCharacter(ω₂)
+    # V(omega1) - V(omega2) tensored with V(omega1):
+    # = V(omega1) ⊗ V(omega1) - V(omega2) ⊗ V(omega1)
+    # = [V(2omega1) + V(omega2)] - [V(omega1+omega2) + V(0)]
+    virtual = WeylCharacter(omega1) - WeylCharacter(omega2)
     @test !is_effective(virtual)
-    tp_virt = virtual * WeylCharacter(ω₁)
+    tp_virt = virtual * WeylCharacter(omega1)
     z = WeightLatticeElem(TypeA{2}, SVector(0, 0))
     expected_virt =
-      WeylCharacter(2 * ω₁) + WeylCharacter(ω₂) - WeylCharacter(ω₁ + ω₂) -
+      WeylCharacter(2 * omega1) + WeylCharacter(omega2) - WeylCharacter(omega1 + omega2) -
       WeylCharacter(z)
     @test tp_virt == expected_virt
   end
@@ -1112,34 +1112,34 @@ end
       end
     end
 
-    # A₁: simplest case
-    ω₁_a1 = fundamental_weight(TypeA{1}, 1)
-    @test lr_tensor_product(ω₁_a1, ω₁_a1) == bk_tensor(ω₁_a1, ω₁_a1)
-    @test lr_tensor_product(2ω₁_a1, ω₁_a1) == bk_tensor(2ω₁_a1, ω₁_a1)
-    @test lr_tensor_product(3ω₁_a1, 2ω₁_a1) == bk_tensor(3ω₁_a1, 2ω₁_a1)
+    # A1: simplest case
+    omega1_a1 = fundamental_weight(TypeA{1}, 1)
+    @test lr_tensor_product(omega1_a1, omega1_a1) == bk_tensor(omega1_a1, omega1_a1)
+    @test lr_tensor_product(2omega1_a1, omega1_a1) == bk_tensor(2omega1_a1, omega1_a1)
+    @test lr_tensor_product(3omega1_a1, 2omega1_a1) == bk_tensor(3omega1_a1, 2omega1_a1)
 
-    # A₂: comprehensive tests
-    ω₁ = fundamental_weight(TypeA{2}, 1)
-    ω₂ = fundamental_weight(TypeA{2}, 2)
+    # A2: comprehensive tests
+    omega1 = fundamental_weight(TypeA{2}, 1)
+    omega2 = fundamental_weight(TypeA{2}, 2)
     z = WeightLatticeElem(TypeA{2}, SVector(0, 0))
 
-    @test lr_tensor_product(ω₁, ω₁) == WeylCharacter(2ω₁) + WeylCharacter(ω₂)
-    @test lr_tensor_product(ω₁, ω₂) == WeylCharacter(ω₁ + ω₂) + WeylCharacter(z)
-    @test lr_tensor_product(ω₂, ω₂) == WeylCharacter(2ω₂) + WeylCharacter(ω₁)
-    @test lr_tensor_product(ω₁ + ω₂, ω₁) == bk_tensor(ω₁ + ω₂, ω₁)
-    @test lr_tensor_product(ω₁ + ω₂, ω₂) == bk_tensor(ω₁ + ω₂, ω₂)
-    @test lr_tensor_product(ω₁ + ω₂, ω₁ + ω₂) == bk_tensor(ω₁ + ω₂, ω₁ + ω₂)
-    @test lr_tensor_product(2ω₁, ω₁) == bk_tensor(2ω₁, ω₁)
-    @test lr_tensor_product(2ω₁, ω₂) == bk_tensor(2ω₁, ω₂)
-    @test lr_tensor_product(2ω₁, 2ω₁) == bk_tensor(2ω₁, 2ω₁)
-    @test lr_tensor_product(3ω₁, ω₂) == bk_tensor(3ω₁, ω₂)
+    @test lr_tensor_product(omega1, omega1) == WeylCharacter(2omega1) + WeylCharacter(omega2)
+    @test lr_tensor_product(omega1, omega2) == WeylCharacter(omega1 + omega2) + WeylCharacter(z)
+    @test lr_tensor_product(omega2, omega2) == WeylCharacter(2omega2) + WeylCharacter(omega1)
+    @test lr_tensor_product(omega1 + omega2, omega1) == bk_tensor(omega1 + omega2, omega1)
+    @test lr_tensor_product(omega1 + omega2, omega2) == bk_tensor(omega1 + omega2, omega2)
+    @test lr_tensor_product(omega1 + omega2, omega1 + omega2) == bk_tensor(omega1 + omega2, omega1 + omega2)
+    @test lr_tensor_product(2omega1, omega1) == bk_tensor(2omega1, omega1)
+    @test lr_tensor_product(2omega1, omega2) == bk_tensor(2omega1, omega2)
+    @test lr_tensor_product(2omega1, 2omega1) == bk_tensor(2omega1, 2omega1)
+    @test lr_tensor_product(3omega1, omega2) == bk_tensor(3omega1, omega2)
 
     # Edge case: tensor with trivial
-    @test lr_tensor_product(ω₁, z) == WeylCharacter(ω₁)
-    @test lr_tensor_product(z, ω₁) == WeylCharacter(ω₁)
+    @test lr_tensor_product(omega1, z) == WeylCharacter(omega1)
+    @test lr_tensor_product(z, omega1) == WeylCharacter(omega1)
     @test lr_tensor_product(z, z) == WeylCharacter(z)
 
-    # A₃: tests
+    # A3: tests
     ω = [fundamental_weight(TypeA{3}, i) for i in 1:3]
     @test lr_tensor_product(ω[1], ω[1]) == bk_tensor(ω[1], ω[1])
     @test lr_tensor_product(ω[1], ω[2]) == bk_tensor(ω[1], ω[2])
@@ -1151,14 +1151,14 @@ end
     @test lr_tensor_product(2ω[1], ω[2]) == bk_tensor(2ω[1], ω[2])
     @test lr_tensor_product(2ω[1], 2ω[1]) == bk_tensor(2ω[1], 2ω[1])
 
-    # A₄: tests
+    # A4: tests
     ω4 = [fundamental_weight(TypeA{4}, i) for i in 1:4]
     @test lr_tensor_product(ω4[1], ω4[1]) == bk_tensor(ω4[1], ω4[1])
     @test lr_tensor_product(ω4[1], ω4[4]) == bk_tensor(ω4[1], ω4[4])
     @test lr_tensor_product(ω4[2], ω4[2]) == bk_tensor(ω4[2], ω4[2])
     @test lr_tensor_product(ω4[2], ω4[3]) == bk_tensor(ω4[2], ω4[3])
 
-    # A₅: tests
+    # A5: tests
     ω5 = [fundamental_weight(TypeA{5}, i) for i in 1:5]
     @test lr_tensor_product(ω5[1], ω5[1]) == bk_tensor(ω5[1], ω5[1])
     @test lr_tensor_product(ω5[1], ω5[5]) == bk_tensor(ω5[1], ω5[5])
@@ -1166,14 +1166,14 @@ end
     @test lr_tensor_product(2ω5[1], ω5[1]) == bk_tensor(2ω5[1], ω5[1])
     @test lr_tensor_product(2ω5[1], 2ω5[1]) == bk_tensor(2ω5[1], 2ω5[1])
 
-    # A₇: higher rank
+    # A7: higher rank
     ω7 = [fundamental_weight(TypeA{7}, i) for i in 1:7]
     @test lr_tensor_product(ω7[1], ω7[1]) == bk_tensor(ω7[1], ω7[1])
     @test lr_tensor_product(ω7[1], ω7[7]) == bk_tensor(ω7[1], ω7[7])
     @test lr_tensor_product(ω7[2], ω7[2]) == bk_tensor(ω7[2], ω7[2])
 
     # Dimension consistency: tensor product dimension = dim(V) * dim(W)
-    for (λ, μ) in [(ω₁, ω₁), (ω₁, ω₂), (ω₁ + ω₂, ω₁),
+    for (λ, μ) in [(omega1, omega1), (omega1, omega2), (omega1 + omega2, omega1),
       (ω[1], ω[2]), (ω4[2], ω4[3])]
       result = lr_tensor_product(λ, μ)
       dim_sum = sum(Lie.degree(k) * v for (k, v) in result.terms)
@@ -1181,74 +1181,74 @@ end
     end
 
     # Commutativity: LR(λ, μ) == LR(μ, λ)
-    @test lr_tensor_product(ω₁, ω₂) == lr_tensor_product(ω₂, ω₁)
+    @test lr_tensor_product(omega1, omega2) == lr_tensor_product(omega2, omega1)
     @test lr_tensor_product(ω[1], ω[3]) == lr_tensor_product(ω[3], ω[1])
-    @test lr_tensor_product(2ω₁, ω₂) == lr_tensor_product(ω₂, 2ω₁)
+    @test lr_tensor_product(2omega1, omega2) == lr_tensor_product(omega2, 2omega1)
 
     # tensor_product dispatches to LR for TypeA
     empty!(Lie._tensor_cache)
-    tp_dispatch = tensor_product(ω₁, ω₂)
-    @test tp_dispatch == lr_tensor_product(ω₁, ω₂)
+    tp_dispatch = tensor_product(omega1, omega2)
+    @test tp_dispatch == lr_tensor_product(omega1, omega2)
   end
 
   # ─── Dual ────────────────────────────────────────────────────────
   @testset "Dual" begin
-    # A₂: dual(ω₁) = ω₂ (A₂ has non-trivial outer automorphism)
-    ω₁ = fundamental_weight(TypeA{2}, 1)
-    ω₂ = fundamental_weight(TypeA{2}, 2)
-    @test dual(ω₁) == ω₂
-    @test dual(ω₂) == ω₁
+    # A2: dual(omega1) = omega2 (A2 has non-trivial outer automorphism)
+    omega1 = fundamental_weight(TypeA{2}, 1)
+    omega2 = fundamental_weight(TypeA{2}, 2)
+    @test dual(omega1) == omega2
+    @test dual(omega2) == omega1
 
-    # B₂: dual = identity (all reps self-dual)
-    ω₁_b = fundamental_weight(TypeB{2}, 1)
-    @test dual(ω₁_b) == ω₁_b
+    # B2: dual = identity (all reps self-dual)
+    omega1_b = fundamental_weight(TypeB{2}, 1)
+    @test dual(omega1_b) == omega1_b
 
     # Dual of virtual character
-    V = WeylCharacter(ω₁)
-    @test highest_weight(dual(V)) == ω₂
+    V = WeylCharacter(omega1)
+    @test highest_weight(dual(V)) == omega2
   end
 
   # ─── Exterior powers ─────────────────────────────────────────────
   @testset "Exterior powers" begin
-    # A₂: ⋀²V(ω₁) = V(ω₂)
-    ω₁ = fundamental_weight(TypeA{2}, 1)
-    ω₂ = fundamental_weight(TypeA{2}, 2)
-    @test ⋀(2, ω₁) == WeylCharacter(ω₂)
-    @test ⋀(3, ω₁) == WeylCharacter(WeightLatticeElem(TypeA{2}, SVector(0, 0)))
+    # A2: ⋀²V(omega1) = V(omega2)
+    omega1 = fundamental_weight(TypeA{2}, 1)
+    omega2 = fundamental_weight(TypeA{2}, 2)
+    @test ⋀(2, omega1) == WeylCharacter(omega2)
+    @test ⋀(3, omega1) == WeylCharacter(WeightLatticeElem(TypeA{2}, SVector(0, 0)))
 
-    # A₃: ⋀²V(ω₁) = V(ω₂), ⋀³V(ω₁) = V(ω₃)
-    ω₁_a3 = fundamental_weight(TypeA{3}, 1)
-    ω₂_a3 = fundamental_weight(TypeA{3}, 2)
-    ω₃_a3 = fundamental_weight(TypeA{3}, 3)
-    @test ⋀(2, ω₁_a3) == WeylCharacter(ω₂_a3)
-    @test ⋀(3, ω₁_a3) == WeylCharacter(ω₃_a3)
+    # A3: ⋀²V(omega1) = V(omega2), ⋀³V(omega1) = V(omega3)
+    omega1_a3 = fundamental_weight(TypeA{3}, 1)
+    omega2_a3 = fundamental_weight(TypeA{3}, 2)
+    omega3_a3 = fundamental_weight(TypeA{3}, 3)
+    @test ⋀(2, omega1_a3) == WeylCharacter(omega2_a3)
+    @test ⋀(3, omega1_a3) == WeylCharacter(omega3_a3)
 
-    # A₃: ⋀⁴V(ω₁) = trivial (top exterior power of std rep)
+    # A3: ⋀⁴V(omega1) = trivial (top exterior power of std rep)
     z_a3 = WeightLatticeElem(TypeA{3}, SVector(0, 0, 0))
-    @test ⋀(4, ω₁_a3) == WeylCharacter(z_a3)
+    @test ⋀(4, omega1_a3) == WeylCharacter(z_a3)
 
-    # A₃: ⋀ᵏV(ω₁) = 0 for k > dim = 4
-    @test ⋀(5, ω₁_a3) == WeylCharacter(TypeA{3})
+    # A3: ⋀ᵏV(omega1) = 0 for k > dim = 4
+    @test ⋀(5, omega1_a3) == WeylCharacter(TypeA{3})
 
-    # E₈: ⋀²V(ω₁) has 4 irreducible components
-    ω₁_e8 = fundamental_weight(TypeE{8}, 1)
-    r = ⋀(2, ω₁_e8)
+    # E8: ⋀²V(omega1) has 4 irreducible components
+    omega1_e8 = fundamental_weight(TypeE{8}, 1)
+    r = ⋀(2, omega1_e8)
     @test length(r.terms) == 4
     @test is_effective(r)
 
     # ─── Dimension identity: dim ⋀ᵏV = C(dim V, k) ─────────────
-    # A₄: V(ω₁) has dim 5, so ⋀ᵏ has dim C(5,k)
-    ω₁_a4 = fundamental_weight(TypeA{4}, 1)
+    # A4: V(omega1) has dim 5, so ⋀ᵏ has dim C(5,k)
+    omega1_a4 = fundamental_weight(TypeA{4}, 1)
     for k in 0:5
-      r = ⋀(k, ω₁_a4)
+      r = ⋀(k, omega1_a4)
       @test sum(m * degree(μ) for (μ, m) in r.terms; init=0) == binomial(5, k)
     end
 
-    # B₃: V(ω₃) is 8-dimensional spin rep
-    ω₃_b3 = fundamental_weight(TypeB{3}, 3)
-    d = degree(ω₃_b3)
+    # B3: V(omega3) is 8-dimensional spin rep
+    omega3_b3 = fundamental_weight(TypeB{3}, 3)
+    d = degree(omega3_b3)
     for k in 1:3
-      r = ⋀(k, ω₃_b3)
+      r = ⋀(k, omega3_b3)
       @test is_effective(r)
       @test sum(m * degree(μ) for (μ, m) in r.terms) == binomial(d, k)
     end
@@ -1265,47 +1265,47 @@ end
     end
 
     # ─── Larger exterior powers across types ─────────────────────
-    # A₅: ⋀³V(ω₁) = V(ω₃)  (fundamental rep)
-    ω₁_a5 = fundamental_weight(TypeA{5}, 1)
-    ω₃_a5 = fundamental_weight(TypeA{5}, 3)
-    @test ⋀(3, ω₁_a5) == WeylCharacter(ω₃_a5)
+    # A5: ⋀³V(omega1) = V(omega3)  (fundamental rep)
+    omega1_a5 = fundamental_weight(TypeA{5}, 1)
+    omega3_a5 = fundamental_weight(TypeA{5}, 3)
+    @test ⋀(3, omega1_a5) == WeylCharacter(omega3_a5)
 
-    # A₇: ⋀⁴V(ω₁) = V(ω₄)
-    ω₁_a7 = fundamental_weight(TypeA{7}, 1)
-    ω₄_a7 = fundamental_weight(TypeA{7}, 4)
-    @test ⋀(4, ω₁_a7) == WeylCharacter(ω₄_a7)
+    # A7: ⋀⁴V(omega1) = V(omega4)
+    omega1_a7 = fundamental_weight(TypeA{7}, 1)
+    omega4_a7 = fundamental_weight(TypeA{7}, 4)
+    @test ⋀(4, omega1_a7) == WeylCharacter(omega4_a7)
 
-    # D₄: ⋀²V(ω₁) has specific structure
-    ω₁_d4 = fundamental_weight(TypeD{4}, 1)
-    r_d4 = ⋀(2, ω₁_d4)
+    # D4: ⋀²V(omega1) has specific structure
+    omega1_d4 = fundamental_weight(TypeD{4}, 1)
+    r_d4 = ⋀(2, omega1_d4)
     @test is_effective(r_d4)
     @test sum(m * degree(μ) for (μ, m) in r_d4.terms) == binomial(8, 2)
 
-    # G₂: dim ⋀ᵏV(ω₁) = C(7,k) (7-dim rep)
-    ω₁_g2 = fundamental_weight(TypeG2, 1)
+    # G2: dim ⋀ᵏV(omega1) = C(7,k) (7-dim rep)
+    omega1_g2 = fundamental_weight(TypeG2, 1)
     for k in 2:4
-      r = ⋀(k, ω₁_g2)
+      r = ⋀(k, omega1_g2)
       @test is_effective(r)
       @test sum(m * degree(μ) for (μ, m) in r.terms) == binomial(7, k)
     end
 
     # ─── Non-minuscule exterior powers ───────────────────────────
-    # A₃: ⋀²V(ω₁+ω₃) — adjoint rep (15-dim)
-    ω₁_a3 = fundamental_weight(TypeA{3}, 1)
-    ω₃_a3 = fundamental_weight(TypeA{3}, 3)
-    adj = ω₁_a3 + ω₃_a3
+    # A3: ⋀²V(omega1+omega3) — adjoint rep (15-dim)
+    omega1_a3 = fundamental_weight(TypeA{3}, 1)
+    omega3_a3 = fundamental_weight(TypeA{3}, 3)
+    adj = omega1_a3 + omega3_a3
     r_adj = ⋀(2, adj)
     @test is_effective(r_adj)
     @test sum(m * degree(μ) for (μ, m) in r_adj.terms) == binomial(15, 2)
 
     # ─── WeylCharacter overloads ──────────────────────────────────
     # Delegation: ⋀(k, V) == ⋀(k, λ) when V is irreducible
-    ω₁_v = fundamental_weight(TypeA{3}, 1)
-    V_ext = WeylCharacter(ω₁_v)
-    @test ⋀(2, V_ext) == ⋀(2, ω₁_v)
-    @test ⋀(3, V_ext) == ⋀(3, ω₁_v)
-    @test ⋀(4, V_ext) == ⋀(4, ω₁_v)
-    @test ⋀(5, V_ext) == ⋀(5, ω₁_v)
+    omega1_v = fundamental_weight(TypeA{3}, 1)
+    V_ext = WeylCharacter(omega1_v)
+    @test ⋀(2, V_ext) == ⋀(2, omega1_v)
+    @test ⋀(3, V_ext) == ⋀(3, omega1_v)
+    @test ⋀(4, V_ext) == ⋀(4, omega1_v)
+    @test ⋀(5, V_ext) == ⋀(5, omega1_v)
 
     # Newton identity via WeylCharacter
     for λ in [
@@ -1317,71 +1317,71 @@ end
       @test Vλ * Vλ == Sym(2, Vλ) + ⋀(2, Vλ)
     end
 
-    # Reducible character: ⋀²(V₁ ⊕ V₂) = ⋀²V₁ ⊕ (V₁ ⊗ V₂) ⊕ ⋀²V₂
-    ω₂_v = fundamental_weight(TypeA{3}, 2)
-    V1 = WeylCharacter(ω₁_v)
-    V2 = WeylCharacter(ω₂_v)
+    # Reducible character: ⋀²(V1 ⊕ V2) = ⋀²V1 ⊕ (V1 ⊗ V2) ⊕ ⋀²V2
+    omega2_v = fundamental_weight(TypeA{3}, 2)
+    V1 = WeylCharacter(omega1_v)
+    V2 = WeylCharacter(omega2_v)
     @test ⋀(2, V1 + V2) == ⋀(2, V1) + V1 * V2 + ⋀(2, V2)
   end
 
   # ─── Symmetric powers ───────────────────────────────────────────
   @testset "Symmetric powers" begin
-    # A₂: Sym²V(ω₁) = V(2ω₁)
-    ω₁ = fundamental_weight(TypeA{2}, 1)
-    @test Sym(2, ω₁) == WeylCharacter(2 * ω₁)
+    # A2: Sym²V(omega1) = V(2omega1)
+    omega1 = fundamental_weight(TypeA{2}, 1)
+    @test Sym(2, omega1) == WeylCharacter(2 * omega1)
 
-    # A₂: Sym³V(ω₁) = V(3ω₁)
-    @test Sym(3, ω₁) == WeylCharacter(3 * ω₁)
+    # A2: Sym³V(omega1) = V(3omega1)
+    @test Sym(3, omega1) == WeylCharacter(3 * omega1)
 
     # Sym⁰ = trivial, Sym¹ = identity
     z = WeightLatticeElem(TypeA{2}, SVector(0, 0))
-    @test Sym(0, ω₁) == WeylCharacter(z)
-    @test Sym(1, ω₁) == WeylCharacter(ω₁)
+    @test Sym(0, omega1) == WeylCharacter(z)
+    @test Sym(1, omega1) == WeylCharacter(omega1)
 
-    # ─── Type A: SymᵏV(ω₁) = V(kω₁) (always irreducible) ──────
+    # ─── Type A: SymᵏV(omega1) = V(komega1) (always irreducible) ──────
     for (DT, k_max) in [(TypeA{2}, 5), (TypeA{3}, 4), (TypeA{5}, 3)]
-      ω₁ = fundamental_weight(DT, 1)
+      omega1 = fundamental_weight(DT, 1)
       for k in 2:k_max
-        @test Sym(k, ω₁) == WeylCharacter(k * ω₁)
+        @test Sym(k, omega1) == WeylCharacter(k * omega1)
       end
     end
 
     # ─── Dimension identity: dim Symᵏ(V) = C(dim V + k - 1, k) ─
-    # A₃: dim V(ω₁) = 4, so dim Symᵏ = C(4+k-1, k)
-    ω₁_a3 = fundamental_weight(TypeA{3}, 1)
+    # A3: dim V(omega1) = 4, so dim Symᵏ = C(4+k-1, k)
+    omega1_a3 = fundamental_weight(TypeA{3}, 1)
     for k in 2:5
-      r = Sym(k, ω₁_a3)
+      r = Sym(k, omega1_a3)
       @test is_effective(r)
       @test sum(m * degree(μ) for (μ, m) in r.terms) == binomial(4 + k - 1, k)
     end
 
-    # B₂: dim V(ω₁) = 5, dim Symᵏ = C(5+k-1, k)
-    ω₁_b2 = fundamental_weight(TypeB{2}, 1)
+    # B2: dim V(omega1) = 5, dim Symᵏ = C(5+k-1, k)
+    omega1_b2 = fundamental_weight(TypeB{2}, 1)
     for k in 2:4
-      r = Sym(k, ω₁_b2)
+      r = Sym(k, omega1_b2)
       @test is_effective(r)
       @test sum(m * degree(μ) for (μ, m) in r.terms) == binomial(5 + k - 1, k)
     end
 
     # ─── Cross-type symmetric powers ────────────────────────────
-    # G₂: Sym²V(ω₁) decomposes; verify effectiveness and dimension
-    ω₁_g2 = fundamental_weight(TypeG2, 1)
-    r = Sym(2, ω₁_g2)
+    # G2: Sym²V(omega1) decomposes; verify effectiveness and dimension
+    omega1_g2 = fundamental_weight(TypeG2, 1)
+    r = Sym(2, omega1_g2)
     @test is_effective(r)
     @test sum(m * degree(μ) for (μ, m) in r.terms) == binomial(7 + 1, 2)
 
-    # C₃: Sym²V(ω₁) decomposes; verify dimension
-    ω₁_c3 = fundamental_weight(TypeC{3}, 1)
-    r = Sym(2, ω₁_c3)
+    # C3: Sym²V(omega1) decomposes; verify dimension
+    omega1_c3 = fundamental_weight(TypeC{3}, 1)
+    r = Sym(2, omega1_c3)
     @test is_effective(r)
     @test sum(m * degree(μ) for (μ, m) in r.terms) == binomial(6 + 1, 2)
 
     # ─── WeylCharacter overloads ──────────────────────────────────
     # Delegation: Sym(k, V) == Sym(k, λ) when V is irreducible
-    ω₁_v = fundamental_weight(TypeA{3}, 1)
-    V_sym = WeylCharacter(ω₁_v)
-    @test Sym(2, V_sym) == Sym(2, ω₁_v)
-    @test Sym(3, V_sym) == Sym(3, ω₁_v)
+    omega1_v = fundamental_weight(TypeA{3}, 1)
+    V_sym = WeylCharacter(omega1_v)
+    @test Sym(2, V_sym) == Sym(2, omega1_v)
+    @test Sym(3, V_sym) == Sym(3, omega1_v)
 
     # Boundary cases
     z3 = WeightLatticeElem(TypeA{3}, SVector(0, 0, 0))
@@ -1391,32 +1391,32 @@ end
     # Reducible character: Sym²(2V) = 3·Sym²V + ⋀²V
     @test Sym(2, 2 * V_sym) == 3 * Sym(2, V_sym) + ⋀(2, V_sym)
 
-    # Reducible: Sym²(V₁ ⊕ V₂) = Sym²V₁ + V₁⊗V₂ + Sym²V₂
-    ω₂_v = fundamental_weight(TypeA{3}, 2)
-    V1 = WeylCharacter(ω₁_v)
-    V2 = WeylCharacter(ω₂_v)
+    # Reducible: Sym²(V1 ⊕ V2) = Sym²V1 + V1⊗V2 + Sym²V2
+    omega2_v = fundamental_weight(TypeA{3}, 2)
+    V1 = WeylCharacter(omega1_v)
+    V2 = WeylCharacter(omega2_v)
     @test Sym(2, V1 + V2) == Sym(2, V1) + V1 * V2 + Sym(2, V2)
   end
 
   # ─── Adams operators ─────────────────────────────────────────────
   @testset "Adams operators" begin
-    ω₁ = fundamental_weight(TypeA{2}, 1)
+    omega1 = fundamental_weight(TypeA{2}, 1)
 
-    # ψ¹ = the weight multiplicities of V(ω₁)
-    ψ1 = adams_operator(ω₁, 1)
-    @test ψ1 == freudenthal_formula(ω₁)
+    # ψ¹ = the weight multiplicities of V(omega1)
+    ψ1 = adams_operator(omega1, 1)
+    @test ψ1 == freudenthal_formula(omega1)
 
     # Newton identity: ψ²(V) as a virtual character = Sym²(V) - ⋀²(V)
-    ψ2_raw = adams_operator(ω₁, 2)
+    ψ2_raw = adams_operator(omega1, 2)
     ψ2_char = character_from_weights(TypeA{2}, ψ2_raw)
-    @test ψ2_char == Sym(2, ω₁) - ⋀(2, ω₁)
+    @test ψ2_char == Sym(2, omega1) - ⋀(2, omega1)
   end
 
-  # ─── E₈ exterior power cross-checks ─────────────────────────────
-  @testset "E₈ exterior powers" begin
+  # ─── E8 exterior power cross-checks ─────────────────────────────
+  @testset "E8 exterior powers" begin
     ω = [fundamental_weight(TypeE{8}, i) for i in 1:8]
 
-    # ⋀²V(ω₁): 4 irreducibles
+    # ⋀²V(omega1): 4 irreducibles
     r1 = ⋀(2, ω[1])
     @test length(r1.terms) == 4
     @test haskey(r1.terms, WeightLatticeElem(TypeE{8}, SVector(0, 0, 0, 0, 0, 0, 1, 0)))
@@ -1424,28 +1424,28 @@ end
     @test haskey(r1.terms, WeightLatticeElem(TypeE{8}, SVector(0, 0, 0, 0, 0, 0, 0, 1)))
     @test haskey(r1.terms, WeightLatticeElem(TypeE{8}, SVector(0, 0, 1, 0, 0, 0, 0, 0)))
 
-    # ⋀²V(ω₂): 13 irreducibles
+    # ⋀²V(omega2): 13 irreducibles
     r2 = ⋀(2, ω[2])
     @test length(r2.terms) == 13
 
-    # ⋀⁵V(ω₈): 12 irreducibles
+    # ⋀⁵V(omega8): 12 irreducibles
     r3 = ⋀(5, ω[8])
     @test length(r3.terms) == 12
 
-    # ⋀²V(2ω₈): 7 irreducibles
+    # ⋀²V(2omega8): 7 irreducibles
     r4 = ⋀(2, 2 * ω[8])
     @test length(r4.terms) == 7
   end
 
   # ─── character_from_weights ──────────────────────────────────────
   @testset "character_from_weights" begin
-    # Build the standard A₂ rep from explicit weights
+    # Build the standard A2 rep from explicit weights
     m = Dict(SVector(1, 0) => 1, SVector(-1, 1) => 1, SVector(0, -1) => 1)
     V = character_from_weights(TypeA{2}, m)
     @test is_irreducible(V)
     @test highest_weight(V) == fundamental_weight(TypeA{2}, 1)
 
-    # Adjoint A₂: 8 = V(1,1) with zero weight mult 2
+    # Adjoint A2: 8 = V(1,1) with zero weight mult 2
     m_adj = Dict(
       SVector(1, 1) => 1, SVector(2, -1) => 1, SVector(-1, 2) => 1,
       SVector(-2, 1) => 1, SVector(1, -2) => 1, SVector(-1, -1) => 1,
@@ -1460,71 +1460,71 @@ end
   # ─── Plethysm ─────────────────────────────────────────────────────
   @testset "Plethysm" begin
     # Symmetric power = plethysm with one-row partition
-    ω₁_A4 = fundamental_weight(TypeA{4}, 1)
+    omega1_A4 = fundamental_weight(TypeA{4}, 1)
     for k in 2:5
-      @test plethysm(vcat([k]), ω₁_A4) == Sym(k, ω₁_A4)
+      @test plethysm(vcat([k]), omega1_A4) == Sym(k, omega1_A4)
     end
 
     # Exterior power = plethysm with one-column partition
     for k in 2:4
-      @test plethysm(ones(Int, k), ω₁_A4) == ⋀(k, ω₁_A4)
+      @test plethysm(ones(Int, k), omega1_A4) == ⋀(k, omega1_A4)
     end
 
     # Mixed symmetry: S_{(2,1)} functor
-    ω₁_A3 = fundamental_weight(TypeA{3}, 1)
-    p21 = plethysm([2, 1], ω₁_A3)
+    omega1_A3 = fundamental_weight(TypeA{3}, 1)
+    p21 = plethysm([2, 1], omega1_A3)
     @test is_irreducible(p21)
     @test highest_weight(p21) ==
       fundamental_weight(TypeA{3}, 1) + fundamental_weight(TypeA{3}, 2)
     @test degree(p21) == 20
 
-    # Plethysm on non-type-A: B₃
-    ω₁_B3 = fundamental_weight(TypeB{3}, 1)
-    @test plethysm([2], ω₁_B3) == Sym(2, ω₁_B3)
-    @test plethysm([1, 1], ω₁_B3) == ⋀(2, ω₁_B3)
+    # Plethysm on non-type-A: B3
+    omega1_B3 = fundamental_weight(TypeB{3}, 1)
+    @test plethysm([2], omega1_B3) == Sym(2, omega1_B3)
+    @test plethysm([1, 1], omega1_B3) == ⋀(2, omega1_B3)
 
-    # Plethysm on G₂
-    ω₁_G2 = fundamental_weight(TypeG2, 1)
-    @test plethysm([2], ω₁_G2) == Sym(2, ω₁_G2)
-    @test plethysm([1, 1], ω₁_G2) == ⋀(2, ω₁_G2)
+    # Plethysm on G2
+    omega1_G2 = fundamental_weight(TypeG2, 1)
+    @test plethysm([2], omega1_G2) == Sym(2, omega1_G2)
+    @test plethysm([1, 1], omega1_G2) == ⋀(2, omega1_G2)
 
-    # S_{(2,1)} on B₃ ω₁: dimension check
-    # dim(V(ω₁)) = 7 for B₃, S_{(2,1)} has hook content dim = 7*6*5/3 = 70
+    # S_{(2,1)} on B3 omega1: dimension check
+    # dim(V(omega1)) = 7 for B3, S_{(2,1)} has hook content dim = 7*6*5/3 = 70
     # but in general the formula is more complex
-    p21_B3 = plethysm([2, 1], ω₁_B3)
+    p21_B3 = plethysm([2, 1], omega1_B3)
     @test degree(p21_B3) == 112  # known value
 
     # Trivial cases
-    @test plethysm([1], ω₁_A3) == WeylCharacter(ω₁_A3)
-    @test plethysm(Int[], ω₁_A3) ==
+    @test plethysm([1], omega1_A3) == WeylCharacter(omega1_A3)
+    @test plethysm(Int[], omega1_A3) ==
       WeylCharacter(WeightLatticeElem{TypeA{3},3}(zero(SVector{3,Int})))
   end
 
   # ─── ProductDynkinType characters ──────────────────────────────
   @testset "ProductDynkinType characters" begin
     PT = ProductDynkinType{Tuple{TypeA{2},TypeB{3}}}
-    ω₁ = fundamental_weight(PT, 1)  # A₂ fundamental weight
-    ω₃ = fundamental_weight(PT, 3)  # B₃ fundamental weight
+    omega1 = fundamental_weight(PT, 1)  # A2 fundamental weight
+    omega3 = fundamental_weight(PT, 3)  # B3 fundamental weight
 
     # Degree of product fundamental weights factors
-    @test degree(ω₁) == degree(fundamental_weight(TypeA{2}, 1))
-    @test degree(ω₃) == degree(fundamental_weight(TypeB{3}, 1))
+    @test degree(omega1) == degree(fundamental_weight(TypeA{2}, 1))
+    @test degree(omega3) == degree(fundamental_weight(TypeB{3}, 1))
 
     # Freudenthal formula
-    m = freudenthal_formula(ω₁)
-    @test sum(values(m)) == degree(ω₁)
-    m3 = freudenthal_formula(ω₃)
-    @test sum(values(m3)) == degree(ω₃)
+    m = freudenthal_formula(omega1)
+    @test sum(values(m)) == degree(omega1)
+    m3 = freudenthal_formula(omega3)
+    @test sum(values(m3)) == degree(omega3)
 
     # Tensor product dimensions are multiplicative
-    V1 = WeylCharacter(ω₁)
-    V3 = WeylCharacter(ω₃)
+    V1 = WeylCharacter(omega1)
+    V3 = WeylCharacter(omega3)
     @test degree(V1 * V3) == degree(V1) * degree(V3)
-    @test degree(V1 * V1) == 9  # 3 ⊗ 3 = 6 ⊕ 3̄ in A₂
+    @test degree(V1 * V1) == 9  # 3 ⊗ 3 = 6 ⊕ 3̄ in A2
 
     # Symmetric and exterior powers
-    @test degree(symmetric_power(ω₁, 2)) == 6   # Sym²(3) in A₂
-    @test degree(exterior_power(ω₁, 2)) == 3     # ∧²(3) in A₂
+    @test degree(symmetric_power(omega1, 2)) == 6   # Sym²(3) in A2
+    @test degree(exterior_power(omega1, 2)) == 3     # ∧²(3) in A2
   end
 
   # ─── Dual is involution ─────────────────────────────────────────
@@ -1572,36 +1572,36 @@ end
 # ═══════════════════════════════════════════════════════════════════════
 @testset "Representations with the same degree (Lübeck)" begin
 
-  # ─── Proposition 2: exceptional types, A₂, and B₂ ───────────────
+  # ─── Proposition 2: exceptional types, A2, and B2 ───────────────
   @testset "Proposition 2" begin
-    # A₂: V(ω₁+2ω₂) and V(4ω₂) both have degree 15
+    # A2: V(omega1+2omega2) and V(4omega2) both have degree 15
     @test degree(WeightLatticeElem(TypeA{2}, [1, 2])) == 15
     @test degree(WeightLatticeElem(TypeA{2}, [0, 4])) == 15
 
-    # B₂: V(ω₁+2ω₂) and V(4ω₂) both have degree 35
+    # B2: V(omega1+2omega2) and V(4omega2) both have degree 35
     @test degree(WeightLatticeElem(TypeB{2}, [1, 2])) == 35
     @test degree(WeightLatticeElem(TypeB{2}, [0, 4])) == 35
 
-    # G₂: V(3ω₁) and V(2ω₂) both have degree 77
-    # The paper uses the opposite labeling to Bourbaki for G₂ (ω₁ ↔ ω₂).
+    # G2: V(3omega1) and V(2omega2) both have degree 77
+    # The paper uses the opposite labeling to Bourbaki for G2 (omega1 ↔ omega2).
     @test degree(WeightLatticeElem(TypeG2, [3, 0])) == 77
     @test degree(WeightLatticeElem(TypeG2, [0, 2])) == 77
 
-    # F₄: V(ω₁+ω₄) and V(2ω₁) both have degree 1053
+    # F4: V(omega1+omega4) and V(2omega1) both have degree 1053
     @test degree(WeightLatticeElem(TypeF4, [1, 0, 0, 1])) == 1053
     @test degree(WeightLatticeElem(TypeF4, [2, 0, 0, 0])) == 1053
 
-    # E₆: V(2ω₁) and V(ω₃) both have degree 351
+    # E6: V(2omega1) and V(omega3) both have degree 351
     @test degree(WeightLatticeElem(TypeE{6}, [2, 0, 0, 0, 0, 0])) == 351
     @test degree(WeightLatticeElem(TypeE{6}, [0, 0, 1, 0, 0, 0])) == 351
 
-    # E₇: V(ω₄+ω₅) and V(2ω₆+3ω₇) both have degree 1903725824
+    # E7: V(omega4+omega5) and V(2omega6+3omega7) both have degree 1903725824
     @test degree(WeightLatticeElem(TypeE{7}, [0, 0, 0, 1, 1, 0, 0])) ==
       1903725824
     @test degree(WeightLatticeElem(TypeE{7}, [0, 0, 0, 0, 0, 2, 3])) ==
       1903725824
 
-    # E₈: V(ω₁+ω₃) and V(ω₁+ω₇+ω₈) both have degree 8634368000
+    # E8: V(omega1+omega3) and V(omega1+omega7+omega8) both have degree 8634368000
     @test degree(WeightLatticeElem(TypeE{8}, [1, 0, 1, 0, 0, 0, 0, 0])) ==
       8634368000
     @test degree(WeightLatticeElem(TypeE{8}, [1, 0, 0, 0, 0, 0, 1, 1])) ==
@@ -1609,7 +1609,7 @@ end
   end
 
   # ─── Theorem 3(a): Type Aₗ ───────────────────────────────────────
-  # V((l-1)ω₂) and V(ω₁+(l-2)ω₂) have the same degree
+  # V((l-1)omega2) and V(omega1+(l-2)omega2) have the same degree
   # = (2l-1) ∏_{k=l+1}^{2l-2} k² / (l-1)!²
   @testset "Theorem 3(a): Type A" begin
     for l in 2:15
@@ -1631,7 +1631,7 @@ end
   end
 
   # ─── Theorem 3(b): Type Bₗ ───────────────────────────────────────
-  # V((2l-2)ω₂) and V(ω₁+(2l-3)ω₂) have the same degree
+  # V((2l-2)omega2) and V(omega1+(2l-3)omega2) have the same degree
   # = 3·(4l-5)·(6l-5)·(6l-7) ∏_{k=2l}^{4l-6} k² / (2l-3)!²
   @testset "Theorem 3(b): Type B" begin
     for l in 3:10
@@ -1654,7 +1654,7 @@ end
   end
 
   # ─── Theorem 3(c): Type Dₗ ───────────────────────────────────────
-  # V((2l-3)ω₂) and V(ω₁+(2l-4)ω₂) have the same degree
+  # V((2l-3)omega2) and V(omega1+(2l-4)omega2) have the same degree
   # = 3·(3l-4)·(3l-5)·(4l-7) ∏_{k=2l-1}^{4l-8} k² / ((l-2)²·(2l-5)!²)
   @testset "Theorem 3(c): Type D" begin
     for l in 4:10
@@ -1722,63 +1722,63 @@ end
     @test dynkin_index(zero(WeightLatticeElem{TypeA{2},2})) == 0
 
     # Index additivity for tensor products: ℓ(V⊗W) = ℓ(V)dim(W) + dim(V)ℓ(W)
-    ω₁ = fundamental_weight(TypeA{3}, 1)
-    ω₂ = fundamental_weight(TypeA{3}, 2)
-    V = tensor_product(ω₁, ω₂)
+    omega1 = fundamental_weight(TypeA{3}, 1)
+    omega2 = fundamental_weight(TypeA{3}, 2)
+    V = tensor_product(omega1, omega2)
     idx_sum = Rational{BigInt}(0)
     for (λ, m) in V
       idx_sum += m * dynkin_index(λ)
     end
-    @test idx_sum == dynkin_index(ω₁) * degree(ω₂) + degree(ω₁) * dynkin_index(ω₂)
+    @test idx_sum == dynkin_index(omega1) * degree(omega2) + degree(omega1) * dynkin_index(omega2)
   end
 
   # ─── Casimir eigenvalue ────────────────────────────────────────────
   @testset "Casimir eigenvalue" begin
     ρ = weyl_vector(TypeA{2})
-    ω₁ = fundamental_weight(TypeA{2}, 1)
-    @test casimir_eigenvalue(ω₁) == dot(ω₁, ω₁ + 2 * ρ)
+    omega1 = fundamental_weight(TypeA{2}, 1)
+    @test casimir_eigenvalue(omega1) == dot(omega1, omega1 + 2 * ρ)
 
     # In non-simply-laced types the result is normalized so long roots have length² 2
-    ω₃_b3 = fundamental_weight(TypeB{3}, 3)
+    omega3_b3 = fundamental_weight(TypeB{3}, 3)
     ρ_b3 = weyl_vector(TypeB{3})
     θ_b3 = highest_root(RootSystem(TypeB{3}))
     θ_b3_w = WeightLatticeElem{TypeB{3},3}(cartan_matrix(TypeB{3}) * θ_b3.vec)
-    @test casimir_eigenvalue(ω₃_b3) ==
-      2 * dot(ω₃_b3, ω₃_b3 + 2 * ρ_b3) // dot(θ_b3_w, θ_b3_w)
-    @test casimir_eigenvalue(ω₃_b3) == 21//4
+    @test casimir_eigenvalue(omega3_b3) ==
+      2 * dot(omega3_b3, omega3_b3 + 2 * ρ_b3) // dot(θ_b3_w, θ_b3_w)
+    @test casimir_eigenvalue(omega3_b3) == 21//4
 
-    # C₂(0) = 0
+    # C2(0) = 0
     z = zero(WeightLatticeElem{TypeA{2},2})
     @test casimir_eigenvalue(z) == 0
   end
 
   # ─── Congruency class ──────────────────────────────────────────────
   @testset "Congruency class" begin
-    # A₂: Σ i·λᵢ mod 3
+    # A2: Σ i·λᵢ mod 3
     @test congruency_class(fundamental_weight(TypeA{2}, 1)) == 1
     @test congruency_class(fundamental_weight(TypeA{2}, 2)) == 2
     @test congruency_class(WeightLatticeElem(TypeA{2}, [1, 1])) == 0  # adjoint
 
-    # B₃: λ₃ mod 2
+    # B3: lambda3 mod 2
     @test congruency_class(fundamental_weight(TypeB{3}, 1)) == 0
     @test congruency_class(fundamental_weight(TypeB{3}, 3)) == 1
 
-    # C₃: Σ λᵢ for odd i mod 2
+    # C3: Σ λᵢ for odd i mod 2
     @test congruency_class(fundamental_weight(TypeC{3}, 1)) == 1
     @test congruency_class(fundamental_weight(TypeC{3}, 2)) == 0
     @test congruency_class(fundamental_weight(TypeC{3}, 3)) == 1
 
-    # D₄: Z/2 × Z/2 center
+    # D4: Z/2 × Z/2 center
     @test congruency_class(fundamental_weight(TypeD{4}, 1)) == (1, 1)
     @test congruency_class(fundamental_weight(TypeD{4}, 2)) == (0, 0)
     @test congruency_class(fundamental_weight(TypeD{4}, 3)) == (1, 0)
     @test congruency_class(fundamental_weight(TypeD{4}, 4)) == (0, 1)
 
-    # E₆: λ₁ - λ₂ + λ₄ - λ₅ mod 3
+    # E6: lambda1 - lambda2 + lambda4 - lambda5 mod 3
     @test congruency_class(fundamental_weight(TypeE{6}, 1)) == 1
     @test congruency_class(fundamental_weight(TypeE{6}, 6)) == 2
 
-    # E₇: λ₂ + λ₅ + λ₇ mod 2
+    # E7: lambda2 + lambda5 + lambda7 mod 2
     @test congruency_class(fundamental_weight(TypeE{7}, 1)) == 0
     @test congruency_class(fundamental_weight(TypeE{7}, 7)) == 1
 
@@ -1788,7 +1788,7 @@ end
     @test congruency_class(fundamental_weight(TypeG2, 1)) == 0
 
     # Weights in same congruency class differ by root lattice element
-    # A₃: class = Σ i·λᵢ mod 4; [1,0,1] and [0,2,0] both have class 0
+    # A3: class = Σ i·λᵢ mod 4; [1,0,1] and [0,2,0] both have class 0
     @test congruency_class(WeightLatticeElem(TypeA{3}, [1, 0, 1])) ==
       congruency_class(WeightLatticeElem(TypeA{3}, [0, 2, 0]))
   end
@@ -1799,9 +1799,9 @@ end
     @test !is_self_dual(fundamental_weight(TypeA{2}, 1))
     @test is_self_dual(WeightLatticeElem(TypeA{2}, [1, 1]))
     @test !is_self_dual(fundamental_weight(TypeA{3}, 1))
-    @test is_self_dual(fundamental_weight(TypeA{3}, 2))  # A₃: ω₂ is self-dual (4×4 antisymmetric)
+    @test is_self_dual(fundamental_weight(TypeA{3}, 2))  # A3: omega2 is self-dual (4×4 antisymmetric)
 
-    # B, C, G₂, F₄, E₇, E₈: all fundamental reps are self-dual
+    # B, C, G2, F4, E7, E8: all fundamental reps are self-dual
     for DT in (TypeB{3}, TypeC{3}, TypeG2, TypeF4, TypeE{7}, TypeE{8})
       R = rank(DT)
       for i in 1:R
@@ -1809,7 +1809,7 @@ end
       end
     end
 
-    # E₆: ω₁ and ω₆ are NOT self-dual (conjugate to each other)
+    # E6: omega1 and omega6 are NOT self-dual (conjugate to each other)
     @test !is_self_dual(fundamental_weight(TypeE{6}, 1))
     @test !is_self_dual(fundamental_weight(TypeE{6}, 6))
     @test is_self_dual(fundamental_weight(TypeE{6}, 2))
@@ -1818,23 +1818,23 @@ end
     @test frobenius_schur_indicator(fundamental_weight(TypeA{2}, 1)) == 0
     @test frobenius_schur_indicator(WeightLatticeElem(TypeA{2}, [1, 1])) == 1
 
-    # B₃ vector is real, spinor of SO(7) is real (7 = 8k-1 pattern)
+    # B3 vector is real, spinor of SO(7) is real (7 = 8k-1 pattern)
     @test frobenius_schur_indicator(fundamental_weight(TypeB{3}, 1)) == 1
     @test frobenius_schur_indicator(fundamental_weight(TypeB{3}, 3)) == 1
 
-    # B₂ spinor (SO(5)) is pseudoreal (5 = 8k+5 pattern)
+    # B2 spinor (SO(5)) is pseudoreal (5 = 8k+5 pattern)
     @test frobenius_schur_indicator(fundamental_weight(TypeB{2}, 2)) == -1
 
-    # C₂ standard rep is pseudoreal (symplectic form)
+    # C2 standard rep is pseudoreal (symplectic form)
     @test frobenius_schur_indicator(fundamental_weight(TypeC{2}, 1)) == -1
     @test frobenius_schur_indicator(fundamental_weight(TypeC{2}, 2)) == 1
 
-    # D₄ spinors are real (8 = 8·1)
+    # D4 spinors are real (8 = 8·1)
     @test frobenius_schur_indicator(fundamental_weight(TypeD{4}, 1)) == 1
     @test frobenius_schur_indicator(fundamental_weight(TypeD{4}, 3)) == 1
     @test frobenius_schur_indicator(fundamental_weight(TypeD{4}, 4)) == 1
 
-    # G₂ 7-dim is real
+    # G2 7-dim is real
     @test frobenius_schur_indicator(fundamental_weight(TypeG2, 1)) == 1
   end
 
@@ -1863,18 +1863,18 @@ end
   end
 
   @testset "adjoint_representation — product types" begin
-    # A₂×B₂: dim(A₂) = 8, dim(B₂) = so(5) = 10, total = 18
+    # A2×B2: dim(A2) = 8, dim(B2) = so(5) = 10, total = 18
     PDT1 = ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}
     adj1 = adjoint_representation(PDT1)
     @test degree(adj1) == 18
     @test length(adj1) == 2
 
-    # G₂×F₄: dim(G₂) = 14, dim(F₄) = 52, total = 66
+    # G2×F4: dim(G2) = 14, dim(F4) = 52, total = 66
     PDT2 = ProductDynkinType{Tuple{TypeG2,TypeF4}}
     adj2 = adjoint_representation(PDT2)
     @test degree(adj2) == 66
 
-    # A₃×A₃: dim(A₃) = 15 each, total = 30
+    # A3×A3: dim(A3) = 15 each, total = 30
     PDT3 = ProductDynkinType{Tuple{TypeA{3},TypeA{3}}}
     adj3 = adjoint_representation(PDT3)
     @test degree(adj3) == 30
@@ -1920,8 +1920,8 @@ end
 #  Coset reps and Bruhat order — extended coverage (item 12)
 # ═══════════════════════════════════════════════════════════════════════
 @testset "Coset reps extended" begin
-  # ─── B₂: |W| = 8, parabolic by {1} has 4 cosets ──────────────────
-  @testset "B₂ right coset reps" begin
+  # ─── B2: |W| = 8, parabolic by {1} has 4 cosets ──────────────────
+  @testset "B2 right coset reps" begin
     W = weyl_group(TypeB{2})
     reps = right_coset_reps(W, [1])
     @test length(reps) == 4   # |W|/|W_{\{1\}}| = 8/2
@@ -1933,7 +1933,7 @@ end
     @test lens == [0, 1, 2, 3]
   end
 
-  @testset "B₂ left coset reps" begin
+  @testset "B2 left coset reps" begin
     W = weyl_group(TypeB{2})
     reps = left_coset_reps(W, [2])
     @test length(reps) == 4
@@ -1942,18 +1942,18 @@ end
     end
   end
 
-  # ─── A₃: |W| = 24, parabolic by {1,2} = S₃, cosets = 4 ──────────
-  @testset "A₃ right coset reps by {1,2}" begin
+  # ─── A3: |W| = 24, parabolic by {1,2} = S3, cosets = 4 ──────────
+  @testset "A3 right coset reps by {1,2}" begin
     W = weyl_group(TypeA{3})
     reps = right_coset_reps(W, [1, 2])
-    @test length(reps) == 4   # |S₄|/|S₃| = 4
+    @test length(reps) == 4   # |S4|/|S3| = 4
     for w in reps
       @test !(1 in right_descent_set(w))
       @test !(2 in right_descent_set(w))
     end
   end
 
-  @testset "A₃ right coset reps by {1}" begin
+  @testset "A3 right coset reps by {1}" begin
     W = weyl_group(TypeA{3})
     reps = right_coset_reps(W, [1])
     @test length(reps) == 12   # 24/2
@@ -1966,8 +1966,8 @@ end
     @test 3 in lens
   end
 
-  # ─── A₃ Bruhat order ────────────────────────────────────────────
-  @testset "A₃ Bruhat order" begin
+  # ─── A3 Bruhat order ────────────────────────────────────────────
+  @testset "A3 Bruhat order" begin
     W = weyl_group(TypeA{3})
     e = one(W)
     w0 = longest_element(W)
@@ -1975,7 +1975,7 @@ end
     s2 = gen(W, 2);
     s3 = gen(W, 3)
 
-    # Identity ≤ everything, w₀ ≥ everything
+    # Identity ≤ everything, w0 ≥ everything
     elems = [e, s1, s2, s3, s1 * s2, s2 * s3, s1 * s2 * s3, w0]
     for x in elems
       @test bruhat_leq(e, x)
@@ -1994,10 +1994,10 @@ end
     @test bruhat_leq(s1, w0)
   end
 
-  # ─── E₆ maximal parabolic (benchmark sanity) ───────────────────
-  @testset "E₆ right coset reps by {2,3,4,5,6}" begin
+  # ─── E6 maximal parabolic (benchmark sanity) ───────────────────
+  @testset "E6 right coset reps by {2,3,4,5,6}" begin
     W = weyl_group(TypeE{6})
-    # Remove node 1: W/W_{2..6} ≅ E₆/P₁, |cosets| = dim(E₆ 27-rep) = 27
+    # Remove node 1: W/W_{2..6} ≅ E6/P1, |cosets| = dim(E6 27-rep) = 27
     reps = right_coset_reps(W, [2, 3, 4, 5, 6])
     @test length(reps) == 27
     for w in reps
@@ -2007,10 +2007,10 @@ end
     end
   end
 
-  @testset "E₈ maximal parabolic by {1,2,3,4,5,6,7}" begin
+  @testset "E8 maximal parabolic by {1,2,3,4,5,6,7}" begin
     W = weyl_group(TypeE{8})
-    # Remove node 8 (rightmost leaf): subdiagram is E₇.
-    # |W(E₈)| / |W(E₇)| = 696_729_600 / 2_903_040 = 240
+    # Remove node 8 (rightmost leaf): subdiagram is E7.
+    # |W(E8)| / |W(E7)| = 696_729_600 / 2_903_040 = 240
     reps = right_coset_reps(W, [1, 2, 3, 4, 5, 6, 7])
     @test length(reps) == 240
     # Every representative has no right descent in I
@@ -2089,14 +2089,14 @@ end
   # For V of dim d: Σ_k degree(Sym^k(V)) x^k = 1/(1-x)^d
   # Check that degree(Sym^k(V)) + degree(⋀^k(V)) matches known formula
   @testset "Sym + exterior dimension identity" begin
-    ω₁_A2 = fundamental_weight(TypeA{2}, 1)  # dim 3
-    V = WeylCharacter(ω₁_A2)
+    omega1_A2 = fundamental_weight(TypeA{2}, 1)  # dim 3
+    V = WeylCharacter(omega1_A2)
     # Sym^2(3) = 6, ⋀^2(3) = 3
     @test degree(symmetric_power(V, 2)) == 6
     @test degree(exterior_power(V, 2)) == 3
 
-    ω₁_B3 = fundamental_weight(TypeB{3}, 1)  # dim 7
-    V7 = WeylCharacter(ω₁_B3)
+    omega1_B3 = fundamental_weight(TypeB{3}, 1)  # dim 7
+    V7 = WeylCharacter(omega1_B3)
     # Sym^2(7) = 28, ⋀^2(7) = 21
     @test degree(symmetric_power(V7, 2)) == 28
     @test degree(exterior_power(V7, 2)) == 21
@@ -2106,16 +2106,16 @@ end
     @test total == 2^7
 
     # Adams operator degree: degree(ψ^k(V)) via character = degree(V) (same)
-    ψ2 = adams_operator(ω₁_A2, 2)
-    @test sum(values(ψ2)) == degree(ω₁_A2)
+    ψ2 = adams_operator(omega1_A2, 2)
+    @test sum(values(ψ2)) == degree(omega1_A2)
   end
 
   # ─── degree(V::WeylCharacter) works for virtual characters ────────
   @testset "degree of virtual character" begin
-    ω₁ = fundamental_weight(TypeA{2}, 1)
-    ω₂ = fundamental_weight(TypeA{2}, 2)
-    V1 = WeylCharacter(ω₁)
-    V2 = WeylCharacter(ω₂)
+    omega1 = fundamental_weight(TypeA{2}, 1)
+    omega2 = fundamental_weight(TypeA{2}, 2)
+    V1 = WeylCharacter(omega1)
+    V2 = WeylCharacter(omega2)
     @test degree(V1 - V2) == 0         # 3 - 3 = 0
     @test degree(V1 - 2 * V2) == -3   # 3 - 6 = -3
     @test degree(2 * V1 + 3 * V2) == 15  # 2*3 + 3*3 = 15
@@ -2123,7 +2123,7 @@ end
     # Zero character
     @test degree(V1 - V1) == 0
 
-    # A₂: V(ω₁+ω₂) = adjoint (8), V(2ω₁) = Sym² (6)
+    # A2: V(omega1+omega2) = adjoint (8), V(2omega1) = Sym² (6)
     adj = WeylCharacter(WeightLatticeElem(TypeA{2}, [1, 1]))
     sym2 = WeylCharacter(WeightLatticeElem(TypeA{2}, [2, 0]))
     @test degree(adj - sym2) == 2           # 8 - 6 = 2
@@ -2131,29 +2131,29 @@ end
     @test degree(adj - sym2 + V1) == 5      # 2 + 3 = 5
     @test degree(3 * adj - 2 * sym2) == 12  # 24 - 12 = 12
 
-    # B₂: V(ω₁)=5, V(ω₂)=4, V(ω₁+ω₂)=16, V(2ω₁)=14
-    b2ω₁ = fundamental_weight(TypeB{2}, 1)
-    b2ω₂ = fundamental_weight(TypeB{2}, 2)
-    W1 = WeylCharacter(b2ω₁)   # dim 5
-    W2 = WeylCharacter(b2ω₂)   # dim 4
+    # B2: V(omega1)=5, V(omega2)=4, V(omega1+omega2)=16, V(2omega1)=14
+    b2omega1 = fundamental_weight(TypeB{2}, 1)
+    b2omega2 = fundamental_weight(TypeB{2}, 2)
+    W1 = WeylCharacter(b2omega1)   # dim 5
+    W2 = WeylCharacter(b2omega2)   # dim 4
     @test degree(W1 - W2) == 1             # 5 - 4 = 1
     @test degree(W2 - W1) == -1            # 4 - 5 = -1
     @test degree(2 * W1 - 3 * W2) == -2   # 10 - 12 = -2
 
-    # G₂: V(ω₁)=7, V(ω₂)=14
-    g2ω₁ = fundamental_weight(TypeG2, 1)
-    g2ω₂ = fundamental_weight(TypeG2, 2)
-    G1 = WeylCharacter(g2ω₁)   # dim 7
-    G2char = WeylCharacter(g2ω₂)  # dim 14
+    # G2: V(omega1)=7, V(omega2)=14
+    g2omega1 = fundamental_weight(TypeG2, 1)
+    g2omega2 = fundamental_weight(TypeG2, 2)
+    G1 = WeylCharacter(g2omega1)   # dim 7
+    G2char = WeylCharacter(g2omega2)  # dim 14
     @test degree(G1 - G2char) == -7        # 7 - 14 = -7
     @test degree(2 * G1 - G2char) == 0    # 14 - 14 = 0
     @test degree(3 * G1 - G2char) == 7    # 21 - 14 = 7
 
-    # Newton identity: ψ₂(V) = Sym²(V) - ⋀²(V) is a virtual character with
+    # Newton identity: psi2(V) = Sym²(V) - ⋀²(V) is a virtual character with
     # degree = dim Sym²(V) - dim ⋀²(V)
-    ψ2_raw = adams_operator(ω₁, 2)
+    ψ2_raw = adams_operator(omega1, 2)
     ψ2 = character_from_weights(TypeA{2}, ψ2_raw)
-    @test degree(ψ2) == degree(Sym(2, ω₁)) - degree(⋀(2, ω₁))  # 6 - 3 = 3
+    @test degree(ψ2) == degree(Sym(2, omega1)) - degree(⋀(2, omega1))  # 6 - 3 = 3
     @test degree(ψ2) == 3
 
     # Additivity: degree(V + W) == degree(V) + degree(W)
@@ -2172,35 +2172,35 @@ end
 #  Product-type character tests (item 21)
 # ═══════════════════════════════════════════════════════════════════════
 @testset "Product-type characters extended" begin
-  # ─── A₂ × B₂ (rank 4) ────────────────────────────────────────────
-  @testset "A₂ × B₂" begin
+  # ─── A2 × B2 (rank 4) ────────────────────────────────────────────
+  @testset "A2 × B2" begin
     PT = ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}
     ω = [fundamental_weight(PT, i) for i in 1:4]
 
     # Each fundamental weight lives in one factor
-    @test degree(ω[1]) == 3    # A₂ standard
-    @test degree(ω[2]) == 3    # A₂ dual standard
-    @test degree(ω[3]) == 5    # B₂ vector (= SO(5) standard, ω₁ of B₂)
-    @test degree(ω[4]) == 4    # B₂ spinor (= ω₂ of B₂)
+    @test degree(ω[1]) == 3    # A2 standard
+    @test degree(ω[2]) == 3    # A2 dual standard
+    @test degree(ω[3]) == 5    # B2 vector (= SO(5) standard, omega1 of B2)
+    @test degree(ω[4]) == 4    # B2 spinor (= omega2 of B2)
 
     # Freudenthal formula consistency
     for i in 1:4
       @test degree(ω[i]) == sum(values(freudenthal_formula(ω[i])))
     end
 
-    # tensor product: V(ω₁) ⊗ V(ω₃) has dim 3×5 = 15
+    # tensor product: V(omega1) ⊗ V(omega3) has dim 3×5 = 15
     V1 = WeylCharacter(ω[1]);
     V3 = WeylCharacter(ω[3])
     @test degree(V1 * V3) == 15
 
-    # V(ω₁) ⊗ V(ω₁) decomposes in A₂ factor only
-    @test degree(V1 * V1) == 9   # 3⊗3 in A₂
+    # V(omega1) ⊗ V(omega1) decomposes in A2 factor only
+    @test degree(V1 * V1) == 9   # 3⊗3 in A2
 
     # Sym² and ⋀² of fundamental reps
     @test degree(symmetric_power(ω[1], 2)) == 6
     @test degree(exterior_power(ω[1], 2)) == 3
     @test degree(symmetric_power(ω[3], 2)) == 15  # Sym²(5) for SO(5) = 14-dim + trivial
-    @test degree(exterior_power(ω[3], 2)) == 10   # adjoint of B₂ = so(5) = 10-dim
+    @test degree(exterior_power(ω[3], 2)) == 10   # adjoint of B2 = so(5) = 10-dim
 
     # dual involution
     for i in 1:4
@@ -2217,44 +2217,44 @@ end
     end
   end
 
-  # ─── A₁ × A₁ (simplest product) ─────────────────────────────────
-  @testset "A₁ × A₁" begin
+  # ─── A1 × A1 (simplest product) ─────────────────────────────────
+  @testset "A1 × A1" begin
     PT = ProductDynkinType{Tuple{TypeA{1},TypeA{1}}}
-    ω₁ = fundamental_weight(PT, 1)
-    ω₂ = fundamental_weight(PT, 2)
+    omega1 = fundamental_weight(PT, 1)
+    omega2 = fundamental_weight(PT, 2)
 
-    @test degree(ω₁) == 2
-    @test degree(ω₂) == 2
+    @test degree(omega1) == 2
+    @test degree(omega2) == 2
 
-    V1 = WeylCharacter(ω₁);
-    V2 = WeylCharacter(ω₂)
+    V1 = WeylCharacter(omega1);
+    V2 = WeylCharacter(omega2)
 
     # (2⊗1) ⊗ (1⊗2) = 4-dim
     @test degree(V1 * V2) == 4
 
     # Sym²(2⊗1) in product type = Sym²(2) ⊗ 1 = 3⊗1 in product
-    # In A₁×A₁: V(ω₁)=2⊗1, Sym²(V(ω₁)) = V(2ω₁) = 3⊗1, dim=3
-    @test degree(symmetric_power(ω₁, 2)) == 3
+    # In A1×A1: V(omega1)=2⊗1, Sym²(V(omega1)) = V(2omega1) = 3⊗1, dim=3
+    @test degree(symmetric_power(omega1, 2)) == 3
 
     # Bruhat-like: dimension formula on product
     @test weyl_order(PT) == 4   # Z/2 × Z/2
 
     # freudenthal on product type
-    m = freudenthal_formula(ω₁)
+    m = freudenthal_formula(omega1)
     @test sum(values(m)) == 2
   end
 
-  # ─── A₂ × A₂ × A₂ (three factors) ───────────────────────────────
-  @testset "A₂ × A₂ × A₂" begin
+  # ─── A2 × A2 × A2 (three factors) ───────────────────────────────
+  @testset "A2 × A2 × A2" begin
     PT = ProductDynkinType{Tuple{TypeA{2},TypeA{2},TypeA{2}}}
     ω = [fundamental_weight(PT, i) for i in 1:6]
 
-    # Each A₂ has 2 fundamental weights with dim 3
+    # Each A2 has 2 fundamental weights with dim 3
     for i in 1:6
       @test degree(ω[i]) == 3
     end
 
-    # Triple tensor product: V(ω₁) ⊗ V(ω₃) ⊗ V(ω₅) has dim 27
+    # Triple tensor product: V(omega1) ⊗ V(omega3) ⊗ V(omega5) has dim 27
     V1 = WeylCharacter(ω[1]);
     V3 = WeylCharacter(ω[3]);
     V5 = WeylCharacter(ω[5])
@@ -2275,22 +2275,22 @@ end
     @test n_positive_roots(PT) == 9
   end
 
-  # ─── A₃ × G₂ ─────────────────────────────────────────────────────
-  @testset "A₃ × G₂" begin
+  # ─── A3 × G2 ─────────────────────────────────────────────────────
+  @testset "A3 × G2" begin
     PT = ProductDynkinType{Tuple{TypeA{3},TypeG2}}
     ω = [fundamental_weight(PT, i) for i in 1:5]
 
-    @test degree(ω[1]) == 4    # A₃ standard
-    @test degree(ω[2]) == 6    # A₃ antisym
-    @test degree(ω[3]) == 4    # A₃ det = dual standard (= 4 since self-dual A₃ ω₃)
-    @test degree(ω[4]) == 7    # G₂ standard
-    @test degree(ω[5]) == 14   # G₂ adjoint
+    @test degree(ω[1]) == 4    # A3 standard
+    @test degree(ω[2]) == 6    # A3 antisym
+    @test degree(ω[3]) == 4    # A3 det = dual standard (= 4 since self-dual A3 omega3)
+    @test degree(ω[4]) == 7    # G2 standard
+    @test degree(ω[5]) == 14   # G2 adjoint
 
     V4 = WeylCharacter(ω[4])
     V5 = WeylCharacter(ω[5])
 
-    # G₂ factor: 7⊗14 decomposes as known
-    # In the product type, this is a G₂ tensor product tensored with trivial A₃
+    # G2 factor: 7⊗14 decomposes as known
+    # In the product type, this is a G2 tensor product tensored with trivial A3
     @test degree(V4 * V5) == 98
 
     # Freudenthal consistency
@@ -2319,13 +2319,13 @@ end
       @test V == WeylCharacter(λ)
     end
 
-    # Multi-irreducible: V(ω₁) ⊕ V(ω₂) in A₂
-    ω₁ = fundamental_weight(TypeA{2}, 1)
-    ω₂ = fundamental_weight(TypeA{2}, 2)
-    ff1 = freudenthal_formula(ω₁)
-    ff2 = freudenthal_formula(ω₂)
+    # Multi-irreducible: V(omega1) ⊕ V(omega2) in A2
+    omega1 = fundamental_weight(TypeA{2}, 1)
+    omega2 = fundamental_weight(TypeA{2}, 2)
+    ff1 = freudenthal_formula(omega1)
+    ff2 = freudenthal_formula(omega2)
     combined = merge(+, ff1, ff2)
     result = character_from_weights(TypeA{2}, combined)
-    @test result == WeylCharacter(ω₁) + WeylCharacter(ω₂)
+    @test result == WeylCharacter(omega1) + WeylCharacter(omega2)
   end
 end

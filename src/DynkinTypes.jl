@@ -202,7 +202,7 @@ Product of simple Dynkin types, representing a semisimple Lie algebra.
 ```jldoctest
 julia> using Lie
 
-julia> ProductDynkinType{Tuple{TypeA{3}, TypeD{5}, TypeE{6}}}()   # A₃ × D₅ × E₆
+julia> ProductDynkinType{Tuple{TypeA{3}, TypeD{5}, TypeE{6}}}()   # A3 × D5 × E6
 A3 × D5 × E6
 ```
 """
@@ -347,7 +347,6 @@ n_components(::Type{<:SimpleDynkinType}) = 1
 n_components(dt::DynkinType) = n_components(typeof(dt))
 
 """
-    component_type(::Type{ProductDynkinType{Ts}}, ::Val{I}) -> Type
     component_type(::Type{ProductDynkinType{Ts}}, i::Integer) -> Type
 
 Return the `i`-th simple Dynkin type in a product.
@@ -358,17 +357,13 @@ julia> using Lie
 
 julia> PT = ProductDynkinType{Tuple{TypeA{2}, TypeB{2}}};
 
-julia> component_type(PT, Val(1))
+julia> component_type(PT, 1)
 TypeA{2}
 
 julia> component_type(PT, 2)
 TypeB{2}
 ```
 """
-function component_type(::Type{ProductDynkinType{Ts}}, ::Val{I}) where {Ts,I}
-  return fieldtypes(Ts)[I]
-end
-
 function component_type(::Type{ProductDynkinType{Ts}}, i::Integer) where {Ts}
   return fieldtypes(Ts)[i]
 end
