@@ -1,10 +1,18 @@
 using Documenter
+using Documenter: RawHTMLHeadContent
 using Lie
 
 const SITE_NAME = "Lie.jl"
 const AUTHORS = "Pieter Belmans"
 const PDF_NAME = "Lie.jl.pdf"
 const HTML_BUILD = joinpath(@__DIR__, "build")
+const PLAUSIBLE_HEAD = RawHTMLHeadContent("""
+<script async src="https://plausible.io/js/pa-XnO99azZJG-BAZutMei1M.js"></script>
+<script>
+  window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};
+  plausible.init()
+</script>
+""")
 const PAGES = [
   "Home" => "index.md",
   "Dynkin types and Cartan matrices" => "types.md",
@@ -28,7 +36,7 @@ function build_html_docs()
     doctest=true,
     format=Documenter.HTML(;
       canonical="https://homogeneous.tools/Lie.jl/",
-      assets=["assets/analytics.js"],
+      assets=[PLAUSIBLE_HEAD],
     ),
   )
 end
