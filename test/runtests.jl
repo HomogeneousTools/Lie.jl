@@ -32,8 +32,21 @@ using LinearAlgebra: det
   # Invalid types
   @test_throws ArgumentError TypeA{0}()
   @test_throws ArgumentError TypeB{1}()
+  @test_throws ArgumentError TypeC{1}()
   @test_throws ArgumentError TypeD{3}()
   @test_throws ArgumentError TypeE{5}()
+  @test_throws ArgumentError rank(TypeA{0})
+  @test_throws ArgumentError rank(TypeB{1})
+  @test_throws ArgumentError rank(TypeC{1})
+  @test_throws ArgumentError rank(TypeD{3})
+  @test_throws ArgumentError rank(TypeE{9})
+  @test_throws ArgumentError n_positive_roots(TypeD{2})
+  @test_throws ArgumentError dimension(TypeA{0})
+  @test_throws ArgumentError cartan_matrix(TypeA{0})
+  @test_throws ArgumentError RootSystem(TypeB{1})
+  @test_throws ArgumentError WeightLatticeElem(TypeA{0}, Int[])
+  @test_throws ArgumentError fundamental_weight(TypeC{1}, 1)
+  @test_throws ArgumentError rank(ProductDynkinType{Tuple{TypeA{0},TypeG2}})
 
   # Display
   @test sprint(show, TypeA(3)) == "A3"

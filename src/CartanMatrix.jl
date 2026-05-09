@@ -12,12 +12,14 @@ export omega_bilinear_form_scaled, cartan_determinant
 
 # Runtime fallback for any DynkinType with rank ≥ 17 — avoids @generated stall
 function _cartan_matrix_runtime(::Type{DT}) where {DT<:DynkinType}
+  check_dynkin_type(DT)
   R = rank(DT)
   C = _cartan_matrix_data(DT)
   return SMatrix{R,R,Int,R*R}(Tuple(C[i, j] for j in 1:R for i in 1:R))
 end
 
 @generated function cartan_matrix(::Type{TypeA{N}}) where {N}
+  N >= 1 || return :(throw(ArgumentError($(_invalid_dynkin_type_message(TypeA{N})))))
   N >= 17 && return :(_cartan_matrix_runtime($(TypeA{N})))
   entries = Int[]
   for j in 1:N, i in 1:N
@@ -36,6 +38,7 @@ end
 # B_n: like A but C[n, n-1] = -2
 
 @generated function cartan_matrix(::Type{TypeB{N}}) where {N}
+  N >= 2 || return :(throw(ArgumentError($(_invalid_dynkin_type_message(TypeB{N})))))
   N >= 17 && return :(_cartan_matrix_runtime($(TypeB{N})))
   entries = Int[]
   for j in 1:N, i in 1:N
@@ -56,6 +59,7 @@ end
 # C_n: like A but C[n-1, n] = -2
 
 @generated function cartan_matrix(::Type{TypeC{N}}) where {N}
+  N >= 2 || return :(throw(ArgumentError($(_invalid_dynkin_type_message(TypeC{N})))))
   N >= 17 && return :(_cartan_matrix_runtime($(TypeC{N})))
   entries = Int[]
   for j in 1:N, i in 1:N
@@ -81,6 +85,7 @@ end
 #   C[n-1,n] = C[n,n-1] = 0
 
 @generated function cartan_matrix(::Type{TypeD{N}}) where {N}
+  N >= 4 || return :(throw(ArgumentError($(_invalid_dynkin_type_message(TypeD{N})))))
   N >= 17 && return :(_cartan_matrix_runtime($(TypeD{N})))
   entries = Int[]
   for j in 1:N, i in 1:N
@@ -122,6 +127,7 @@ function _E8_cartan()
 end
 
 @generated function cartan_matrix(::Type{TypeE{N}}) where {N}
+  N in (6, 7, 8) || return :(throw(ArgumentError($(_invalid_dynkin_type_message(TypeE{N})))))
   C8 = _E8_cartan()
   C = C8[1:N, 1:N]
   entries = Tuple(C[i, j] for j in 1:N for i in 1:N)
@@ -159,6 +165,7 @@ end
 
 # Helper to get raw matrix data at code-generation time
 function _cartan_matrix_data(::Type{TypeA{N}}) where {N}
+  check_dynkin_type(TypeA{N})
   C = zeros(Int, N, N)
   for i in 1:N
     C[i, i] = 2
@@ -171,18 +178,21 @@ function _cartan_matrix_data(::Type{TypeA{N}}) where {N}
 end
 
 function _cartan_matrix_data(::Type{TypeB{N}}) where {N}
+  check_dynkin_type(TypeB{N})
   C = _cartan_matrix_data(TypeA{N})
   C[N, N - 1] = -2
   return C
 end
 
 function _cartan_matrix_data(::Type{TypeC{N}}) where {N}
+  check_dynkin_type(TypeC{N})
   C = _cartan_matrix_data(TypeA{N})
   C[N - 1, N] = -2
   return C
 end
 
 function _cartan_matrix_data(::Type{TypeD{N}}) where {N}
+  check_dynkin_type(TypeD{N})
   C = zeros(Int, N, N)
   for i in 1:N
     C[i, i] = 2
@@ -199,6 +209,7 @@ function _cartan_matrix_data(::Type{TypeD{N}}) where {N}
 end
 
 function _cartan_matrix_data(::Type{TypeE{N}}) where {N}
+  check_dynkin_type(TypeE{N})
   C8 = _E8_cartan()
   return C8[1:N, 1:N]
 end
@@ -214,6 +225,7 @@ function _cartan_matrix_data(::Type{TypeG2})
 end
 
 function _cartan_matrix_data(::Type{ProductDynkinType{Ts}}) where {Ts}
+  check_dynkin_type(ProductDynkinType{Ts})
   types = Ts.parameters
   R = sum(rank(T) for T in types)
   C = zeros(Int, R, R)
@@ -360,6 +372,7 @@ cartan_symmetrizer(dt::DynkinType) = cartan_symmetrizer(typeof(dt))
 # ─── Symmetric bilinear form ────────────────────────────────────────────────
 
 function _cartan_bilinear_form_runtime(::Type{DT}) where {DT<:DynkinType}
+  check_dynkin_type(DT)
   R = rank(DT)
   C = _cartan_matrix_data_full(DT)
   d = collect(_cartan_symmetrizer_data(DT))
@@ -368,6 +381,7 @@ function _cartan_bilinear_form_runtime(::Type{DT}) where {DT<:DynkinType}
 end
 
 function _cartan_matrix_inverse_runtime(::Type{DT}) where {DT<:DynkinType}
+  check_dynkin_type(DT)
   R = rank(DT)
   C = Rational{Int}.(_cartan_matrix_data_full(DT))
   Cinv = inv(C)
@@ -375,6 +389,7 @@ function _cartan_matrix_inverse_runtime(::Type{DT}) where {DT<:DynkinType}
 end
 
 function _omega_bilinear_form_scaled_runtime(::Type{DT}) where {DT<:DynkinType}
+  check_dynkin_type(DT)
   R = rank(DT)
   C = Rational{Int}.(_cartan_matrix_data_full(DT))
   Cinv = inv(C)
@@ -556,10 +571,10 @@ julia> cartan_determinant(TypeG2)
 1
 ```
 """
-cartan_determinant(::Type{TypeA{N}}) where {N} = N + 1
-cartan_determinant(::Type{TypeB{N}}) where {N} = 2
-cartan_determinant(::Type{TypeC{N}}) where {N} = 2
-cartan_determinant(::Type{TypeD{N}}) where {N} = 4
+cartan_determinant(::Type{TypeA{N}}) where {N} = (check_dynkin_type(TypeA{N}); N + 1)
+cartan_determinant(::Type{TypeB{N}}) where {N} = (check_dynkin_type(TypeB{N}); 2)
+cartan_determinant(::Type{TypeC{N}}) where {N} = (check_dynkin_type(TypeC{N}); 2)
+cartan_determinant(::Type{TypeD{N}}) where {N} = (check_dynkin_type(TypeD{N}); 4)
 cartan_determinant(::Type{TypeE{6}}) = 3
 cartan_determinant(::Type{TypeE{7}}) = 2
 cartan_determinant(::Type{TypeE{8}}) = 1
@@ -567,6 +582,7 @@ cartan_determinant(::Type{TypeF4}) = 1
 cartan_determinant(::Type{TypeG2}) = 1
 
 function cartan_determinant(::Type{ProductDynkinType{Ts}}) where {Ts}
+  check_dynkin_type(ProductDynkinType{Ts})
   return prod(cartan_determinant, fieldtypes(Ts))
 end
 

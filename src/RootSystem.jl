@@ -189,6 +189,7 @@ const _root_system_cache = Dict{Type,Any}()
 const _root_system_lock = ReentrantLock()
 
 function RootSystem(::Type{DT}) where {DT<:DynkinType}
+  check_dynkin_type(DT)
   lock(_root_system_lock) do
     get!(_root_system_cache, DT) do
       R = rank(DT)
@@ -222,6 +223,7 @@ function _make_root_system_runtime(
 end
 
 function _make_root_system_runtime(::Type{DT}) where {DT<:DynkinType}
+  check_dynkin_type(DT)
   return _make_root_system_runtime(DT, Val(rank(DT)), Val(n_positive_roots(DT)))
 end
 
@@ -819,17 +821,19 @@ julia> coxeter_coefficients(TypeB{2})
  2
 ```
 """
-coxeter_coefficients(::Type{TypeA{N}}) where {N} = SVector{N,Int}(ntuple(_ -> 1, N))
+coxeter_coefficients(::Type{TypeA{N}}) where {N} =
+  (check_dynkin_type(TypeA{N}); SVector{N,Int}(ntuple(_ -> 1, N)))
 
 coxeter_coefficients(::Type{TypeB{N}}) where {N} = SVector{N,Int}(
-  ntuple(i -> i == 1 ? 1 : 2, Val(N))
+  (check_dynkin_type(TypeB{N}); ntuple(i -> i == 1 ? 1 : 2, Val(N)))
 )
 
 coxeter_coefficients(::Type{TypeC{N}}) where {N} = SVector{N,Int}(
-  ntuple(i -> i == N ? 1 : 2, Val(N))
+  (check_dynkin_type(TypeC{N}); ntuple(i -> i == N ? 1 : 2, Val(N)))
 )
 
 function coxeter_coefficients(::Type{TypeD{N}}) where {N}
+  check_dynkin_type(TypeD{N})
   if N == 2
     return SVector{2,Int}((1, 1))
   else
@@ -844,6 +848,7 @@ coxeter_coefficients(::Type{TypeF4}) = SVector{4,Int}((2, 3, 4, 2))
 coxeter_coefficients(::Type{TypeG2}) = SVector{2,Int}((3, 2))
 
 @generated function coxeter_coefficients(::Type{ProductDynkinType{Ts}}) where {Ts}
+  check_dynkin_type(ProductDynkinType{Ts})
   types = Ts.parameters
   all_coeffs = vcat([collect(coxeter_coefficients(T)) for T in types]...)
   R = length(all_coeffs)
@@ -883,10 +888,12 @@ julia> dual_coxeter_coefficients(TypeG2)
  2
 ```
 """
-dual_coxeter_coefficients(::Type{TypeA{N}}) where {N} = coxeter_coefficients(TypeA{N})
+dual_coxeter_coefficients(::Type{TypeA{N}}) where {N} =
+  (check_dynkin_type(TypeA{N}); coxeter_coefficients(TypeA{N}))
 
 # Dual of B_n is C_n; highest short root of C_n = e₁+e₂, coefficients [1,2,...,2,1]
 function dual_coxeter_coefficients(::Type{TypeB{N}}) where {N}
+  check_dynkin_type(TypeB{N})
   if N == 1
     return SVector{1,Int}((1,))
   elseif N == 2
@@ -898,10 +905,12 @@ end
 
 # Dual of C_n is B_n; highest short root of B_n = e₁ = α₁+...+αₙ, coefficients [1,...,1]
 function dual_coxeter_coefficients(::Type{TypeC{N}}) where {N}
+  check_dynkin_type(TypeC{N})
   return SVector{N,Int}(ntuple(_ -> 1, N))
 end
 
-dual_coxeter_coefficients(::Type{TypeD{N}}) where {N} = coxeter_coefficients(TypeD{N})
+dual_coxeter_coefficients(::Type{TypeD{N}}) where {N} =
+  (check_dynkin_type(TypeD{N}); coxeter_coefficients(TypeD{N}))
 dual_coxeter_coefficients(::Type{TypeE{6}}) = coxeter_coefficients(TypeE{6})
 dual_coxeter_coefficients(::Type{TypeE{7}}) = coxeter_coefficients(TypeE{7})
 dual_coxeter_coefficients(::Type{TypeE{8}}) = coxeter_coefficients(TypeE{8})
@@ -911,6 +920,7 @@ dual_coxeter_coefficients(::Type{TypeF4}) = SVector{4,Int}((1, 2, 3, 2))
 dual_coxeter_coefficients(::Type{TypeG2}) = SVector{2,Int}((1, 2))
 
 @generated function dual_coxeter_coefficients(::Type{ProductDynkinType{Ts}}) where {Ts}
+  check_dynkin_type(ProductDynkinType{Ts})
   types = Ts.parameters
   all_coeffs = vcat([dual_coxeter_coefficients(T) for T in types]...)
   R = length(all_coeffs)
@@ -1019,21 +1029,23 @@ julia> degrees_fundamental_invariants(TypeG2)
  6
 ```
 """
-degrees_fundamental_invariants(::Type{TypeA{N}}) where {N} = SVector{N,Int}(
-  Tuple(2:(N + 1))
-)
+degrees_fundamental_invariants(::Type{TypeA{N}}) where {N} =
+  (check_dynkin_type(TypeA{N}); SVector{N,Int}(Tuple(2:(N + 1))))
 
 # B_n and C_n: 2, 4, 6, ..., 2n
 function degrees_fundamental_invariants(::Type{TypeB{N}}) where {N}
+  check_dynkin_type(TypeB{N})
   return SVector{N,Int}(Tuple(2:2:(2N)))
 end
 
 function degrees_fundamental_invariants(::Type{TypeC{N}}) where {N}
+  check_dynkin_type(TypeC{N})
   return SVector{N,Int}(Tuple(2:2:(2N)))
 end
 
 # D_n: 2, 4, ..., 2(n-1), n
 function degrees_fundamental_invariants(::Type{TypeD{N}}) where {N}
+  check_dynkin_type(TypeD{N})
   return SVector{N,Int}(Tuple(vcat(collect(2:2:(2N - 2)), [N])))
 end
 
@@ -1046,6 +1058,7 @@ degrees_fundamental_invariants(::Type{TypeF4}) = SVector{4,Int}((2, 6, 8, 12))
 degrees_fundamental_invariants(::Type{TypeG2}) = SVector{2,Int}((2, 6))
 
 @generated function degrees_fundamental_invariants(::Type{ProductDynkinType{Ts}}) where {Ts}
+  check_dynkin_type(ProductDynkinType{Ts})
   types = Ts.parameters
   all_degrees = vcat([degrees_fundamental_invariants(T) for T in types]...)
   R = length(all_degrees)

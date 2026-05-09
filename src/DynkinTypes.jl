@@ -211,6 +211,7 @@ struct ProductDynkinType{Ts<:Tuple} <: DynkinType
     # Validate all components are SimpleDynkinType
     for T in Ts.parameters
       T <: SimpleDynkinType || throw(ArgumentError("$T is not a SimpleDynkinType"))
+      check_dynkin_type(T)
     end
     new{Ts}()
   end
@@ -224,6 +225,51 @@ Convenience constructor for product types from instances.
 function ProductDynkinType(types::SimpleDynkinType...)
   Ts = Tuple{typeof.(types)...}
   return ProductDynkinType{Ts}()
+end
+
+# ─── Type-level validation ─────────────────────────────────────────────────────
+
+is_valid_dynkin_type(::Type{TypeA{N}}) where {N} = N >= 1
+is_valid_dynkin_type(::Type{TypeB{N}}) where {N} = N >= 2
+is_valid_dynkin_type(::Type{TypeC{N}}) where {N} = N >= 2
+is_valid_dynkin_type(::Type{TypeD{N}}) where {N} = N >= 4
+is_valid_dynkin_type(::Type{TypeE{N}}) where {N} = N in (6, 7, 8)
+is_valid_dynkin_type(::Type{TypeF4}) = true
+is_valid_dynkin_type(::Type{TypeG2}) = true
+
+function is_valid_dynkin_type(::Type{ProductDynkinType{Ts}}) where {Ts}
+  all(T <: SimpleDynkinType && is_valid_dynkin_type(T) for T in Ts.parameters)
+end
+
+_invalid_dynkin_type_message(::Type{TypeA{N}}) where {N} =
+  "TypeA{$N} requires N ≥ 1, got N=$N"
+_invalid_dynkin_type_message(::Type{TypeB{N}}) where {N} =
+  "TypeB{$N} requires N ≥ 2, got N=$N"
+_invalid_dynkin_type_message(::Type{TypeC{N}}) where {N} =
+  "TypeC{$N} requires N ≥ 2, got N=$N"
+_invalid_dynkin_type_message(::Type{TypeD{N}}) where {N} =
+  "TypeD{$N} requires N ≥ 4, got N=$N"
+_invalid_dynkin_type_message(::Type{TypeE{N}}) where {N} =
+  "TypeE{$N} requires N ∈ {6,7,8}, got N=$N"
+_invalid_dynkin_type_message(::Type{TypeF4}) = "TypeF4 is valid"
+_invalid_dynkin_type_message(::Type{TypeG2}) = "TypeG2 is valid"
+
+function _invalid_dynkin_type_message(::Type{ProductDynkinType{Ts}}) where {Ts}
+  problems = String[]
+  for T in Ts.parameters
+    if !(T <: SimpleDynkinType)
+      push!(problems, "$T is not a SimpleDynkinType")
+    elseif !is_valid_dynkin_type(T)
+      push!(problems, _invalid_dynkin_type_message(T))
+    end
+  end
+  isempty(problems) && return "Invalid ProductDynkinType{$Ts}"
+  return "Invalid ProductDynkinType component(s): $(join(problems, "; "))"
+end
+
+@inline function check_dynkin_type(::Type{DT}) where {DT<:DynkinType}
+  is_valid_dynkin_type(DT) || throw(ArgumentError(_invalid_dynkin_type_message(DT)))
+  return DT
 end
 
 # ─── Rank ────────────────────────────────────────────────────────────────────
@@ -245,15 +291,16 @@ julia> rank(TypeE{8})
 8
 ```
 """
-rank(::Type{TypeA{N}}) where {N} = N
-rank(::Type{TypeB{N}}) where {N} = N
-rank(::Type{TypeC{N}}) where {N} = N
-rank(::Type{TypeD{N}}) where {N} = N
-rank(::Type{TypeE{N}}) where {N} = N
+rank(::Type{TypeA{N}}) where {N} = (check_dynkin_type(TypeA{N}); N)
+rank(::Type{TypeB{N}}) where {N} = (check_dynkin_type(TypeB{N}); N)
+rank(::Type{TypeC{N}}) where {N} = (check_dynkin_type(TypeC{N}); N)
+rank(::Type{TypeD{N}}) where {N} = (check_dynkin_type(TypeD{N}); N)
+rank(::Type{TypeE{N}}) where {N} = (check_dynkin_type(TypeE{N}); N)
 rank(::Type{TypeF4}) = 4
 rank(::Type{TypeG2}) = 2
 
 function rank(::Type{ProductDynkinType{Ts}}) where {Ts}
+  check_dynkin_type(ProductDynkinType{Ts})
   return sum(rank, fieldtypes(Ts))
 end
 
@@ -278,10 +325,10 @@ julia> n_positive_roots(TypeE{8})
 120
 ```
 """
-n_positive_roots(::Type{TypeA{N}}) where {N} = N * (N + 1) ÷ 2
-n_positive_roots(::Type{TypeB{N}}) where {N} = N^2
-n_positive_roots(::Type{TypeC{N}}) where {N} = N^2
-n_positive_roots(::Type{TypeD{N}}) where {N} = N * (N - 1)
+n_positive_roots(::Type{TypeA{N}}) where {N} = (check_dynkin_type(TypeA{N}); N * (N + 1) ÷ 2)
+n_positive_roots(::Type{TypeB{N}}) where {N} = (check_dynkin_type(TypeB{N}); N^2)
+n_positive_roots(::Type{TypeC{N}}) where {N} = (check_dynkin_type(TypeC{N}); N^2)
+n_positive_roots(::Type{TypeD{N}}) where {N} = (check_dynkin_type(TypeD{N}); N * (N - 1))
 n_positive_roots(::Type{TypeE{6}}) = 36
 n_positive_roots(::Type{TypeE{7}}) = 63
 n_positive_roots(::Type{TypeE{8}}) = 120
@@ -289,6 +336,7 @@ n_positive_roots(::Type{TypeF4}) = 24
 n_positive_roots(::Type{TypeG2}) = 6
 
 function n_positive_roots(::Type{ProductDynkinType{Ts}}) where {Ts}
+  check_dynkin_type(ProductDynkinType{Ts})
   return sum(n_positive_roots, fieldtypes(Ts))
 end
 
@@ -340,6 +388,7 @@ julia> n_components(ProductDynkinType{Tuple{TypeA{2}, TypeB{2}}})
 ```
 """
 function n_components(::Type{ProductDynkinType{Ts}}) where {Ts}
+  check_dynkin_type(ProductDynkinType{Ts})
   return length(fieldtypes(Ts))
 end
 
@@ -365,6 +414,7 @@ TypeB{2}
 ```
 """
 function component_type(::Type{ProductDynkinType{Ts}}, i::Integer) where {Ts}
+  check_dynkin_type(ProductDynkinType{Ts})
   return fieldtypes(Ts)[i]
 end
 
@@ -382,6 +432,7 @@ julia> component_ranks(ProductDynkinType{Tuple{TypeA{2}, TypeB{3}}})
 ```
 """
 function component_ranks(::Type{ProductDynkinType{Ts}}) where {Ts}
+  check_dynkin_type(ProductDynkinType{Ts})
   return map(rank, fieldtypes(Ts))
 end
 
@@ -400,6 +451,7 @@ julia> component_offsets(ProductDynkinType{Tuple{TypeA{2}, TypeB{3}}})
 ```
 """
 function component_offsets(::Type{ProductDynkinType{Ts}}) where {Ts}
+  check_dynkin_type(ProductDynkinType{Ts})
   rs = map(rank, fieldtypes(Ts))
   return ntuple(i -> i == 1 ? 0 : sum(rs[j] for j in 1:(i - 1)), length(rs))
 end
@@ -480,12 +532,14 @@ julia> dynkin_diagram(TypeG2)
 ```
 """
 function dynkin_diagram(::Type{TypeA{N}}) where {N}
+  check_dynkin_type(TypeA{N})
   nodes = join(fill("○", N), "───")
   labels = join([lpad(string(i), 1) for i in 1:N], "   ")
   return DynkinDiagram(nodes * "\n" * labels)
 end
 
 function dynkin_diagram(::Type{TypeB{N}}) where {N}
+  check_dynkin_type(TypeB{N})
   # B_n: ○───○───…───○=>=○  (double bond with arrow to last)
   if N == 2
     nodes = "○═>═○"
@@ -497,6 +551,7 @@ function dynkin_diagram(::Type{TypeB{N}}) where {N}
 end
 
 function dynkin_diagram(::Type{TypeC{N}}) where {N}
+  check_dynkin_type(TypeC{N})
   # C_n: ○───○───…───○=<=○  (double bond with arrow from last)
   if N == 2
     nodes = "○═<═○"
@@ -508,6 +563,7 @@ function dynkin_diagram(::Type{TypeC{N}}) where {N}
 end
 
 function dynkin_diagram(::Type{TypeD{N}}) where {N}
+  check_dynkin_type(TypeD{N})
   # D_n: linear chain 1..N-2, then fork to N-1 and N at node N-2
   # Bourbaki layout:
   #          ○ N
@@ -527,6 +583,7 @@ function dynkin_diagram(::Type{TypeD{N}}) where {N}
 end
 
 function dynkin_diagram(::Type{TypeE{N}}) where {N}
+  check_dynkin_type(TypeE{N})
   # E_n (n=6,7,8): linear chain 1,3,4,5,...,n with node 2 branching from node 4
   # Bourbaki:
   #         ○ 2
@@ -553,6 +610,7 @@ function dynkin_diagram(::Type{TypeG2})
 end
 
 function dynkin_diagram(::Type{ProductDynkinType{Ts}}) where {Ts}
+  check_dynkin_type(ProductDynkinType{Ts})
   diagrams = [dynkin_diagram(T).str for T in Ts.parameters]
   labels = [_type_name(T) for T in Ts.parameters]
   parts = [labels[i] * ":\n" * diagrams[i] for i in eachindex(diagrams)]

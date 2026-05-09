@@ -54,6 +54,7 @@ Weyl group of type A2
 ```
 """
 function weyl_group(::Type{DT}) where {DT<:DynkinType}
+  check_dynkin_type(DT)
   RS = RootSystem(DT)
   return WeylGroup{DT,rank(DT)}(RS)
 end
@@ -611,10 +612,13 @@ julia> weyl_order(TypeE{8})
 696729600
 ```
 """
-weyl_order(::Type{TypeA{N}}) where {N} = factorial(BigInt(N + 1))
-weyl_order(::Type{TypeB{N}}) where {N} = factorial(BigInt(N)) * BigInt(2)^N
-weyl_order(::Type{TypeC{N}}) where {N} = factorial(BigInt(N)) * BigInt(2)^N
-weyl_order(::Type{TypeD{N}}) where {N} = factorial(BigInt(N)) * BigInt(2)^(N - 1)
+weyl_order(::Type{TypeA{N}}) where {N} = (check_dynkin_type(TypeA{N}); factorial(BigInt(N + 1)))
+weyl_order(::Type{TypeB{N}}) where {N} =
+  (check_dynkin_type(TypeB{N}); factorial(BigInt(N)) * BigInt(2)^N)
+weyl_order(::Type{TypeC{N}}) where {N} =
+  (check_dynkin_type(TypeC{N}); factorial(BigInt(N)) * BigInt(2)^N)
+weyl_order(::Type{TypeD{N}}) where {N} =
+  (check_dynkin_type(TypeD{N}); factorial(BigInt(N)) * BigInt(2)^(N - 1))
 weyl_order(::Type{TypeE{6}}) = BigInt(51840)
 weyl_order(::Type{TypeE{7}}) = BigInt(2903040)
 weyl_order(::Type{TypeE{8}}) = BigInt(696729600)
@@ -622,6 +626,7 @@ weyl_order(::Type{TypeF4}) = BigInt(1152)
 weyl_order(::Type{TypeG2}) = BigInt(12)
 
 function weyl_order(::Type{ProductDynkinType{Ts}}) where {Ts}
+  check_dynkin_type(ProductDynkinType{Ts})
   return prod(weyl_order(T) for T in Ts.parameters)
 end
 
