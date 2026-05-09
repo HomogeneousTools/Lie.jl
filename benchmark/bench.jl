@@ -78,7 +78,7 @@ end
 #  1. Apply longest Weyl element to all positive roots
 # ═══════════════════════════════════════════════════════════════════════════════
 
-header("1. w₀ action on all positive roots")
+header("1. Warm: w₀ action on all positive roots")
 
 function bench_w0_on_roots(::Type{DT}) where {DT}
   W = weyl_group(DT)
@@ -92,14 +92,14 @@ for DT in [TypeA{4}, TypeA{6}, TypeB{4}, TypeB{6}, TypeC{5}, TypeD{5}, TypeD{7},
   bench_w0_on_roots(DT)
   b = @benchmark bench_w0_on_roots($DT) evals = 1 samples = 300
   report("$(sprint(show,DT())): w₀ · $(n_positive_roots(DT)) roots", b;
-    category="w0_action")
+    category="warm_w0_action")
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  2. conjugate_dominant_weight over a box of weights
 # ═══════════════════════════════════════════════════════════════════════════════
 
-header("2. conjugate_dominant_weight on a box of weights")
+header("2. Warm: conjugate_dominant_weight on a box of weights")
 
 function bench_conj_dom_box(::Type{DT}, bound) where {DT}
   R = rank(DT)
@@ -120,14 +120,14 @@ for (DT, bound) in [(TypeA{3}, 5), (TypeA{4}, 3), (TypeB{3}, 5), (TypeB{4}, 3),
   bench_conj_dom_box(DT, bound)
   b = @benchmark bench_conj_dom_box($DT, $bound) evals = 1 samples = 50
   report("$(sprint(show,DT())): box [-$bound,$bound]^$R ($n wts)", b;
-    category="conj_dom_weight")
+    category="warm_conj_dom_weight")
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  3. Weyl orbit of interesting weights
 # ═══════════════════════════════════════════════════════════════════════════════
 
-header("3. Weyl orbit computation")
+header("3. Warm: Weyl orbit computation")
 
 function bench_weyl_orbit(::Type{DT}, coords) where {DT}
   R = rank(DT)
@@ -157,14 +157,14 @@ for (DT, coords, label) in orbit_cases
   orb = bench_weyl_orbit(DT, coords)
   b = @benchmark bench_weyl_orbit($DT, $coords) evals = 1 samples = 50
   report("$(sprint(show,DT())): orbit($label), |W·λ|=$(length(orb))", b;
-    category="weyl_orbit")
+    category="warm_weyl_orbit")
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  4. Weyl dimension formula
 # ═══════════════════════════════════════════════════════════════════════════════
 
-header("4. Weyl dimension formula")
+header("4. Warm: Weyl dimension formula")
 
 function bench_degree_fund(::Type{DT}) where {DT}
   R = rank(DT)
@@ -176,7 +176,7 @@ for DT in [TypeA{4}, TypeA{6}, TypeA{8}, TypeB{4}, TypeB{5}, TypeC{4}, TypeC{5},
   bench_degree_fund(DT)
   b = @benchmark bench_degree_fund($DT) evals = 1 samples = 500
   report("$(sprint(show,DT())): degree(ωᵢ), i=1…$(rank(DT))", b;
-    category="dimension_formula")
+    category="warm_dimension_formula")
 end
 
 # High-weight representations
@@ -210,14 +210,14 @@ for (DT, coords, label) in hw_cases
   b = @benchmark bench_degree_hw($DT, $coords) evals = 1 samples = 500
   ds = d < 10^15 ? string(d) : "≈10^$(round(log10(Float64(d)), digits=1))"
   report("$(sprint(show,DT())): degree($label) = $ds", b;
-    category="dimension_formula")
+    category="warm_dimension_formula")
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  5. Freudenthal formula (weight multiplicities)
 # ═══════════════════════════════════════════════════════════════════════════════
 
-header("5. Freudenthal formula")
+header("5. Cold: Freudenthal formula")
 
 function bench_freudenthal(::Type{DT}, coords) where {DT}
   R = rank(DT)
@@ -264,14 +264,14 @@ for (DT, coords, label) in freudenthal_cases
   bench_freudenthal(DT, coords)
   nsamp = get(freudenthal_samples, (DT, coords), 50)
   b = @benchmark bench_freudenthal($DT, $coords) evals = 1 samples = nsamp
-  report("$(sprint(show,DT())): $label", b; category="freudenthal")
+  report("$(sprint(show,DT())): $label", b; category="cold_freudenthal")
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  6. Tensor product decomposition
 # ═══════════════════════════════════════════════════════════════════════════════
 
-header("6. Tensor product decomposition")
+header("6. Cold: Tensor product decomposition")
 
 function bench_tensor(::Type{DT}, c1, c2) where {DT}
   R = rank(DT)
@@ -305,14 +305,14 @@ for (DT, c1, c2, label) in tensor_cases
   b = @benchmark bench_tensor($DT, $c1, $c2) evals = 1 samples = 20
   tp = bench_tensor(DT, c1, c2)
   report("$(sprint(show,DT())): $label → $(length(tp.terms)) irreps", b;
-    category="tensor_product")
+    category="cold_tensor_product")
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  7. Littlewood–Richardson vs Brauer–Klimyk (Type A tensor products)
 # ═══════════════════════════════════════════════════════════════════════════════
 
-header("7. Littlewood–Richardson vs Brauer–Klimyk (Type A)")
+header("7. Warm LR vs cold Brauer–Klimyk (Type A)")
 
 function bench_lr(::Type{TypeA{N}}, c1, c2) where {N}
   λ = WeightLatticeElem(TypeA{N}, SVector{N,Int}(Tuple(c1)))
@@ -358,8 +358,8 @@ for (DT, c1, c2, label) in lr_bk_cases
   t_bk = minimum(b_bk).time / 1e3
   speedup = t_bk / t_lr
 
-  report("$(sprint(show,DT())): LR  $label", b_lr; category="lr_vs_bk")
-  report("$(sprint(show,DT())): BK  $label", b_bk; category="lr_vs_bk",
+  report("$(sprint(show,DT())): LR  $label", b_lr; category="warm_lr_tensor_product")
+  report("$(sprint(show,DT())): BK  $label", b_bk; category="cold_bk_tensor_product",
     extra=@sprintf("speedup: %.1f×", speedup))
 end
 
@@ -367,7 +367,7 @@ end
 #  8. Exterior and symmetric powers
 # ═══════════════════════════════════════════════════════════════════════════════
 
-header("8. Exterior and symmetric powers")
+header("8. Cold: Exterior and symmetric powers")
 
 function bench_exterior(::Type{DT}, coords, k) where {DT}
   R = rank(DT)
@@ -413,7 +413,7 @@ for (DT, coords, k, label) in ext_cases
   b = @benchmark bench_exterior($DT, $coords, $k) evals = 1 samples = 10
   r = bench_exterior(DT, coords, k)
   report("$(sprint(show,DT())): $label → $(length(r.terms)) irreps", b;
-    category="exterior_power")
+    category="cold_exterior_power")
 end
 
 sym_cases = [
@@ -440,14 +440,14 @@ for (DT, coords, k, label) in sym_cases
   b = @benchmark bench_symmetric($DT, $coords, $k) evals = 1 samples = 10
   r = bench_symmetric(DT, coords, k)
   report("$(sprint(show,DT())): $label → $(length(r.terms)) irreps", b;
-    category="symmetric_power")
+    category="cold_symmetric_power")
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  9. Borel–Weil–Bott
 # ═══════════════════════════════════════════════════════════════════════════════
 
-header("9. Borel–Weil–Bott theorem")
+header("9. Warm: Borel–Weil–Bott theorem")
 
 # ─── Box benchmark (like conjugate_dominant_weight) ──────────────────────────
 
@@ -476,7 +476,8 @@ for (DT, bound) in bwb_box_cases
   n = (2 * bound + 1)^R
   bench_bwb_box(DT, bound)
   b = @benchmark bench_bwb_box($DT, $bound) evals = 1 samples = 30
-  report("$(sprint(show,DT())): box [-$bound,$bound]^$R ($n wts)", b; category="bwb")
+  report("$(sprint(show,DT())): box [-$bound,$bound]^$R ($n wts)", b;
+    category="warm_bwb")
 end
 
 # ─── Deep non-dominant weights ───────────────────────────────────────────────
@@ -513,14 +514,14 @@ for (DT, n, scale, label) in bwb_deep_cases
   weights = make_deep_weights(DT, n, scale)
   bench_bwb_deep(DT, weights)
   b = @benchmark bench_bwb_deep($DT, $weights) evals = 1 samples = 50
-  report("$(sprint(show,DT())): $label", b; category="bwb")
+  report("$(sprint(show,DT())): $label", b; category="warm_bwb")
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  10. Plethysm
 # ═══════════════════════════════════════════════════════════════════════════════
 
-header("10. Plethysm")
+header("10. Cold: Plethysm")
 
 function bench_plethysm(::Type{DT}, coords, partition) where {DT}
   R = rank(DT)
@@ -558,14 +559,14 @@ for (DT, coords, partition, label) in plethysm_cases
   b = @benchmark bench_plethysm($DT, $coords, $partition) evals = 1 samples = 10
   r = bench_plethysm(DT, coords, partition)
   report("$(sprint(show,DT())): $label → $(length(r.terms)) irreps", b;
-    category="plethysm")
+    category="cold_plethysm")
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  11. Adams operator
 # ═══════════════════════════════════════════════════════════════════════════════
 
-header("11. Adams operator")
+header("11. Warm: Adams operator")
 
 function bench_adams(::Type{DT}, coords, k) where {DT}
   R = rank(DT)
@@ -591,14 +592,14 @@ adams_cases = [
 for (DT, coords, k, label) in adams_cases
   r = bench_adams(DT, coords, k)
   b = @benchmark bench_adams($DT, $coords, $k) evals = 1 samples = 30
-  report("$(sprint(show,DT())): $label ($(length(r)) wts)", b; category="adams")
+  report("$(sprint(show,DT())): $label ($(length(r)) wts)", b; category="warm_adams")
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  12. character_from_weights
 # ═══════════════════════════════════════════════════════════════════════════════
 
-header("12. character_from_weights (peeling decomposition)")
+header("12. Warm: character_from_weights (peeling decomposition)")
 
 function bench_cfw(::Type{DT}, coords) where {DT}
   R = rank(DT)
@@ -625,7 +626,7 @@ for (DT, coords, label) in cfw_cases
   r = bench_cfw(DT, coords)
   b = @benchmark bench_cfw($DT, $coords) evals = 1 samples = 20
   report("$(sprint(show,DT())): $label → $(length(r.terms)) irreps", b;
-    category="character_from_weights")
+    category="warm_character_from_weights")
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════
