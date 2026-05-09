@@ -212,7 +212,7 @@ end
   hsr_A2 = highest_short_root(RS_A2)
   @test coefficients(hsr_A2) == coefficients(hr)
 
-  # For G2: short roots have length² = 2; highest is 2alpha1+α2
+  # For G2: short roots have length² = 2; highest is 2α1+α2
   RS_G2 = RootSystem(TypeG2)
   hsr_G2 = highest_short_root(RS_G2)
   @test coefficients(hsr_G2) == [2, 1]
@@ -392,14 +392,14 @@ end
   RS = RootSystem(DT)
   α1 = simple_root(RS, 1)
   w_α1 = WeightLatticeElem(α1)
-  @test w_α1 == WeightLatticeElem(DT, [2, -1])  # α1 = 2omega1 - ω2
+  @test w_α1 == WeightLatticeElem(DT, [2, -1])  # α1 = 2ω1 - ω2
   @test_throws ArgumentError RootSpaceElem(ω1)
 
   # Reflection
   w = WeightLatticeElem(DT, [2, 1])
   w_reflected = reflect(w, 1)
   @test w_reflected == WeightLatticeElem(DT, [-2, 3])
-  # s1(2omega1 + ω2) = (2omega1 + ω2) - 2*(α1) = (2omega1 + ω2) - 2*(2omega1 - ω2) = -2omega1 + 3omega2
+  # s1(2ω1 + ω2) = (2ω1 + ω2) - 2*(α1) = (2ω1 + ω2) - 2*(2ω1 - ω2) = -2ω1 + 3ω2
   @test_throws ArgumentError reflect(w, RootSpaceElem(DT, [2, 0]))
 
   # Conjugation to dominant chamber
@@ -689,7 +689,7 @@ end
     end
   end
 
-  # E8: high-dimensional representation 3omega3 + 5omega8
+  # E8: high-dimensional representation 3ω3 + 5ω8
   @test degree(WeightLatticeElem(TypeE{8}, [0, 0, 3, 0, 0, 0, 0, 5])) ==
     big"18190674254761844256000000"
 
@@ -708,7 +708,7 @@ end
   @test hw in dw
   @test WeightLatticeElem(TypeA{2}, [0, 0]) in dw
 
-  # A1, hw = 3omega1: dominant weights are 3ω, ω
+  # A1, hw = 3ω1: dominant weights are 3ω, ω
   hw1 = WeightLatticeElem(TypeA{1}, [3])
   dw1 = dominant_weights(hw1)
   @test length(dw1) == 2
@@ -1060,7 +1060,7 @@ end
 
   # ─── Tensor products ─────────────────────────────────────────────
   @testset "Tensor products" begin
-    # A2: V(ω1) ⊗ V(ω1) = V(2omega1) + V(ω2)
+    # A2: V(ω1) ⊗ V(ω1) = V(2ω1) + V(ω2)
     ω1 = fundamental_weight(TypeA{2}, 1)
     ω2 = fundamental_weight(TypeA{2}, 2)
     V1 = WeylCharacter(ω1)
@@ -1073,7 +1073,7 @@ end
       WeylCharacter(ω1 + ω2) +
           WeylCharacter(WeightLatticeElem(TypeA{2}, SVector(0, 0)))
 
-    # B2: V(ω1) ⊗ V(ω1) = V(2omega1) + V(ω2) + V(0) (dims: 25 = 14+10+1)
+    # B2: V(ω1) ⊗ V(ω1) = V(2ω1) + V(ω2) + V(0) (dims: 25 = 14+10+1)
     ω1_b = fundamental_weight(TypeB{2}, 1)
     ω2_b = fundamental_weight(TypeB{2}, 2)
     tp_b = WeylCharacter(ω1_b) * WeylCharacter(ω1_b)
@@ -1088,7 +1088,7 @@ end
     # Tensor product of virtual (non-effective) characters
     # V(ω1) - V(ω2) tensored with V(ω1):
     # = V(ω1) ⊗ V(ω1) - V(ω2) ⊗ V(ω1)
-    # = [V(2omega1) + V(ω2)] - [V(ω1+ω2) + V(0)]
+    # = [V(2ω1) + V(ω2)] - [V(ω1+ω2) + V(0)]
     virtual = WeylCharacter(ω1) - WeylCharacter(ω2)
     @test !is_effective(virtual)
     tp_virt = virtual * WeylCharacter(ω1)
@@ -1115,24 +1115,24 @@ end
     # A1: simplest case
     ω1_a1 = fundamental_weight(TypeA{1}, 1)
     @test lr_tensor_product(ω1_a1, ω1_a1) == bk_tensor(ω1_a1, ω1_a1)
-    @test lr_tensor_product(2omega1_a1, ω1_a1) == bk_tensor(2omega1_a1, ω1_a1)
-    @test lr_tensor_product(3omega1_a1, 2omega1_a1) == bk_tensor(3omega1_a1, 2omega1_a1)
+    @test lr_tensor_product(2ω1_a1, ω1_a1) == bk_tensor(2ω1_a1, ω1_a1)
+    @test lr_tensor_product(3ω1_a1, 2ω1_a1) == bk_tensor(3ω1_a1, 2ω1_a1)
 
     # A2: comprehensive tests
     ω1 = fundamental_weight(TypeA{2}, 1)
     ω2 = fundamental_weight(TypeA{2}, 2)
     z = WeightLatticeElem(TypeA{2}, SVector(0, 0))
 
-    @test lr_tensor_product(ω1, ω1) == WeylCharacter(2omega1) + WeylCharacter(ω2)
+    @test lr_tensor_product(ω1, ω1) == WeylCharacter(2ω1) + WeylCharacter(ω2)
     @test lr_tensor_product(ω1, ω2) == WeylCharacter(ω1 + ω2) + WeylCharacter(z)
-    @test lr_tensor_product(ω2, ω2) == WeylCharacter(2omega2) + WeylCharacter(ω1)
+    @test lr_tensor_product(ω2, ω2) == WeylCharacter(2ω2) + WeylCharacter(ω1)
     @test lr_tensor_product(ω1 + ω2, ω1) == bk_tensor(ω1 + ω2, ω1)
     @test lr_tensor_product(ω1 + ω2, ω2) == bk_tensor(ω1 + ω2, ω2)
     @test lr_tensor_product(ω1 + ω2, ω1 + ω2) == bk_tensor(ω1 + ω2, ω1 + ω2)
-    @test lr_tensor_product(2omega1, ω1) == bk_tensor(2omega1, ω1)
-    @test lr_tensor_product(2omega1, ω2) == bk_tensor(2omega1, ω2)
-    @test lr_tensor_product(2omega1, 2omega1) == bk_tensor(2omega1, 2omega1)
-    @test lr_tensor_product(3omega1, ω2) == bk_tensor(3omega1, ω2)
+    @test lr_tensor_product(2ω1, ω1) == bk_tensor(2ω1, ω1)
+    @test lr_tensor_product(2ω1, ω2) == bk_tensor(2ω1, ω2)
+    @test lr_tensor_product(2ω1, 2ω1) == bk_tensor(2ω1, 2ω1)
+    @test lr_tensor_product(3ω1, ω2) == bk_tensor(3ω1, ω2)
 
     # Edge case: tensor with trivial
     @test lr_tensor_product(ω1, z) == WeylCharacter(ω1)
@@ -1183,7 +1183,7 @@ end
     # Commutativity: LR(λ, μ) == LR(μ, λ)
     @test lr_tensor_product(ω1, ω2) == lr_tensor_product(ω2, ω1)
     @test lr_tensor_product(ω[1], ω[3]) == lr_tensor_product(ω[3], ω[1])
-    @test lr_tensor_product(2omega1, ω2) == lr_tensor_product(ω2, 2omega1)
+    @test lr_tensor_product(2ω1, ω2) == lr_tensor_product(ω2, 2ω1)
 
     # tensor_product dispatches to LR for TypeA
     empty!(Lie._tensor_cache)
@@ -1326,11 +1326,11 @@ end
 
   # ─── Symmetric powers ───────────────────────────────────────────
   @testset "Symmetric powers" begin
-    # A2: Sym²V(ω1) = V(2omega1)
+    # A2: Sym²V(ω1) = V(2ω1)
     ω1 = fundamental_weight(TypeA{2}, 1)
     @test Sym(2, ω1) == WeylCharacter(2 * ω1)
 
-    # A2: Sym³V(ω1) = V(3omega1)
+    # A2: Sym³V(ω1) = V(3ω1)
     @test Sym(3, ω1) == WeylCharacter(3 * ω1)
 
     # Sym⁰ = trivial, Sym¹ = identity
@@ -1432,7 +1432,7 @@ end
     r3 = ⋀(5, ω[8])
     @test length(r3.terms) == 12
 
-    # ⋀²V(2omega8): 7 irreducibles
+    # ⋀²V(2ω8): 7 irreducibles
     r4 = ⋀(2, 2 * ω[8])
     @test length(r4.terms) == 7
   end
@@ -1574,28 +1574,28 @@ end
 
   # ─── Proposition 2: exceptional types, A2, and B2 ───────────────
   @testset "Proposition 2" begin
-    # A2: V(ω1+2omega2) and V(4omega2) both have degree 15
+    # A2: V(ω1+2ω2) and V(4ω2) both have degree 15
     @test degree(WeightLatticeElem(TypeA{2}, [1, 2])) == 15
     @test degree(WeightLatticeElem(TypeA{2}, [0, 4])) == 15
 
-    # B2: V(ω1+2omega2) and V(4omega2) both have degree 35
+    # B2: V(ω1+2ω2) and V(4ω2) both have degree 35
     @test degree(WeightLatticeElem(TypeB{2}, [1, 2])) == 35
     @test degree(WeightLatticeElem(TypeB{2}, [0, 4])) == 35
 
-    # G2: V(3omega1) and V(2omega2) both have degree 77
+    # G2: V(3ω1) and V(2ω2) both have degree 77
     # The paper uses the opposite labeling to Bourbaki for G2 (ω1 ↔ ω2).
     @test degree(WeightLatticeElem(TypeG2, [3, 0])) == 77
     @test degree(WeightLatticeElem(TypeG2, [0, 2])) == 77
 
-    # F4: V(ω1+ω4) and V(2omega1) both have degree 1053
+    # F4: V(ω1+ω4) and V(2ω1) both have degree 1053
     @test degree(WeightLatticeElem(TypeF4, [1, 0, 0, 1])) == 1053
     @test degree(WeightLatticeElem(TypeF4, [2, 0, 0, 0])) == 1053
 
-    # E6: V(2omega1) and V(ω3) both have degree 351
+    # E6: V(2ω1) and V(ω3) both have degree 351
     @test degree(WeightLatticeElem(TypeE{6}, [2, 0, 0, 0, 0, 0])) == 351
     @test degree(WeightLatticeElem(TypeE{6}, [0, 0, 1, 0, 0, 0])) == 351
 
-    # E7: V(ω4+ω5) and V(2omega6+3omega7) both have degree 1903725824
+    # E7: V(ω4+ω5) and V(2ω6+3ω7) both have degree 1903725824
     @test degree(WeightLatticeElem(TypeE{7}, [0, 0, 0, 1, 1, 0, 0])) ==
       1903725824
     @test degree(WeightLatticeElem(TypeE{7}, [0, 0, 0, 0, 0, 2, 3])) ==
@@ -2123,7 +2123,7 @@ end
     # Zero character
     @test degree(V1 - V1) == 0
 
-    # A2: V(ω1+ω2) = adjoint (8), V(2omega1) = Sym² (6)
+    # A2: V(ω1+ω2) = adjoint (8), V(2ω1) = Sym² (6)
     adj = WeylCharacter(WeightLatticeElem(TypeA{2}, [1, 1]))
     sym2 = WeylCharacter(WeightLatticeElem(TypeA{2}, [2, 0]))
     @test degree(adj - sym2) == 2           # 8 - 6 = 2
@@ -2131,20 +2131,20 @@ end
     @test degree(adj - sym2 + V1) == 5      # 2 + 3 = 5
     @test degree(3 * adj - 2 * sym2) == 12  # 24 - 12 = 12
 
-    # B2: V(ω1)=5, V(ω2)=4, V(ω1+ω2)=16, V(2omega1)=14
-    b2omega1 = fundamental_weight(TypeB{2}, 1)
-    b2omega2 = fundamental_weight(TypeB{2}, 2)
-    W1 = WeylCharacter(b2omega1)   # dim 5
-    W2 = WeylCharacter(b2omega2)   # dim 4
+    # B2: V(ω1)=5, V(ω2)=4, V(ω1+ω2)=16, V(2ω1)=14
+    b2ω1 = fundamental_weight(TypeB{2}, 1)
+    b2ω2 = fundamental_weight(TypeB{2}, 2)
+    W1 = WeylCharacter(b2ω1)   # dim 5
+    W2 = WeylCharacter(b2ω2)   # dim 4
     @test degree(W1 - W2) == 1             # 5 - 4 = 1
     @test degree(W2 - W1) == -1            # 4 - 5 = -1
     @test degree(2 * W1 - 3 * W2) == -2   # 10 - 12 = -2
 
     # G2: V(ω1)=7, V(ω2)=14
-    g2omega1 = fundamental_weight(TypeG2, 1)
-    g2omega2 = fundamental_weight(TypeG2, 2)
-    G1 = WeylCharacter(g2omega1)   # dim 7
-    G2char = WeylCharacter(g2omega2)  # dim 14
+    g2ω1 = fundamental_weight(TypeG2, 1)
+    g2ω2 = fundamental_weight(TypeG2, 2)
+    G1 = WeylCharacter(g2ω1)   # dim 7
+    G2char = WeylCharacter(g2ω2)  # dim 14
     @test degree(G1 - G2char) == -7        # 7 - 14 = -7
     @test degree(2 * G1 - G2char) == 0    # 14 - 14 = 0
     @test degree(3 * G1 - G2char) == 7    # 21 - 14 = 7
@@ -2233,7 +2233,7 @@ end
     @test degree(V1 * V2) == 4
 
     # Sym²(2⊗1) in product type = Sym²(2) ⊗ 1 = 3⊗1 in product
-    # In A1×A1: V(ω1)=2⊗1, Sym²(V(ω1)) = V(2omega1) = 3⊗1, dim=3
+    # In A1×A1: V(ω1)=2⊗1, Sym²(V(ω1)) = V(2ω1) = 3⊗1, dim=3
     @test degree(symmetric_power(ω1, 2)) == 3
 
     # Bruhat-like: dimension formula on product
