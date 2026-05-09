@@ -459,8 +459,10 @@ For exceptional types, coset representatives W / W_classical are precomputed
 as matrices.
 
 All transforms dispatch on the Dynkin type, enabling the compiler to inline
-them and unroll fixed-size loops.  Workspace vectors use stack-allocated
-`MVector` from StaticArrays.
+them and unroll fixed-size loops. The hot per-orbit workspace uses
+stack-allocated `MVector` from StaticArrays; the deduplicated suborbit
+representatives still live in a small heap vector because their count depends
+on the Dynkin type and the input weight.
 
 `action!` receives a mutable workspace vector; it must NOT hold a reference
 to this vector across calls (copy if needed).
