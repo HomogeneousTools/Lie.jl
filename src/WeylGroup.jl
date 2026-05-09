@@ -659,10 +659,13 @@ end
 Dimension of the irreducible representation with highest weight `hw`,
 computed via the Weyl dimension formula:
 
-``\\dim \\mathrm{V}(λ) = \\prod_{α > 0} \\frac{⟨λ + ρ, α⟩}{⟨ρ, α⟩}``
+``\\dim \\mathrm{V}(λ) = \\prod_{α > 0} \\frac{⟨λ + ρ, α^\\vee⟩}{⟨ρ, α^\\vee⟩}``
 
-The denominator `∏ ⟨ρ, α⟩` and the symmetrizer-scaled root vectors are
-precomputed once per Dynkin type. The numerator `∏ ⟨λ+ρ, α⟩` is computed as
+Equivalently, using the invariant bilinear form,
+``\\prod_{α>0} (λ+ρ,α)/(ρ,α)``.
+
+The denominator and the symmetrizer-scaled root vectors are precomputed once per
+Dynkin type. The numerator is computed as
 a `BigInt` product of `Int`-valued inner products via in-place GMP arithmetic.
 
 # Examples
