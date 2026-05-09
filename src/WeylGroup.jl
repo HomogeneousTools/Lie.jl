@@ -612,7 +612,8 @@ julia> weyl_order(TypeE{8})
 696729600
 ```
 """
-weyl_order(::Type{TypeA{N}}) where {N} = (check_dynkin_type(TypeA{N}); factorial(BigInt(N + 1)))
+weyl_order(::Type{TypeA{N}}) where {N} =
+  (check_dynkin_type(TypeA{N}); factorial(BigInt(N + 1)))
 weyl_order(::Type{TypeB{N}}) where {N} =
   (check_dynkin_type(TypeB{N}); factorial(BigInt(N)) * BigInt(2)^N)
 weyl_order(::Type{TypeC{N}}) where {N} =

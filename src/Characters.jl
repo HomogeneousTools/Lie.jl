@@ -2309,7 +2309,7 @@ function character_from_weights(
 
     all(>=(0), best) || throw(
       ArgumentError(
-        "character_from_weights for type $(_type_name(DT)) expected Weyl-invariant multiplicities, but the highest remaining weight $(WeightLatticeElem{DT,R}(best)) is not dominant",
+        "character_from_weights for type $(_type_name(DT)) expected Weyl-invariant multiplicities, but the highest remaining weight $(WeightLatticeElem{DT,R}(best)) is not dominant"
       ),
     )
 

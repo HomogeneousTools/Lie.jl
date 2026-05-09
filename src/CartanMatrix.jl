@@ -127,7 +127,8 @@ function _E8_cartan()
 end
 
 @generated function cartan_matrix(::Type{TypeE{N}}) where {N}
-  N in (6, 7, 8) || return :(throw(ArgumentError($(_invalid_dynkin_type_message(TypeE{N})))))
+  N in (6, 7, 8) ||
+    return :(throw(ArgumentError($(_invalid_dynkin_type_message(TypeE{N})))))
   C8 = _E8_cartan()
   C = C8[1:N, 1:N]
   entries = Tuple(C[i, j] for j in 1:N for i in 1:N)
