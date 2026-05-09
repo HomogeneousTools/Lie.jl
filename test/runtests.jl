@@ -756,6 +756,23 @@ end
   @test !is_singular(WeightLatticeElem(TypeA{2}, [-1, 3])) # → [1, 2] or similar
 end
 
+@testset "dot_reduce" begin
+  zero_A2 = WeightLatticeElem(TypeA{2}, [0, 0])
+  @test Lie.dot_reduce(fundamental_weight(TypeA{2}, 1)) == (1, fundamental_weight(TypeA{2}, 1))
+  @test Lie.dot_reduce(WeightLatticeElem(TypeA{2}, [-2, 1])) == (-1, zero_A2)
+  @test Lie.dot_reduce(WeightLatticeElem(TypeA{2}, [-1, 0])) == (0, zero_A2)
+
+  zero_B2 = WeightLatticeElem(TypeB{2}, [0, 0])
+  @test Lie.dot_reduce(fundamental_weight(TypeB{2}, 1)) == (1, fundamental_weight(TypeB{2}, 1))
+  @test Lie.dot_reduce(WeightLatticeElem(TypeB{2}, [2, -2])) == (-1, fundamental_weight(TypeB{2}, 1))
+  @test Lie.dot_reduce(WeightLatticeElem(TypeB{2}, [0, -2])) == (0, zero_B2)
+
+  zero_G2 = WeightLatticeElem(TypeG2, [0, 0])
+  @test Lie.dot_reduce(fundamental_weight(TypeG2, 1)) == (1, fundamental_weight(TypeG2, 1))
+  @test Lie.dot_reduce(WeightLatticeElem(TypeG2, [-2, 2])) == (-1, fundamental_weight(TypeG2, 2))
+  @test Lie.dot_reduce(WeightLatticeElem(TypeG2, [0, -2])) == (0, zero_G2)
+end
+
 @testset "Borel–Weil–Bott" begin
   # ── A2 ──────────────────────────────────────────────────────────────
   # Dominant weight: degree 0, representation is itself
