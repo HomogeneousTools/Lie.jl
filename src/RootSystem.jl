@@ -801,11 +801,7 @@ coxeter_coefficients(::Type{TypeC{N}}) where {N} = SVector{N,Int}(
 
 function coxeter_coefficients(::Type{TypeD{N}}) where {N}
   check_dynkin_type(TypeD{N})
-  if N == 2
-    return SVector{2,Int}((1, 1))
-  else
-    return SVector{N,Int}(ntuple(i -> (i == 1 || i >= N - 1) ? 1 : 2, Val(N)))
-  end
+  return SVector{N,Int}(ntuple(i -> (i == 1 || i >= N - 1) ? 1 : 2, Val(N)))
 end
 
 coxeter_coefficients(::Type{TypeE{6}}) = SVector{6,Int}((1, 2, 2, 3, 2, 1))
