@@ -386,32 +386,24 @@ function _compute_positive_roots_and_reflections_runtime(C::AbstractMatrix{Int},
         pairing += C[s, j] * root_i[j]
         copairing += coroot_i[j] * C[j, s]
       end
-
-      if pairing * copairing >= 4
-        refl_data[(s, i)] = 0
-        continue
-      end
+      pairing * copairing < 4 ||
+        error("Non-finite Cartan data encountered while enumerating positive roots")
 
       new_root = copy(root_i)
       new_root[s] -= pairing
       new_coroot = copy(coroot_i)
       new_coroot[s] -= copairing
-
-      if _is_nonnegative(new_root)
-        idx = get(root_index, new_root, 0)
-        if idx == 0
-          push!(pos_roots, new_root)
-          push!(pos_coroots, new_coroot)
-          idx = length(pos_roots)
-          root_index[new_root] = idx
-        end
-        refl_data[(s, i)] = UInt(idx)
-        refl_data[(s, idx)] = UInt(i)
-      elseif _is_nonpositive(new_root)
-        refl_data[(s, i)] = 0
-      else
-        refl_data[(s, i)] = 0
+      _is_nonnegative(new_root) ||
+        error("Positive-root reflection unexpectedly left the positive cone")
+      idx = get(root_index, new_root, 0)
+      if idx == 0
+        push!(pos_roots, new_root)
+        push!(pos_coroots, new_coroot)
+        idx = length(pos_roots)
+        root_index[new_root] = idx
       end
+      refl_data[(s, i)] = UInt(idx)
+      refl_data[(s, idx)] = UInt(i)
     end
     i += 1
   end
