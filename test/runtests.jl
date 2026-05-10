@@ -62,6 +62,191 @@ using LinearAlgebra: det
   @test sprint(show, ProductDynkinType(TypeA{2}(), TypeG2())) == "A2 × G2"
 end
 
+@testset "Coverage edge cases" begin
+  @testset "Cache configuration wrappers" begin
+    @test configure_caches!(
+      budget=10_000,
+      dominant_frac=0.1,
+      tensor_frac=0.2,
+      sym_power_frac=0.3,
+      ext_power_frac=0.4,
+    ) === nothing
+    info = cache_info()
+    @test info.dominant_character.maxsize == 1000
+    @test info.tensor.maxsize == 2000
+    @test info.symmetric_power.maxsize == 3000
+    @test info.exterior_power.maxsize == 4000
+  end
+
+  @testset "Dynkin type wrappers" begin
+    dt::DynkinType = TypeA{2}()
+    PT = ProductDynkinType{Tuple{TypeA{2},TypeB{3}}}
+    diag = dynkin_diagram(TypeA{2})
+
+    @test TypeB(3) isa TypeB{3}
+    @test Lie.is_valid_dynkin_type(TypeF4)
+    @test Lie.is_valid_dynkin_type(TypeG2)
+    @test Lie._invalid_dynkin_type_message(TypeF4) == "TypeF4 is valid"
+    @test Lie._invalid_dynkin_type_message(TypeG2) == "TypeG2 is valid"
+    @test Base.invokelatest(rank, TypeF4) == 4
+    @test Base.invokelatest(rank, TypeG2) == 2
+    @test Base.invokelatest(rank, dt) == 2
+    @test Base.invokelatest(n_positive_roots, TypeE{6}) == 36
+    @test Base.invokelatest(n_positive_roots, TypeE{7}) == 63
+    @test Base.invokelatest(n_positive_roots, TypeE{8}) == 120
+    @test Base.invokelatest(n_positive_roots, TypeF4) == 24
+    @test Base.invokelatest(n_positive_roots, TypeG2) == 6
+    @test Base.invokelatest(n_positive_roots, dt) == 3
+    @test n_components(TypeA{2}) == 1
+    @test Base.invokelatest(n_components, dt) == 1
+    @test component_ranks(PT) == (2, 3)
+    @test component_offsets(PT) == (0, 2)
+    @test sprint(show, MIME"text/plain"(), diag) == "○───○\n1   2"
+    @test diag == "○───○\n1   2"
+    @test "○───○\n1   2" == diag
+    @test hash(diag, UInt(0)) == hash("○───○\n1   2", UInt(0))
+  end
+
+  @testset "Cartan runtime fallbacks" begin
+    DT = TypeA{17}
+    C = cartan_matrix(DT)
+    @test Lie._cartan_matrix_runtime(DT) == C
+    @test Base.invokelatest(cartan_matrix, DT()) == C
+
+    B = cartan_bilinear_form(DT)
+    @test Lie._cartan_bilinear_form_runtime(DT) == B
+    @test Base.invokelatest(cartan_bilinear_form, DT()) == B
+
+    Cinv = cartan_matrix_inverse(DT)
+    @test Lie._cartan_matrix_inverse_runtime(DT) == Cinv
+    @test Base.invokelatest(cartan_matrix_inverse, DT()) == Cinv
+
+    S, Bω = omega_bilinear_form_scaled(DT)
+    @test Lie._omega_bilinear_form_scaled_runtime(DT) == (S, Bω)
+  end
+
+  @testset "Root system wrappers" begin
+    dt::DynkinType = TypeA{2}()
+    RS = Base.invokelatest(RootSystem, dt)
+    α1 = simple_root(RS, 1)
+    α2 = simple_root(RS, 2)
+
+    @test Lie._make_root_system_runtime(TypeA{17}) == RootSystem(TypeA{17})
+    @test sprint(show, RS) == "Root system of type A2, rank 2 with 3 positive roots"
+    @test RootSpaceElem(TypeA{2}, (1, 1)) == α1 + α2
+    @test α1 - α2 == RootSpaceElem(TypeA{2}, [1, -1])
+    @test α1 * 2 == RootSpaceElem(TypeA{2}, [2, 0])
+    @test hash(α1, UInt(0)) == hash(simple_root(RS, 1), UInt(0))
+    @test iszero(zero(typeof(α1)))
+    @test positive_roots(RS) == [positive_root(RS, i) for i in 1:3]
+    @test negative_root(RS, 1) == -α1
+    @test negative_roots(RS) == [negative_root(RS, i) for i in 1:3]
+    @test roots(RS) == vcat(positive_roots(RS), negative_roots(RS))
+    @test root(RS, 1) == positive_root(RS, 1)
+    @test root(RS, 4) == negative_root(RS, 1)
+    @test_throws BoundsError root(RS, 7)
+    @test simple_coroots(RS) == simple_roots(RS)
+    @test positive_coroots(RS)[1:2] == simple_coroots(RS)
+    @test Base.invokelatest(coxeter_coefficients, TypeC{3}) == SVector(2, 2, 1)
+    @test dual_coxeter_coefficients(ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}) ==
+      SVector(1, 1, 1, 1)
+    @test Base.invokelatest(dual_coxeter_coefficients, dt) == SVector(1, 1)
+    @test Base.invokelatest(coxeter_number, dt) == 3
+    @test Base.invokelatest(dual_coxeter_number, dt) == 3
+  end
+
+  @testset "Weight lattice wrappers" begin
+    RS = RootSystem(TypeA{2})
+    ω1 = fundamental_weight(TypeA{2}, 1)
+
+    @test ω1 * 2 == 2 * ω1
+    @test zero(ω1) == WeightLatticeElem(TypeA{2}, [0, 0])
+    @test fundamental_weights(TypeA{2}) == [fundamental_weight(TypeA{2}, i) for i in 1:2]
+    @test dot(simple_root(RS, 1), ω1) == 1//1
+  end
+
+  @testset "Character convenience methods" begin
+    ω1 = fundamental_weight(TypeA{2}, 1)
+    ω2 = fundamental_weight(TypeA{2}, 2)
+    z = zero(ω1)
+    V = WeylCharacter(ω1)
+    W = WeylCharacter(ω2)
+    mixed = WeylCharacter(2 * ω1) + 2 * W
+    signed = WeylCharacter(2 * ω1) - 2 * W
+
+    @test WeylCharacter(TypeA{2}, [1, 0]) == V
+    @test isone(WeylCharacter(z))
+    @test collect(keys(V + W)) == [ω1, ω2]
+    @test collect(values(V + W)) == [1, 1]
+    @test collect(pairs(V + W)) == [ω1 => 1, ω2 => 1]
+    @test sprint(show, WeylCharacter(TypeA{2})) == "0"
+    @test sprint(show, V) == "A2(1, 0)"
+    @test sprint(show, -V) == "-A2(1, 0)"
+    @test sprint(show, 2 * V) == "2*A2(1, 0)"
+    @test occursin(" + A2(0, 1)", sprint(show, WeylCharacter(2 * ω1) + W))
+    @test occursin(" + 2*A2(0, 1)", sprint(show, mixed))
+    @test occursin(" - A2(0, 1)", sprint(show, WeylCharacter(2 * ω1) - W))
+    @test occursin(" - 2*A2(0, 1)", sprint(show, signed))
+    @test V * 2 == 2 * V
+    n = -1
+    @test_throws ArgumentError V^n
+    @test V^0 == WeylCharacter(z)
+    @test V^1 == V
+    @test V^2 == tensor_product(ω1, ω1)
+    @test weight_multiplicity(ω1 + ω2, z) == 2
+  end
+
+  @testset "Weyl group convenience methods" begin
+    dt::DynkinType = TypeA{2}()
+    W = Base.invokelatest(weyl_group, dt)
+    x = W([1, 2]; normalize=false)
+    e = one(W)
+    PT = ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}()
+    ω1 = fundamental_weight(TypeA{2}, 1)
+
+    @test sprint(show, W) == "Weyl group of type A2"
+    @test sprint(show, e) == "id"
+    @test sprint(show, x) == "s1 * s2"
+    @test hash(x, UInt(0)) == hash(W([1, 2]; normalize=false), UInt(0))
+    @test isone(e)
+    @test x^0 == e
+    @test x^2 == x * x
+    @test x^(-1) == inv(x)
+    @test Base.invokelatest(weyl_order, TypeC{3}) == 48
+    @test Base.invokelatest(weyl_order, TypeD{4}) == 192
+    @test Base.invokelatest(weyl_order, TypeE{6}) == BigInt(51840)
+    @test Base.invokelatest(weyl_order, TypeF4) == BigInt(1152)
+    @test weyl_order(PT) == 48
+    @test Lie._weyl_denominator(TypeA{2}) == BigInt(2)
+    @test length(Lie._weyl_dim_scaled_roots(TypeA{2})) == 3
+    @test Lie._degree_runtime(TypeA{17}, fundamental_weight(TypeA{17}, 1)) == 18
+    @test degree(TypeA{2}, [1, 0]) == 3
+    @test degree(TypeA{2}(), [1, 0]) == 3
+    @test weyl_dimension(TypeA{2}, ω1) == 3
+    @test weyl_dimension(TypeA{2}, [1, 0]) == 3
+    @test weyl_dimension(TypeA{2}(), [1, 0]) == 3
+  end
+
+  @testset "Weylloop constants" begin
+    @test Lie._weylloop_subtype(TypeE{6}) == :D
+    @test Lie._weylloop_subtype(TypeE{7}) == :A
+    @test Lie._weylloop_subtype(TypeE{8}) == :D
+    @test Lie._weylloop_subtype(TypeF4) == :B
+    @test Lie._weylloop_subtype(TypeG2) == :A
+    @test Lie._weylloop_eps_dim(TypeE{6}) == 6
+    @test Lie._weylloop_eps_dim(TypeE{7}) == 8
+    @test Lie._weylloop_eps_dim(TypeE{8}) == 8
+    @test Lie._weylloop_eps_dim(TypeF4) == 4
+    @test Lie._weylloop_eps_dim(TypeG2) == 3
+    @test Lie._weylloop_perm_size(TypeE{6}) == 5
+    @test Lie._weylloop_perm_size(TypeE{7}) == 8
+    @test Lie._weylloop_perm_size(TypeE{8}) == 8
+    @test Lie._weylloop_perm_size(TypeF4) == 4
+    @test Lie._weylloop_perm_size(TypeG2) == 3
+    @test length(Lie._build_coset_reps(TypeE{7})) == 72
+  end
+end
+
 # ═══════════════════════════════════════════════════════════════════════
 #  Dynkin diagram layouts
 # ═══════════════════════════════════════════════════════════════════════
