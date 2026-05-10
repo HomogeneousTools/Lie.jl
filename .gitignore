@@ -2,3 +2,4 @@
 benchmark/results
 docs/build
 Manifest.toml
+*.cov
