@@ -19,6 +19,9 @@ using LinearAlgebra: det
   @test rank(TypeE{8}) == 8
   @test rank(TypeF4) == 4
   @test rank(TypeG2) == 2
+  @test TypeB{3}() isa TypeB{3}
+  @test TypeC{3}() isa TypeC{3}
+  @test TypeD{4}() isa TypeD{4}
 
   # Product types
   PT = ProductDynkinType{Tuple{TypeA{3},TypeD{5}}}
@@ -48,10 +51,15 @@ using LinearAlgebra: det
   @test_throws ArgumentError WeightLatticeElem(TypeA{0}, Int[])
   @test_throws ArgumentError fundamental_weight(TypeC{1}, 1)
   @test_throws ArgumentError rank(ProductDynkinType{Tuple{TypeA{0},TypeG2}})
+  @test_throws ArgumentError rank(ProductDynkinType{Tuple{TypeA{1},Int}})
 
   # Display
   @test sprint(show, TypeA(3)) == "A3"
+  @test sprint(show, TypeC(3)) == "C3"
+  @test sprint(show, TypeD(4)) == "D4"
+  @test sprint(show, TypeE(6)) == "E6"
   @test sprint(show, TypeG2()) == "G2"
+  @test sprint(show, ProductDynkinType(TypeA{2}(), TypeG2())) == "A2 × G2"
 end
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -170,6 +178,12 @@ end
 
   # Instance dispatch
   @test cartan_determinant(TypeA{2}()) == cartan_determinant(TypeA{2})
+
+  # Runtime symmetrizer fallback for high-rank simple and product types
+  @test cartan_symmetrizer(TypeA{17}) == SVector{17,Int}(ntuple(_ -> 1, Val(17)))
+  PT_runtime = ProductDynkinType{Tuple{TypeA{9},TypeB{8}}}
+  @test collect(cartan_symmetrizer(PT_runtime)) ==
+    vcat(collect(cartan_symmetrizer(TypeA{9})), collect(cartan_symmetrizer(TypeB{8})))
 
   # Cross-check: cartan_determinant == det(cartan_matrix) for all simple types
   for DT in [TypeA{1}, TypeA{2}, TypeA{3}, TypeA{4}, TypeB{2}, TypeB{3},
@@ -379,6 +393,12 @@ end
   @test String(take!(io)) == "α1"
   show(io, α1 + α2)
   @test String(take!(io)) == "α1 + α2"
+  show(io, 2 * α1)
+  @test String(take!(io)) == "2α1"
+  show(io, RootSpaceElem(TypeA{2}, [1, -1]))
+  @test String(take!(io)) == "α1 - α2"
+  show(io, zero(typeof(α1)))
+  @test String(take!(io)) == "0"
 end
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -412,6 +432,7 @@ end
   α1 = simple_root(RS, 1)
   w_α1 = WeightLatticeElem(α1)
   @test w_α1 == WeightLatticeElem(DT, [2, -1])  # α1 = 2ω1 - ω2
+  @test RootSpaceElem(w_α1) == α1
   @test_throws ArgumentError RootSpaceElem(ω1)
 
   # Reflection
@@ -419,6 +440,7 @@ end
   w_reflected = reflect(w, 1)
   @test w_reflected == WeightLatticeElem(DT, [-2, 3])
   # s1(2ω1 + ω2) = (2ω1 + ω2) - 2*(α1) = (2ω1 + ω2) - 2*(2ω1 - ω2) = -2ω1 + 3ω2
+  @test reflect(ω1, highest_root(RS)) == -ω2
   @test_throws ArgumentError reflect(w, RootSpaceElem(DT, [2, 0]))
 
   # Conjugation to dominant chamber
@@ -457,6 +479,10 @@ end
   @test String(take!(io)) == "ω1"
   show(io, ω1 + 2ω2)
   @test String(take!(io)) == "ω1 + 2ω2"
+  show(io, WeightLatticeElem(DT, [0, -1]))
+  @test String(take!(io)) == "-ω2"
+  show(io, WeightLatticeElem(DT, [1, -1]))
+  @test String(take!(io)) == "ω1 - ω2"
   show(io, WeightLatticeElem(DT, [0, 0]))
   @test String(take!(io)) == "0"
 
@@ -502,6 +528,7 @@ end
     W = weyl_group(TypeA{2})
     RS = root_system(W)
     s = gens(W)
+    @test word(W([2, 1]; normalize=false)) == UInt8[2, 1]
 
     # Simple reflections are involutions
     @test s[1] * s[1] == one(W)
@@ -629,6 +656,17 @@ end
       @test bruhat_leq(v, w0)
       @test length(v) == length(w0) - 1
     end
+  end
+
+  @testset "Right-multiplication insertion path" begin
+    W = weyl_group(TypeA{2})
+    x = W([2, 1])
+    b, pos, letter = Lie._explain_rmul(x, UInt8(2), root_system(W).refl, rank(TypeA{2}))
+    @test (b, pos, Int(letter)) == (true, 1, 1)
+
+    y = deepcopy(x)
+    Lie.rmul!(y, UInt8(2))
+    @test word(y) == UInt8[1, 2, 1]
   end
 
   @testset "Parabolic coset representatives" begin
@@ -1137,6 +1175,10 @@ end
       WeylCharacter(2 * ω1) + WeylCharacter(ω2) - WeylCharacter(ω1 + ω2) -
       WeylCharacter(z)
     @test tp_virt == expected_virt
+
+    # Character arithmetic prunes zero-multiplicity terms
+    @test iszero(WeylCharacter(ω1) + (-WeylCharacter(ω1)))
+    @test iszero(WeylCharacter(ω1) - WeylCharacter(ω1))
   end
 
   # ─── Littlewood–Richardson rule ──────────────────────────────────
@@ -1229,6 +1271,10 @@ end
     empty!(Lie._tensor_cache)
     tp_dispatch = tensor_product(ω1, ω2)
     @test tp_dispatch == lr_tensor_product(ω1, ω2)
+
+    normalize_lr(d) = Dict(Tuple(k) => v for (k, v) in d)
+    @test normalize_lr(Lie._lr_coefficients([1], [1, 0], 3)) ==
+      normalize_lr(Lie._lr_coefficients([1, 0, 0], [1], 3))
   end
 
   # ─── Dual ────────────────────────────────────────────────────────
@@ -1538,6 +1584,8 @@ end
     @test plethysm([1], ω1_A3) == WeylCharacter(ω1_A3)
     @test plethysm(Int[], ω1_A3) ==
       WeylCharacter(WeightLatticeElem{TypeA{3},3}(zero(SVector{3,Int})))
+    @test plethysm([2, 1, 0], ω1_A3) == plethysm([2, 1], ω1_A3)
+    @test Lie._mn_char_val([2, 1, 0], [2, 1, 0]) == Lie._mn_char_val([2, 1], [2, 1])
   end
 
   # ─── ProductDynkinType characters ──────────────────────────────
@@ -1813,6 +1861,11 @@ end
     @test congruency_class(fundamental_weight(TypeD{4}, 2)) == (0, 0)
     @test congruency_class(fundamental_weight(TypeD{4}, 3)) == (1, 0)
     @test congruency_class(fundamental_weight(TypeD{4}, 4)) == (0, 1)
+
+    # D5: Z/4 center
+    @test congruency_class(fundamental_weight(TypeD{5}, 1)) == 2
+    @test congruency_class(fundamental_weight(TypeD{5}, 4)) == 1
+    @test congruency_class(fundamental_weight(TypeD{5}, 5)) == 3
 
     # E6: λ1 - λ2 + λ4 - λ5 mod 3
     @test congruency_class(fundamental_weight(TypeE{6}, 1)) == 1
