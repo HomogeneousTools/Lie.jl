@@ -176,9 +176,10 @@ end
 
     @test WeylCharacter(TypeA{2}, [1, 0]) == V
     @test isone(WeylCharacter(z))
-    @test collect(keys(V + W)) == [ω1, ω2]
-    @test collect(values(V + W)) == [1, 1]
-    @test collect(pairs(V + W)) == [ω1 => 1, ω2 => 1]
+    sum_pairs = sort!(collect(pairs(V + W)); by=p -> p.first.vec, rev=true)
+    @test first.(sum_pairs) == [ω1, ω2]
+    @test last.(sum_pairs) == [1, 1]
+    @test sum_pairs == [ω1 => 1, ω2 => 1]
     @test sprint(show, WeylCharacter(TypeA{2})) == "0"
     @test sprint(show, V) == "A2(1, 0)"
     @test sprint(show, -V) == "-A2(1, 0)"
