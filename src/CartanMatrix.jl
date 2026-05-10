@@ -292,9 +292,7 @@ function _cartan_symmetrizer_data(::Type{DT}) where {DT<:SimpleDynkinType}
       if !visited[j] && C[i, j] != 0
         # d[i] * C[i,j] = d[j] * C[j,i]  =>  d[j] = d[i] * C[i,j] / C[j,i]
         d[j] = d[i] * C[i, j]//C[j, i]
-        if d[j] < 0
-          d[j] = -d[j]
-        end
+        d[j] > 0 || error("Cartan symmetrizer must stay positive for finite Dynkin types")
         visited[j] = true
         push!(queue, j)
       end
