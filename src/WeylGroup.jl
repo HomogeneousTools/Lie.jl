@@ -269,7 +269,8 @@ function _explain_rmul(x::WeylGroupElem, s::UInt8, refl::AbstractMatrix{UInt}, r
 
     # Apply reflection s_{word[k]} to root
     root = refl[Int(x.word[k]), Int(root)]
-    iszero(root) && error("Reduced-word insertion invariant violated in right multiplication")
+    iszero(root) &&
+      error("Reduced-word insertion invariant violated in right multiplication")
 
     # Check if we have a better insertion point.
     # Since word[k] is a simple root, if root < word[k] it must also be simple.
