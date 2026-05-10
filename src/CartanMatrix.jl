@@ -350,10 +350,7 @@ end
   R = sum(rank(T) for T in types)
   if R >= 17
     return quote
-      d = Int[]
-      for T in $(Tuple(types...))
-        append!(d, _cartan_symmetrizer_data(T))
-      end
+      d = _cartan_symmetrizer_data($(ProductDynkinType{Ts}))
       SVector{$R,Int}(Tuple(d))
     end
   end
