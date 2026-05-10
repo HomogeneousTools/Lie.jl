@@ -857,9 +857,7 @@ dual_coxeter_coefficients(::Type{TypeA{N}}) where {N} =
 # Dual of B_n is C_n; highest short root of C_n = e₁+e₂, coefficients [1,2,...,2,1]
 function dual_coxeter_coefficients(::Type{TypeB{N}}) where {N}
   check_dynkin_type(TypeB{N})
-  if N == 1
-    return SVector{1,Int}((1,))
-  elseif N == 2
+  if N == 2
     return SVector{2,Int}((1, 1))
   else
     return SVector{N,Int}(ntuple(i -> (i == 1 || i == N) ? 1 : 2, Val(N)))
