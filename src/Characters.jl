@@ -1591,7 +1591,9 @@ end
   return value
 end
 
-function _combine_product_coord_dicts(::Type{PDT}, dicts) where {Ts,PDT<:ProductDynkinType{Ts}}
+function _combine_product_coord_dicts(
+  ::Type{PDT}, dicts
+) where {Ts,PDT<:ProductDynkinType{Ts}}
   R = rank(PDT)
   offsets = component_offsets(PDT)
   result = Dict{SVector{R,Int},Int}(zero(SVector{R,Int}) => 1)
