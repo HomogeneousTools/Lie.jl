@@ -284,32 +284,18 @@ function _compute_positive_roots_and_reflections(C::SMatrix{R,R,Int}, rk::Intege
       new_coroot = SVector{R,Int}(
         ntuple(j -> coroot_i[j] - copairing * (j == s ? 1 : 0), R)
       )
-
-      if all(>=(0), new_root)
-        # Result is a positive root
-        idx = get(root_index, new_root, 0)
-        if idx == 0
-          # New positive root discovered
-          push!(pos_roots, new_root)
-          push!(pos_coroots, new_coroot)
-          idx = length(pos_roots)
-          root_index[new_root] = idx
-        end
-        refl_data[(s, i)] = UInt(idx)
-        refl_data[(s, idx)] = UInt(i)
-      elseif all(<=(0), new_root)
-        # Result is a negative root
-        neg_root = -new_root
-        idx = get(root_index, neg_root, 0)
-        if idx == 0
-          # This shouldn't happen for positive root reflections
-          refl_data[(s, i)] = 0
-        else
-          refl_data[(s, i)] = 0  # mark as "goes to negative"
-        end
-      else
-        refl_data[(s, i)] = 0
+      all(>=(0), new_root) ||
+        error("Positive-root reflection unexpectedly left the positive cone")
+      idx = get(root_index, new_root, 0)
+      if idx == 0
+        # New positive root discovered
+        push!(pos_roots, new_root)
+        push!(pos_coroots, new_coroot)
+        idx = length(pos_roots)
+        root_index[new_root] = idx
       end
+      refl_data[(s, i)] = UInt(idx)
+      refl_data[(s, idx)] = UInt(i)
     end
     i += 1
   end
@@ -341,13 +327,6 @@ end
 function _is_nonnegative(v)
   @inbounds for x in v
     x < 0 && return false
-  end
-  return true
-end
-
-function _is_nonpositive(v)
-  @inbounds for x in v
-    x > 0 && return false
   end
   return true
 end
