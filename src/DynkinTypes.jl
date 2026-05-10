@@ -568,13 +568,8 @@ function dynkin_diagram(::Type{TypeD{N}}) where {N}
   # 1  2     N-2 N-1
   prefix = " "^(4 * (N - 2)) * "○ $N"
   fork = " "^(4 * (N - 2) - 1) * "/"
-  if N - 1 >= 2
-    main = join(fill("○", N - 1), "───")
-    main_labels = join([lpad(string(i), 1) for i in 1:(N - 1)], "   ")
-  else
-    main = "○"
-    main_labels = "$(N-1)"
-  end
+  main = join(fill("○", N - 1), "───")
+  main_labels = join([lpad(string(i), 1) for i in 1:(N - 1)], "   ")
   return DynkinDiagram(prefix * "\n" * fork * "\n" * main * "\n" * main_labels)
 end
 
