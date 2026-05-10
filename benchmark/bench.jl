@@ -5,6 +5,7 @@
 #    julia --project=. benchmark/bench.jl               # run + save results
 #    julia --project=. benchmark/bench.jl --compare      # compare vs last saved
 #    julia --project=. benchmark/bench.jl --save-only    # save without comparing
+#    julia --project=. benchmark/bench.jl --product-only # run only product-type benchmarks
 #
 #  Results are saved to benchmark/results/<timestamp>.json
 #  The most recent saved result is also copied as benchmark/results/latest.json
@@ -22,6 +23,7 @@ import Lie: borel_weil_bott
 
 const COMPARE = "--compare" in ARGS
 const SAVE_ONLY = "--save-only" in ARGS
+const PRODUCT_ONLY = "--product-only" in ARGS
 
 # ─── Result storage ─────────────────────────────────────────────────────────
 
@@ -77,6 +79,8 @@ end
 # ═══════════════════════════════════════════════════════════════════════════════
 #  1. Apply longest Weyl element to all positive roots
 # ═══════════════════════════════════════════════════════════════════════════════
+
+if !PRODUCT_ONLY
 
 header("1. Warm: w₀ action on all positive roots")
 
@@ -627,6 +631,164 @@ for (DT, coords, label) in cfw_cases
   b = @benchmark bench_cfw($DT, $coords) evals = 1 samples = 20
   report("$(sprint(show,DT())): $label → $(length(r.terms)) irreps", b;
     category="warm_character_from_weights")
+end
+
+end
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  13. ProductDynkinType shortcuts
+# ═══════════════════════════════════════════════════════════════════════════════
+
+header("13. ProductDynkinType shortcuts")
+
+function bench_product_degree(::Type{PDT}, coords) where {PDT}
+  R = rank(PDT)
+  λ = WeightLatticeElem(PDT, SVector{R,Int}(Tuple(coords)))
+  return degree(λ)
+end
+
+function bench_product_freudenthal(::Type{PDT}, coords) where {PDT}
+  R = rank(PDT)
+  Lie.clear_all_caches!()
+  λ = WeightLatticeElem(PDT, SVector{R,Int}(Tuple(coords)))
+  return freudenthal_formula(λ)
+end
+
+function bench_product_tensor(::Type{PDT}, c1, c2) where {PDT}
+  R = rank(PDT)
+  Lie.clear_all_caches!()
+  λ = WeightLatticeElem(PDT, SVector{R,Int}(Tuple(c1)))
+  μ = WeightLatticeElem(PDT, SVector{R,Int}(Tuple(c2)))
+  return tensor_product(λ, μ)
+end
+
+function bench_product_exterior(::Type{PDT}, coords, k) where {PDT}
+  R = rank(PDT)
+  Lie.clear_all_caches!()
+  λ = WeightLatticeElem(PDT, SVector{R,Int}(Tuple(coords)))
+  return ⋀(k, λ)
+end
+
+function bench_product_symmetric(::Type{PDT}, coords, k) where {PDT}
+  R = rank(PDT)
+  Lie.clear_all_caches!()
+  λ = WeightLatticeElem(PDT, SVector{R,Int}(Tuple(coords)))
+  return Sym(k, λ)
+end
+
+function bench_product_adams(::Type{PDT}, coords, k) where {PDT}
+  R = rank(PDT)
+  λ = WeightLatticeElem(PDT, SVector{R,Int}(Tuple(coords)))
+  return adams_operator(λ, k)
+end
+
+product_degree_cases = [
+  (ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}, [1, 0, 1, 0], "A2×B2: ω₁⊠ω₁"),
+  (ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}, [1, 1, 0, 1], "A2×B2: (ω₁+ω₂)⊠ω₂"),
+  (ProductDynkinType{Tuple{TypeA{2},TypeB{3}}}, [1, 0, 0, 0, 1], "A2×B3: ω₁⊠ω₃"),
+  (ProductDynkinType{Tuple{TypeA{3},TypeG2}}, [1, 0, 0, 1, 0], "A3×G2: ω₁⊠ω₁"),
+  (ProductDynkinType{Tuple{TypeB{2},TypeG2}}, [0, 1, 1, 0], "B2×G2: ω₂⊠ω₁"),
+  (ProductDynkinType{Tuple{TypeA{2},TypeA{2},TypeA{2}}}, [1, 0, 0, 1, 1, 0], "A2³: ω₁⊠ω₂⊠ω₁"),
+  (ProductDynkinType{Tuple{TypeA{4},TypeA{5},TypeB{3}}}, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1], "A4×A5×B3: ω₁⊠ω₂⊠ω₃"),
+  (ProductDynkinType{Tuple{TypeA{3},TypeD{4},TypeA{5}}}, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1], "A3×D4×A5: ω₁⊠ω₃⊠ω₅"),
+]
+
+for (PDT, coords, label) in product_degree_cases
+  d = bench_product_degree(PDT, coords)
+  b = @benchmark bench_product_degree($PDT, $coords) evals = 1 samples = 300
+  ds = d < 10^15 ? string(d) : "≈10^$(round(log10(Float64(d)), digits=1))"
+  report("$(sprint(show,PDT())): degree($label) = $ds", b;
+    category="product_dimension_formula")
+end
+
+product_freudenthal_cases = [
+  (ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}, [1, 0, 1, 0], "A2×B2: ω₁⊠ω₁"),
+  (ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}, [1, 1, 0, 1], "A2×B2: (ω₁+ω₂)⊠ω₂"),
+  (ProductDynkinType{Tuple{TypeA{2},TypeB{3}}}, [1, 0, 0, 0, 1], "A2×B3: ω₁⊠ω₃"),
+  (ProductDynkinType{Tuple{TypeA{3},TypeG2}}, [1, 0, 0, 1, 0], "A3×G2: ω₁⊠ω₁"),
+  (ProductDynkinType{Tuple{TypeB{2},TypeG2}}, [0, 1, 1, 0], "B2×G2: ω₂⊠ω₁"),
+  (ProductDynkinType{Tuple{TypeA{2},TypeA{2},TypeA{2}}}, [1, 1, 1, 1, 0, 0], "A2³: adj⊠adj⊠0"),
+  (ProductDynkinType{Tuple{TypeA{4},TypeA{5},TypeB{3}}}, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1], "A4×A5×B3: ω₁⊠ω₂⊠ω₃"),
+  (ProductDynkinType{Tuple{TypeA{3},TypeD{4},TypeA{5}}}, [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1], "A3×D4×A5: ω₁⊠ω₃⊠ω₅"),
+]
+
+for (PDT, coords, label) in product_freudenthal_cases
+  ff = bench_product_freudenthal(PDT, coords)
+  b = @benchmark bench_product_freudenthal($PDT, $coords) evals = 1 samples = 20
+  report("$(sprint(show,PDT())): $label ($(length(ff)) wts)", b;
+    category="product_freudenthal")
+end
+
+product_tensor_cases = [
+  (ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}, [1, 0, 0, 0], [0, 0, 1, 0], "A2×B2: ω₁ ⊗ ω₃"),
+  (ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}, [1, 0, 0, 0], [1, 0, 0, 0], "A2×B2: ω₁ ⊗ ω₁"),
+  (ProductDynkinType{Tuple{TypeA{1},TypeA{1}}}, [1, 0], [0, 1], "A1×A1: ω₁ ⊗ ω₂"),
+  (ProductDynkinType{Tuple{TypeA{2},TypeB{3}}}, [1, 0, 0, 0, 0], [0, 0, 0, 0, 1], "A2×B3: ω₁ ⊗ ω₅"),
+  (ProductDynkinType{Tuple{TypeA{2},TypeB{3}}}, [1, 1, 1, 0, 0], [1, 0, 0, 1, 0], "A2×B3: mixed ⊗ mixed"),
+  (ProductDynkinType{Tuple{TypeA{3},TypeG2}}, [1, 0, 0, 0, 0], [0, 0, 0, 0, 1], "A3×G2: ω₁ ⊗ ω₅"),
+  (ProductDynkinType{Tuple{TypeB{2},TypeG2}}, [0, 1, 0, 0], [0, 0, 1, 0], "B2×G2: ω₂ ⊗ ω₃"),
+  (ProductDynkinType{Tuple{TypeA{2},TypeA{2},TypeA{2}}}, [1, 0, 0, 0, 0, 1], [0, 0, 1, 0, 1, 0], "A2³: mixed ⊗ mixed"),
+  (ProductDynkinType{Tuple{TypeA{4},TypeA{5},TypeB{3}}}, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0], "A4×A5×B3: disjoint ⊗ disjoint"),
+  (ProductDynkinType{Tuple{TypeA{4},TypeA{5},TypeB{3}}}, [1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0], "A4×A5×B3: mixed ⊗ mixed"),
+  (ProductDynkinType{Tuple{TypeA{3},TypeD{4},TypeA{5}}}, [1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1], "A3×D4×A5: disjoint ⊗ disjoint"),
+  (ProductDynkinType{Tuple{TypeA{3},TypeD{4},TypeA{5}}}, [0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1], "A3×D4×A5: mixed ⊗ mixed"),
+]
+
+for (PDT, c1, c2, label) in product_tensor_cases
+  tp = bench_product_tensor(PDT, c1, c2)
+  b = @benchmark bench_product_tensor($PDT, $c1, $c2) evals = 1 samples = 20
+  report("$(sprint(show,PDT())): $label → $(length(tp.terms)) irreps", b;
+    category="product_tensor_product")
+end
+
+product_exterior_cases = [
+  (ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}, [1, 0, 0, 0], 2, "A2×B2: ⋀²V(ω₁)"),
+  (ProductDynkinType{Tuple{TypeA{2},TypeB{3}}}, [0, 0, 0, 0, 1], 2, "A2×B3: ⋀²V(ω₅)"),
+  (ProductDynkinType{Tuple{TypeA{3},TypeG2}}, [0, 0, 0, 1, 0], 2, "A3×G2: ⋀²V(ω₄)"),
+  (ProductDynkinType{Tuple{TypeB{2},TypeG2}}, [0, 1, 0, 0], 2, "B2×G2: ⋀²V(ω₂)"),
+  (ProductDynkinType{Tuple{TypeA{4},TypeA{5},TypeB{3}}}, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 2, "A4×A5×B3: ⋀²V(ω₁)"),
+  (ProductDynkinType{Tuple{TypeA{3},TypeD{4},TypeA{5}}}, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], 2, "A3×D4×A5: ⋀²V(ω₁₂)"),
+]
+
+for (PDT, coords, k, label) in product_exterior_cases
+  r = bench_product_exterior(PDT, coords, k)
+  b = @benchmark bench_product_exterior($PDT, $coords, $k) evals = 1 samples = 20
+  report("$(sprint(show,PDT())): $label → $(length(r.terms)) irreps", b;
+    category="product_exterior_power")
+end
+
+product_symmetric_cases = [
+  (ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}, [1, 0, 0, 0], 2, "A2×B2: Sym²V(ω₁)"),
+  (ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}, [1, 0, 0, 0], 3, "A2×B2: Sym³V(ω₁)"),
+  (ProductDynkinType{Tuple{TypeA{2},TypeB{3}}}, [0, 0, 0, 0, 1], 2, "A2×B3: Sym²V(ω₅)"),
+  (ProductDynkinType{Tuple{TypeA{3},TypeG2}}, [0, 0, 0, 1, 0], 3, "A3×G2: Sym³V(ω₄)"),
+  (ProductDynkinType{Tuple{TypeB{2},TypeG2}}, [0, 1, 0, 0], 2, "B2×G2: Sym²V(ω₂)"),
+  (ProductDynkinType{Tuple{TypeA{4},TypeA{5},TypeB{3}}}, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 3, "A4×A5×B3: Sym³V(ω₁)"),
+  (ProductDynkinType{Tuple{TypeA{3},TypeD{4},TypeA{5}}}, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], 2, "A3×D4×A5: Sym²V(ω₁₂)"),
+]
+
+for (PDT, coords, k, label) in product_symmetric_cases
+  r = bench_product_symmetric(PDT, coords, k)
+  b = @benchmark bench_product_symmetric($PDT, $coords, $k) evals = 1 samples = 20
+  report("$(sprint(show,PDT())): $label → $(length(r.terms)) irreps", b;
+    category="product_symmetric_power")
+end
+
+product_adams_cases = [
+  (ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}, [1, 0, 0, 0], 2, "A2×B2: ψ²V(ω₁)"),
+  (ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}, [1, 0, 0, 0], 3, "A2×B2: ψ³V(ω₁)"),
+  (ProductDynkinType{Tuple{TypeA{2},TypeB{3}}}, [0, 0, 0, 0, 1], 2, "A2×B3: ψ²V(ω₅)"),
+  (ProductDynkinType{Tuple{TypeA{3},TypeG2}}, [0, 0, 0, 1, 0], 3, "A3×G2: ψ³V(ω₄)"),
+  (ProductDynkinType{Tuple{TypeB{2},TypeG2}}, [0, 1, 0, 0], 2, "B2×G2: ψ²V(ω₂)"),
+  (ProductDynkinType{Tuple{TypeA{4},TypeA{5},TypeB{3}}}, [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], 2, "A4×A5×B3: ψ²V(ω₁)"),
+  (ProductDynkinType{Tuple{TypeA{3},TypeD{4},TypeA{5}}}, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1], 3, "A3×D4×A5: ψ³V(ω₁₂)"),
+]
+
+for (PDT, coords, k, label) in product_adams_cases
+  r = bench_product_adams(PDT, coords, k)
+  b = @benchmark bench_product_adams($PDT, $coords, $k) evals = 1 samples = 30
+  report("$(sprint(show,PDT())): $label ($(length(r)) wts)", b;
+    category="product_adams")
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════

@@ -279,6 +279,68 @@ function RootSpaceElem(w::WeightLatticeElem{DT,R}) where {DT,R}
   return RootSpaceElem{DT,R}(SVector{R,Int}(Int.(v)))
 end
 
+# ─── Product-type helper layer ────────────────────────────────────────────────
+
+function _product_component_weights(
+  ::Type{PDT}, w::WeightLatticeElem{PDT,R}
+) where {Ts,PDT<:ProductDynkinType{Ts},R}
+  types = Ts.parameters
+  ranks = component_ranks(PDT)
+  offsets = component_offsets(PDT)
+  weights = Any[]
+  sizehint!(weights, length(ranks))
+  for i in eachindex(ranks)
+    T = types[i]
+    r = ranks[i]
+    offset = offsets[i]
+    push!(weights, WeightLatticeElem(T, Int[w.vec[offset + j] for j in 1:r]))
+  end
+  return weights
+end
+
+function _product_embed_coords(
+  ::Type{PDT}, i::Integer, v::AbstractVector{<:Integer}
+) where {Ts,PDT<:ProductDynkinType{Ts}}
+  offsets = component_offsets(PDT)
+  ranks = component_ranks(PDT)
+  1 <= i <= length(ranks) || throw(BoundsError(ranks, i))
+  r = ranks[i]
+  length(v) == r ||
+    throw(ArgumentError("Vector length $(length(v)) does not match rank $r of factor $i"))
+
+  R = rank(PDT)
+  coords = zeros(Int, R)
+  offset = offsets[i]
+  @inbounds for j in 1:r
+    coords[offset + j] = Int(v[j])
+  end
+  return SVector{R,Int}(Tuple(coords))
+end
+
+function _product_embed_weight(
+  ::Type{PDT}, i::Integer, w::WeightLatticeElem
+) where {Ts,PDT<:ProductDynkinType{Ts}}
+  R = rank(PDT)
+  return WeightLatticeElem{PDT,R}(_product_embed_coords(PDT, i, w.vec))
+end
+
+function _product_single_supported_component(
+  w::WeightLatticeElem{PDT,R}
+) where {Ts,PDT<:ProductDynkinType{Ts},R}
+  weights = _product_component_weights(PDT, w)
+  idx = 0
+  component_weight = nothing
+  for i in eachindex(weights)
+    wi = weights[i]
+    if !iszero(wi)
+      idx == 0 || return nothing
+      idx = i
+      component_weight = wi
+    end
+  end
+  return idx == 0 ? nothing : (idx, component_weight)
+end
+
 # ─── Reflect a weight by a simple reflection ────────────────────────────────
 
 """

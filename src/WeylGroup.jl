@@ -840,6 +840,18 @@ julia> [degree(fundamental_weight(TypeB{3}, i)) for i in 1:3]
   8
 ```
 """
+function degree(
+  ::Type{PDT}, hw::WeightLatticeElem{PDT,R}
+) where {Ts,PDT<:ProductDynkinType{Ts},R}
+  is_dominant(hw) || throw(ArgumentError("Highest weight must be dominant"))
+
+  result = BigInt(1)
+  for factor_weight in _product_component_weights(PDT, hw)
+    result *= degree(factor_weight)
+  end
+  return result
+end
+
 function degree(::Type{DT}, hw::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R}
   is_dominant(hw) || throw(ArgumentError("Highest weight must be dominant"))
 

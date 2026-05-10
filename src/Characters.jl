@@ -517,6 +517,15 @@ julia> sum(values(mults))  # dim = 8
 8
 ```
 """
+function freudenthal_formula(
+  λ::WeightLatticeElem{PDT,R}
+) where {Ts,PDT<:ProductDynkinType{Ts},R}
+  is_dominant(λ) || throw(ArgumentError("Weight must be dominant"))
+  return _combine_product_coord_dicts(
+    PDT, map(freudenthal_formula, _product_component_weights(PDT, λ))
+  )
+end
+
 function freudenthal_formula(λ::WeightLatticeElem{DT,R}) where {DT,R}
   dom_mults = dominant_character(λ)
 
@@ -629,6 +638,22 @@ julia> dc_adj[SVector(0, 0)]   # zero weight multiplicity in adjoint
 2
 ```
 """
+function dominant_character(
+  λ::WeightLatticeElem{PDT,R}
+) where {Ts,PDT<:ProductDynkinType{Ts},R}
+  is_dominant(λ) || throw(ArgumentError("Weight must be dominant"))
+
+  cache_key = (PDT, λ)
+  cached = _get_dominant_cache(PDT, cache_key)
+  cached !== nothing && return cached
+
+  result = _combine_product_coord_dicts(
+    PDT, map(dominant_character, _product_component_weights(PDT, λ))
+  )
+  _set_dominant_cache!(cache_key, result)
+  return result
+end
+
 function dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
   is_dominant(λ) || throw(ArgumentError("Weight must be dominant"))
 
@@ -1313,6 +1338,25 @@ julia> ω1 = fundamental_weight(TypeA{3}, 1); tensor_product(ω1, ω1)
 A3(2, 0, 0) + A3(0, 1, 0)
 ```
 """
+function tensor_product(
+  λ::WeightLatticeElem{PDT,R}, μ::WeightLatticeElem{PDT,R}
+) where {Ts,PDT<:ProductDynkinType{Ts},R}
+  is_dominant(λ) || throw(ArgumentError("First weight must be dominant"))
+  is_dominant(μ) || throw(ArgumentError("Second weight must be dominant"))
+
+  a, b = λ.vec <= μ.vec ? (λ, μ) : (μ, λ)
+  key = (PDT, a, b)
+  cached = _get_tensor_cache(PDT, key)
+  cached !== nothing && return cached
+
+  λ_factors = _product_component_weights(PDT, λ)
+  μ_factors = _product_component_weights(PDT, μ)
+  result = _outer_product_characters(PDT, map(tensor_product, λ_factors, μ_factors))
+
+  _set_tensor_cache!(key, result)
+  return result
+end
+
 function tensor_product(λ::WeightLatticeElem{DT,R}, μ::WeightLatticeElem{DT,R}) where {DT,R}
   is_dominant(λ) || throw(ArgumentError("First weight must be dominant"))
   is_dominant(μ) || throw(ArgumentError("Second weight must be dominant"))
@@ -1443,6 +1487,26 @@ function adams_operator(λ::WeightLatticeElem{DT,R}, k::Integer) where {DT,R}
   k >= 1 ||
     throw(ArgumentError("Adams operator index must be a positive integer, got k=$k"))
 
+  return _adams_operator_generic(λ, k)
+end
+
+function adams_operator(
+  λ::WeightLatticeElem{PDT,R}, k::Integer
+) where {Ts,PDT<:ProductDynkinType{Ts},R}
+  k >= 1 ||
+    throw(ArgumentError("Adams operator index must be a positive integer, got k=$k"))
+
+  single = _product_single_supported_component(λ)
+  if single !== nothing
+    i, factor_weight = single
+    return _product_embed_coord_dict(PDT, i, adams_operator(factor_weight, k))
+  end
+
+  return _adams_operator_generic(λ, k)
+end
+
+function _adams_operator_generic(λ::WeightLatticeElem{DT,R}, k::Integer) where {DT,R}
+
   # Use dominant_character + direct orbit expansion (avoids building
   # the full unscaled weight dict).
   dom_mults = dominant_character(λ)
@@ -1527,6 +1591,83 @@ end
   return value
 end
 
+function _combine_product_coord_dicts(::Type{PDT}, dicts) where {Ts,PDT<:ProductDynkinType{Ts}}
+  R = rank(PDT)
+  offsets = component_offsets(PDT)
+  result = Dict{SVector{R,Int},Int}(zero(SVector{R,Int}) => 1)
+
+  for (i, dict) in pairs(dicts)
+    offset = offsets[i]
+    next_result = Dict{SVector{R,Int},Int}()
+    sizehint!(next_result, length(result) * max(length(dict), 1))
+    for (global_vec, global_m) in result
+      for (local_vec, local_m) in dict
+        coords = MVector{R,Int}(Tuple(global_vec))
+        @inbounds for j in 1:length(local_vec)
+          coords[offset + j] = local_vec[j]
+        end
+        combined = SVector{R,Int}(Tuple(coords))
+        next_result[combined] = get(next_result, combined, 0) + global_m * local_m
+      end
+    end
+    result = next_result
+  end
+
+  return result
+end
+
+function _product_embed_coord_dict(
+  ::Type{PDT}, i::Integer, dict
+) where {Ts,PDT<:ProductDynkinType{Ts}}
+  R = rank(PDT)
+  result = Dict{SVector{R,Int},Int}()
+  for (local_vec, m) in dict
+    m == 0 && continue
+    result[_product_embed_coords(PDT, i, local_vec)] = m
+  end
+  return result
+end
+
+function _product_embed_character(
+  ::Type{PDT}, i::Integer, V
+) where {Ts,PDT<:ProductDynkinType{Ts}}
+  R = rank(PDT)
+  result = Dict{WeightLatticeElem{PDT,R},Int}()
+  for (local_weight, m) in V.terms
+    m == 0 && continue
+    global_weight = _product_embed_weight(PDT, i, local_weight)
+    result[global_weight] = get(result, global_weight, 0) + m
+  end
+  return WeylCharacter{PDT,R}(result)
+end
+
+function _outer_product_characters(::Type{PDT}, chars) where {Ts,PDT<:ProductDynkinType{Ts}}
+  R = rank(PDT)
+  offsets = component_offsets(PDT)
+  zero_weight = WeightLatticeElem{PDT,R}(zero(SVector{R,Int}))
+  result = Dict{WeightLatticeElem{PDT,R},Int}(zero_weight => 1)
+
+  for (i, V) in pairs(chars)
+    offset = offsets[i]
+    next_result = Dict{WeightLatticeElem{PDT,R},Int}()
+    sizehint!(next_result, length(result) * max(length(V.terms), 1))
+    for (global_weight, global_m) in result
+      for (local_weight, local_m) in V.terms
+        coords = MVector{R,Int}(Tuple(global_weight.vec))
+        @inbounds for j in 1:length(local_weight.vec)
+          coords[offset + j] = local_weight.vec[j]
+        end
+        combined = WeightLatticeElem{PDT,R}(SVector{R,Int}(Tuple(coords)))
+        next_result[combined] = get(next_result, combined, 0) + global_m * local_m
+      end
+    end
+    result = next_result
+  end
+
+  filter!(p -> !iszero(p.second), result)
+  return WeylCharacter{PDT,R}(result)
+end
+
 """
     symmetric_power(λ::WeightLatticeElem{DT,R}, k::Integer) -> WeylCharacter{DT,R}
 
@@ -1563,6 +1704,30 @@ function symmetric_power(λ::WeightLatticeElem{DT,R}, k::Integer) where {DT,R}
   cached !== nothing && return cached
 
   result = _symmetric_power_newton_girard(λ, k)
+
+  _set_sym_power_cache!(cache_key, result)
+  return result
+end
+
+function symmetric_power(
+  λ::WeightLatticeElem{PDT,R}, k::Integer
+) where {Ts,PDT<:ProductDynkinType{Ts},R}
+  is_dominant(λ) || throw(ArgumentError("Weight must be dominant"))
+  k < 0 && return WeylCharacter(PDT)
+  k == 0 && return WeylCharacter(WeightLatticeElem{PDT,R}(zero(SVector{R,Int})))
+  k == 1 && return WeylCharacter(λ)
+
+  cache_key = (PDT, λ, k)
+  cached = _get_sym_power_cache(PDT, cache_key)
+  cached !== nothing && return cached
+
+  single = _product_single_supported_component(λ)
+  if single !== nothing
+    i, factor_weight = single
+    result = _product_embed_character(PDT, i, symmetric_power(factor_weight, k))
+  else
+    result = _symmetric_power_newton_girard(λ, k)
+  end
 
   _set_sym_power_cache!(cache_key, result)
   return result
@@ -1732,6 +1897,31 @@ function exterior_power(λ::WeightLatticeElem{DT,R}, k::Integer) where {DT,R}
   cached !== nothing && return cached
 
   result = _exterior_power_newton_girard(λ, k)
+
+  _set_ext_power_cache!(cache_key, result)
+  return result
+end
+
+function exterior_power(
+  λ::WeightLatticeElem{PDT,R}, k::Integer
+) where {Ts,PDT<:ProductDynkinType{Ts},R}
+  is_dominant(λ) || throw(ArgumentError("Weight must be dominant"))
+  k < 0 && return WeylCharacter(PDT)
+  k == 0 && return WeylCharacter(WeightLatticeElem{PDT,R}(zero(SVector{R,Int})))
+  k == 1 && return WeylCharacter(λ)
+  k > degree(λ) && return WeylCharacter(PDT)
+
+  cache_key = (PDT, λ, k)
+  cached = _get_ext_power_cache(PDT, cache_key)
+  cached !== nothing && return cached
+
+  single = _product_single_supported_component(λ)
+  if single !== nothing
+    i, factor_weight = single
+    result = _product_embed_character(PDT, i, exterior_power(factor_weight, k))
+  else
+    result = _exterior_power_newton_girard(λ, k)
+  end
 
   _set_ext_power_cache!(cache_key, result)
   return result
@@ -2626,21 +2816,14 @@ adjoint_representation(dt::DynkinType) = adjoint_representation(typeof(dt))
 function adjoint_representation(::Type{PDT}) where {Ts,PDT<:ProductDynkinType{Ts}}
   R = rank(PDT)
   result = WeylCharacter{PDT,R}(Dict{WeightLatticeElem{PDT,R},Int}())
-  offset = 0
-  for T in Ts.parameters
+  for (i, T) in pairs(Ts.parameters)
     r = rank(T)
     RS_T = RootSystem(T)
     θ = highest_root(RS_T)
     C = cartan_matrix(T)
     θ_w_local = C * θ.vec  # SVector{r,Int} in fundamental weight coords of T
-    # Embed into the product weight space: zeros for all other factor slots
-    full_vec = zeros(Int, R)
-    for j in 1:r
-      full_vec[offset + j] = Int(θ_w_local[j])
-    end
-    λ = WeightLatticeElem{PDT,R}(SVector{R,Int}(full_vec))
+    λ = _product_embed_weight(PDT, i, WeightLatticeElem{T,r}(SVector{r,Int}(θ_w_local)))
     result = result + WeylCharacter(λ)
-    offset += r
   end
   return result
 end

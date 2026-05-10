@@ -2212,6 +2212,88 @@ end
 #  Product-type character tests (item 21)
 # ═══════════════════════════════════════════════════════════════════════
 @testset "Product-type characters extended" begin
+  zero_weight(::Type{DT}) where {DT<:DynkinType} =
+    WeightLatticeElem{DT,rank(DT)}(zero(SVector{rank(DT),Int}))
+
+  function embed_coords(::Type{PDT}, factor::Integer, v::AbstractVector{<:Integer}) where {Ts,PDT<:ProductDynkinType{Ts}}
+    offsets = component_offsets(PDT)
+    R = rank(PDT)
+    coords = zeros(Int, R)
+    offset = offsets[factor]
+    @inbounds for j in 1:length(v)
+      coords[offset + j] = Int(v[j])
+    end
+    return SVector{R,Int}(Tuple(coords))
+  end
+
+  embed_weight(::Type{PDT}, factor::Integer, w::WeightLatticeElem) where {Ts,PDT<:ProductDynkinType{Ts}} =
+    WeightLatticeElem(PDT, embed_coords(PDT, factor, w.vec))
+
+  function embed_coord_dict(::Type{PDT}, factor::Integer, d) where {Ts,PDT<:ProductDynkinType{Ts}}
+    return Dict(embed_coords(PDT, factor, μ) => m for (μ, m) in d)
+  end
+
+  function combine_coord_dicts(::Type{PDT}, parts) where {Ts,PDT<:ProductDynkinType{Ts}}
+    R = rank(PDT)
+    offsets = component_offsets(PDT)
+    result = Dict{SVector{R,Int},Int}(zero(SVector{R,Int}) => 1)
+    for (factor, dict) in parts
+      offset = offsets[factor]
+      next_result = Dict{SVector{R,Int},Int}()
+      for (global_vec, global_m) in result, (local_vec, local_m) in dict
+        coords = collect(global_vec)
+        @inbounds for j in 1:length(local_vec)
+          coords[offset + j] = local_vec[j]
+        end
+        combined = SVector{R,Int}(Tuple(coords))
+        next_result[combined] = get(next_result, combined, 0) + global_m * local_m
+      end
+      result = next_result
+    end
+    return result
+  end
+
+  function combine_characters(::Type{PDT}, parts) where {Ts,PDT<:ProductDynkinType{Ts}}
+    R = rank(PDT)
+    offsets = component_offsets(PDT)
+    result = Dict{WeightLatticeElem{PDT,R},Int}(zero_weight(PDT) => 1)
+    for (factor, V) in parts
+      offset = offsets[factor]
+      next_result = Dict{WeightLatticeElem{PDT,R},Int}()
+      for (global_weight, global_m) in result, (local_weight, local_m) in V.terms
+        coords = collect(global_weight.vec)
+        @inbounds for j in 1:length(local_weight.vec)
+          coords[offset + j] = local_weight.vec[j]
+        end
+        combined = WeightLatticeElem(PDT, SVector{R,Int}(Tuple(coords)))
+        next_result[combined] = get(next_result, combined, 0) + global_m * local_m
+      end
+      result = next_result
+    end
+    filter!(p -> !iszero(p.second), result)
+    return WeylCharacter{PDT,R}(result)
+  end
+
+  function local_weight(::Type{PDT}, factor::Integer, coords) where {Ts,PDT<:ProductDynkinType{Ts}}
+    return WeightLatticeElem(component_type(PDT, factor), coords)
+  end
+
+  function build_product_weight(::Type{PDT}, specs) where {Ts,PDT<:ProductDynkinType{Ts}}
+    w = zero_weight(PDT)
+    for (factor, coords) in specs
+      w += embed_weight(PDT, factor, local_weight(PDT, factor, coords))
+    end
+    return w
+  end
+
+  function factor_weights(::Type{PDT}, specs) where {Ts,PDT<:ProductDynkinType{Ts}}
+    ws = [zero_weight(component_type(PDT, i)) for i in 1:n_components(PDT)]
+    for (factor, coords) in specs
+      ws[factor] = local_weight(PDT, factor, coords)
+    end
+    return ws
+  end
+
   # ─── A2 × B2 (rank 4) ────────────────────────────────────────────
   @testset "A2 × B2" begin
     PT = ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}
@@ -2231,16 +2313,21 @@ end
     # tensor product: V(ω1) ⊗ V(ω3) has dim 3×5 = 15
     V1 = WeylCharacter(ω[1]);
     V3 = WeylCharacter(ω[3])
+    @test degree(ω[1] + ω[3]) == degree(ω[1]) * degree(ω[3])
     @test degree(V1 * V3) == 15
+    @test V1 * V3 == WeylCharacter(ω[1] + ω[3])
 
     # V(ω1) ⊗ V(ω1) decomposes in A2 factor only
     @test degree(V1 * V1) == 9   # 3⊗3 in A2
+    @test V1 * V1 == WeylCharacter(2 * ω[1]) + WeylCharacter(ω[2])
 
     # Sym² and ⋀² of fundamental reps
     @test degree(symmetric_power(ω[1], 2)) == 6
     @test degree(exterior_power(ω[1], 2)) == 3
     @test degree(symmetric_power(ω[3], 2)) == 15  # Sym²(5) for SO(5) = 14-dim + trivial
     @test degree(exterior_power(ω[3], 2)) == 10   # adjoint of B2 = so(5) = 10-dim
+    @test symmetric_power(ω[1], 2) == WeylCharacter(2 * ω[1])
+    @test exterior_power(ω[1], 2) == WeylCharacter(ω[2])
 
     # dual involution
     for i in 1:4
@@ -2271,10 +2358,13 @@ end
 
     # (2⊗1) ⊗ (1⊗2) = 4-dim
     @test degree(V1 * V2) == 4
+    @test V1 * V2 == WeylCharacter(ω1 + ω2)
 
     # Sym²(2⊗1) in product type = Sym²(2) ⊗ 1 = 3⊗1 in product
     # In A1×A1: V(ω1)=2⊗1, Sym²(V(ω1)) = V(2ω1) = 3⊗1, dim=3
     @test degree(symmetric_power(ω1, 2)) == 3
+    @test symmetric_power(ω1, 2) == WeylCharacter(2 * ω1)
+    @test exterior_power(ω1, 2) == WeylCharacter(zero(ω1))
 
     # Bruhat-like: dimension formula on product
     @test weyl_order(PT) == 4   # Z/2 × Z/2
@@ -2282,6 +2372,11 @@ end
     # freudenthal on product type
     m = freudenthal_formula(ω1)
     @test sum(values(m)) == 2
+
+    ψ2_local = adams_operator(fundamental_weight(TypeA{1}, 1), 2)
+    ψ2_prod = adams_operator(ω1, 2)
+    expected_ψ2 = Dict(SVector(μ[1], 0) => mult for (μ, mult) in ψ2_local)
+    @test ψ2_prod == expected_ψ2
   end
 
   # ─── A2 × A2 × A2 (three factors) ───────────────────────────────
@@ -2299,6 +2394,16 @@ end
     V3 = WeylCharacter(ω[3]);
     V5 = WeylCharacter(ω[5])
     @test degree(V1 * V3 * V5) == 27
+
+    λ_adj = (ω[1] + ω[2]) + (ω[3] + ω[4])
+    dc_adj = dominant_character(λ_adj)
+    @test length(dc_adj) == 4
+    @test dc_adj[SVector(1, 1, 1, 1, 0, 0)] == 1
+    @test dc_adj[SVector(0, 0, 0, 0, 0, 0)] == 4
+
+    full_adj = freudenthal_formula(λ_adj)
+    @test full_adj[SVector(0, 0, 0, 0, 0, 0)] == 4
+    @test sum(values(full_adj)) == degree(λ_adj)
 
     # Weyl order: (3!)^3 = 216
     @test weyl_order(PT) == 216
@@ -2340,6 +2445,98 @@ end
 
     # dimension: rank + 2*n_pos
     @test dimension(PT) == dimension(TypeA{3}) + dimension(TypeG2)
+  end
+
+  @testset "Shortcut equivalences across many product types" begin
+    single_factor_cases = [
+      (ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}, [(1, 1), (1, 2), (2, 1), (2, 2)]),
+      (ProductDynkinType{Tuple{TypeA{1},TypeA{1}}}, [(1, 1), (2, 1)]),
+      (ProductDynkinType{Tuple{TypeA{2},TypeB{3}}}, [(1, 1), (1, 2), (2, 1), (2, 2), (2, 3)]),
+      (ProductDynkinType{Tuple{TypeA{3},TypeG2}}, [(1, 1), (1, 2), (1, 3), (2, 1), (2, 2)]),
+      (ProductDynkinType{Tuple{TypeB{2},TypeG2}}, [(1, 1), (1, 2), (2, 1), (2, 2)]),
+      (ProductDynkinType{Tuple{TypeA{2},TypeA{3}}}, [(1, 1), (1, 2), (2, 1), (2, 2), (2, 3)]),
+      (ProductDynkinType{Tuple{TypeA{4},TypeA{5},TypeB{3}}}, [(1, 1), (1, 4), (2, 1), (2, 5), (3, 1), (3, 3)]),
+      (ProductDynkinType{Tuple{TypeA{3},TypeD{4},TypeA{5}}}, [(1, 1), (1, 3), (2, 1), (2, 3), (2, 4), (3, 1), (3, 5)]),
+    ]
+
+    for (PT, entries) in single_factor_cases
+      offsets = component_offsets(PT)
+      @testset "$(sprint(show, PT())) single-factor embeddings" begin
+        for (factor, local_idx) in entries
+          T = component_type(PT, factor)
+          λ_local = fundamental_weight(T, local_idx)
+          λ = fundamental_weight(PT, offsets[factor] + local_idx)
+
+          @test degree(λ) == degree(λ_local)
+          @test dominant_character(λ) == embed_coord_dict(PT, factor, dominant_character(λ_local))
+          @test freudenthal_formula(λ) == embed_coord_dict(PT, factor, freudenthal_formula(λ_local))
+
+          for k in 2:3
+            @test symmetric_power(λ, k) ==
+              combine_characters(PT, [(factor, symmetric_power(λ_local, k))])
+            @test adams_operator(λ, k) == embed_coord_dict(PT, factor, adams_operator(λ_local, k))
+          end
+
+          for k in 2:min(3, Int(degree(λ_local)))
+            @test exterior_power(λ, k) ==
+              combine_characters(PT, [(factor, exterior_power(λ_local, k))])
+          end
+        end
+      end
+    end
+
+    mixed_irrep_cases = [
+      (ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}, [(1, [1, 0]), (2, [1, 0])]),
+      (ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}, [(1, [1, 1]), (2, [0, 1])]),
+      (ProductDynkinType{Tuple{TypeA{2},TypeB{3}}}, [(1, [1, 0]), (2, [0, 0, 1])]),
+      (ProductDynkinType{Tuple{TypeA{3},TypeG2}}, [(1, [1, 0, 0]), (2, [1, 0])]),
+      (ProductDynkinType{Tuple{TypeB{2},TypeG2}}, [(1, [1, 0]), (2, [0, 1])]),
+      (ProductDynkinType{Tuple{TypeA{2},TypeA{2},TypeA{2}}}, [(1, [1, 0]), (2, [0, 1]), (3, [1, 1])]),
+      (ProductDynkinType{Tuple{TypeA{4},TypeA{5},TypeB{3}}}, [(1, [1, 0, 0, 0]), (2, [0, 1, 0, 0, 0]), (3, [0, 0, 1])]),
+      (ProductDynkinType{Tuple{TypeA{4},TypeA{5},TypeB{3}}}, [(1, [1, 0, 0, 1]), (2, [1, 0, 0, 0, 1]), (3, [1, 0, 0])]),
+      (ProductDynkinType{Tuple{TypeA{3},TypeD{4},TypeA{5}}}, [(1, [1, 0, 0]), (2, [0, 0, 1, 0]), (3, [0, 0, 0, 0, 1])]),
+      (ProductDynkinType{Tuple{TypeA{3},TypeD{4},TypeA{5}}}, [(1, [0, 1, 0]), (2, [1, 0, 0, 1]), (3, [1, 0, 0, 0, 1])]),
+    ]
+
+    for (PT, specs) in mixed_irrep_cases
+      λ = build_product_weight(PT, specs)
+      local_weights = [(factor, local_weight(PT, factor, coords)) for (factor, coords) in specs]
+      expected_degree = prod(degree(w) for (_, w) in local_weights)
+      expected_dom = combine_coord_dicts(PT, [(factor, dominant_character(w)) for (factor, w) in local_weights])
+      expected_full = combine_coord_dicts(PT, [(factor, freudenthal_formula(w)) for (factor, w) in local_weights])
+
+      @test degree(λ) == expected_degree
+      @test dominant_character(λ) == expected_dom
+      @test freudenthal_formula(λ) == expected_full
+    end
+
+    tensor_cases = [
+      (ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}, [(1, [1, 0])], [(2, [1, 0])]),
+      (ProductDynkinType{Tuple{TypeA{2},TypeB{2}}}, [(1, [1, 0])], [(1, [1, 0])]),
+      (ProductDynkinType{Tuple{TypeA{1},TypeA{1}}}, [(1, [1])], [(2, [1])]),
+      (ProductDynkinType{Tuple{TypeA{2},TypeB{3}}}, [(1, [1, 0])], [(2, [0, 0, 1])]),
+      (ProductDynkinType{Tuple{TypeA{2},TypeB{3}}}, [(1, [1, 1]), (2, [1, 0, 0])], [(1, [1, 0]), (2, [0, 1, 0])]),
+      (ProductDynkinType{Tuple{TypeA{3},TypeG2}}, [(1, [1, 0, 0])], [(2, [0, 1])]),
+      (ProductDynkinType{Tuple{TypeB{2},TypeG2}}, [(1, [0, 1])], [(2, [1, 0])]),
+      (ProductDynkinType{Tuple{TypeA{2},TypeA{2},TypeA{2}}}, [(1, [1, 0]), (3, [0, 1])], [(2, [1, 0]), (3, [1, 0])]),
+      (ProductDynkinType{Tuple{TypeA{4},TypeA{5},TypeB{3}}}, [(1, [1, 0, 0, 0]), (3, [0, 0, 1])], [(2, [1, 0, 0, 0, 0])]),
+      (ProductDynkinType{Tuple{TypeA{4},TypeA{5},TypeB{3}}}, [(1, [1, 0, 0, 1]), (2, [0, 1, 0, 0, 0])], [(2, [1, 0, 0, 0, 1]), (3, [1, 0, 0])]),
+      (ProductDynkinType{Tuple{TypeA{3},TypeD{4},TypeA{5}}}, [(1, [1, 0, 0]), (3, [0, 0, 0, 0, 1])], [(2, [0, 0, 1, 0])]),
+      (ProductDynkinType{Tuple{TypeA{3},TypeD{4},TypeA{5}}}, [(1, [0, 1, 0]), (2, [1, 0, 0, 1])], [(2, [0, 0, 1, 0]), (3, [1, 0, 0, 0, 1])]),
+    ]
+
+    for (PT, lhs_specs, rhs_specs) in tensor_cases
+      λ = build_product_weight(PT, lhs_specs)
+      μ = build_product_weight(PT, rhs_specs)
+      λ_factors = factor_weights(PT, lhs_specs)
+      μ_factors = factor_weights(PT, rhs_specs)
+      expected = combine_characters(PT, [
+        (i, tensor_product(λ_factors[i], μ_factors[i])) for i in 1:n_components(PT)
+      ])
+
+      @test tensor_product(λ, μ) == expected
+      @test degree(tensor_product(λ, μ)) == degree(λ) * degree(μ)
+    end
   end
 
   # ─── character_from_weights round-trip ──────────────────────────
