@@ -274,12 +274,8 @@ function _compute_positive_roots_and_reflections(C::SMatrix{R,R,Int}, rk::Intege
         pairing += C[s, j] * root_i[j]
         copairing += coroot_i[j] * C[j, s]
       end
-
-      if pairing * copairing >= 4
-        # Not a valid reflection (imaginary root situation for non-finite types)
-        refl_data[(s, i)] = 0
-        continue
-      end
+      pairing * copairing < 4 ||
+        error("Non-finite Cartan data encountered while enumerating positive roots")
 
       # Reflected root: s_s(root_i) = root_i - pairing * α_s
       new_root = SVector{R,Int}(ntuple(j -> root_i[j] - pairing * (j == s ? 1 : 0), R))
