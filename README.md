@@ -1,6 +1,7 @@
 # Lie.jl
 
 [![tests](https://github.com/HomogeneousTools/Lie.jl/actions/workflows/tests.yml/badge.svg)](https://github.com/HomogeneousTools/Lie.jl/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/gh/HomogeneousTools/Lie.jl/graph/badge.svg)](https://codecov.io/gh/HomogeneousTools/Lie.jl)
 [![Docs](https://img.shields.io/badge/docs-homogeneous.tools/Lie.jl-blue)](https://homogeneous.tools/Lie.jl/)
 [![Release](https://img.shields.io/github/v/release/HomogeneousTools/Lie.jl?color=green)](https://github.com/HomogeneousTools/Lie.jl/releases)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
@@ -91,6 +92,10 @@ is_effective(V - V)      # true (the zero character is effective)
 ```bash
 julia --project=. -e 'using Pkg; Pkg.test()'
 ```
+
+Coverage for the default Julia 1 CI run is uploaded automatically to
+[Codecov](https://codecov.io/gh/HomogeneousTools/Lie.jl) by the `codecov` job in
+`.github/workflows/tests.yml`.
 
 ## Running doctests
 
