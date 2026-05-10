@@ -205,6 +205,7 @@ end
 
 # ─── Startup banner ────────────────────────────────────────────────────────
 
+# COV_EXCL_START
 function _print_banner()
   v = pkgversion(@__MODULE__)
   version_str = v === nothing ? "dev" : string(v)
@@ -229,12 +230,15 @@ function _print_banner()
   print("            ")
   println("│  Version: ", version_str)
 end
+# COV_EXCL_STOP
 
 function __init__()
   _apply_cache_preferences!()
   show_banner = @load_preference("show_banner", true)
   if show_banner && isinteractive() && !haskey(ENV, "CI") && displaysize(stdout)[2] >= 60
+    # COV_EXCL_START
     _print_banner()
+    # COV_EXCL_STOP
   end
   return nothing
 end
