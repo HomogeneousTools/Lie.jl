@@ -63,28 +63,27 @@ julia --project=.
 using Lie
 
 # Fundamental weights of A₃
-ω₁ = fundamental_weight(TypeA{3}, 1)
-ω₂ = fundamental_weight(TypeA{3}, 2)
+ω1 = fundamental_weight(TypeA{3}, 1)
+ω2 = fundamental_weight(TypeA{3}, 2)
 
 # Dimension of the standard representation
-degree(ω₁)   # 4
+degree(ω1)   # 4
 
-# Tensor product decomposition: V(ω₁) ⊗ V(ω₁) = Sym²V ⊕ ⋀²V
-tensor_product(ω₁, ω₁)
+# Tensor product decomposition: V(ω1) ⊗ V(ω1) = Sym²V ⊕ ⋀²V
+tensor_product(ω1, ω2)
 
 # Symmetric and exterior powers
-Sym(3, ω₁)    # Sym³(standard rep)
-⋀(2, ω₁)      # ⋀²(standard rep) = V(ω₂)
+Sym(3, ω1)    # Sym³(standard rep)
+⋀(2, ω1)      # ⋀²(standard rep) = V(ω2)
 
 # Weyl orbit and dimension
-length(weyl_orbit(TypeA{3}, ω₁))   # 4
-weyl_order(TypeA{3})                # 24
+length(weyl_orbit(TypeA{3}, ω1))   # 4
+weyl_order(TypeA{3})               # 24
 
 # Virtual (Weyl) characters and the representation ring
-V = WeylCharacter(ω₁)
-V * V                    # tensor product as ring multiplication
+V = WeylCharacter(ω1)
+2V * V                   # tensor product as ring multiplication
 dual(V)                  # contragredient
-is_effective(V - V)      # true (the zero character is effective)
 ```
 
 ## Running tests
