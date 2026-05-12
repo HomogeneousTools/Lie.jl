@@ -46,7 +46,7 @@ multiplicity dictionary returned by [`dominant_character`](@ref).
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
@@ -93,7 +93,7 @@ with the given coordinates in the fundamental weight basis.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> WeylCharacter(TypeA{2}, [1, 0])
 A2(1, 0)
@@ -129,7 +129,7 @@ an actual (not merely virtual) representation.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> V = WeylCharacter(fundamental_weight(TypeA{2}, 1));
 
@@ -149,7 +149,7 @@ True when `V` is a single irreducible with multiplicity 1.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> V = WeylCharacter(fundamental_weight(TypeA{2}, 1));
 
@@ -171,7 +171,7 @@ Throws if `V` is not irreducible.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> V = WeylCharacter(fundamental_weight(TypeA{2}, 1));
 
@@ -202,7 +202,7 @@ Returns a `BigInt`.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
@@ -334,7 +334,7 @@ making each squaring step significantly more expensive.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
@@ -373,7 +373,7 @@ Add `W` into `V` in-place, modifying `V`. Returns `V`.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
@@ -402,7 +402,7 @@ Add `c * W` into `V` in-place, modifying `V`. Returns `V`.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
@@ -446,7 +446,7 @@ Iterates over all pairs `(λ, m)` in `V` and `(μ, n)` in `W`, computes
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
@@ -494,7 +494,7 @@ to its full Weyl orbit.
 
 # Examples
 ```jldoctest
-julia> using Lie; using StaticArrays
+julia> using Semisimple; using StaticArrays
 
 julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
@@ -609,7 +609,7 @@ and multiplicities as values. Results are cached per highest weight; clear with
 
 # Examples
 ```jldoctest
-julia> using Lie; using StaticArrays
+julia> using Semisimple; using StaticArrays
 
 julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
@@ -815,7 +815,7 @@ Return the multiplicity of weight `μ` in the irreducible representation
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> ω1 = fundamental_weight(TypeA{2}, 1); ω2 = fundamental_weight(TypeA{2}, 2);
 
@@ -1227,7 +1227,7 @@ partitions for ``λ`` and ``μ``), and reads off the multiplicities
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> ω1 = fundamental_weight(TypeA{2}, 1); ω2 = fundamental_weight(TypeA{2}, 2);
 
@@ -1302,7 +1302,7 @@ factor has smaller dimension, for efficiency.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> ω1 = fundamental_weight(TypeA{2}, 1); ω2 = fundamental_weight(TypeA{2}, 2);
 
@@ -1371,7 +1371,7 @@ Highest weight of the contragredient (dual) representation: `λ* = -w₀(λ)`.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> ω1 = fundamental_weight(TypeA{2}, 1); ω2 = fundamental_weight(TypeA{2}, 2);
 
@@ -1398,7 +1398,7 @@ Dual of a virtual character: each summand ``\\mathrm{V}(λ)`` maps to ``\\mathrm
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
@@ -1431,7 +1431,7 @@ multiplicity ``m(μ)``, then ``ψ^k(\\mathrm{V}(λ))`` has ``m(μ)`` at weight `
 
 # Examples
 ```jldoctest
-julia> using Lie, StaticArrays
+julia> using Semisimple, StaticArrays
 
 julia> m = adams_operator(fundamental_weight(TypeA{2}, 1), 2);
 
@@ -1544,7 +1544,7 @@ Results are memoized for efficiency in recursive calls.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> spin = fundamental_weight(TypeB{3}, 3);  # B3 spin rep, dim 8
 
@@ -1622,7 +1622,7 @@ Results are memoized.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
@@ -1712,7 +1712,7 @@ Results are memoized for efficiency in recursive calls.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> spin = fundamental_weight(TypeB{3}, 3);  # B3 spin rep, dim 8
 
@@ -1779,7 +1779,7 @@ Results are memoized.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> ω1 = fundamental_weight(TypeA{3}, 1);
 
@@ -1852,7 +1852,7 @@ Compute the `k`-th symmetric power.  Shorthand for [`symmetric_power`](@ref).
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
@@ -1882,7 +1882,7 @@ Compute the `k`-th exterior power.  Shorthand for [`exterior_power`](@ref).
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> ω1 = fundamental_weight(TypeA{3}, 1);
 
@@ -2136,7 +2136,7 @@ s_λ(\\mathrm{V}) = \\frac{1}{n!} \\sum_{κ \\vdash n} χ^λ(κ) \\cdot |\\mathr
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> ω1 = fundamental_weight(TypeA{3}, 1);
 
@@ -2283,7 +2283,7 @@ all Lie types (including G₂ where the Cartan symmetrizer gives the wrong order
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
@@ -2353,7 +2353,7 @@ The result is always a non-negative half-integer.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> dynkin_index(fundamental_weight(TypeA{2}, 1))
 1//2
@@ -2395,7 +2395,7 @@ highest root. The normalization ensures long roots have squared length 2.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> casimir_eigenvalue(fundamental_weight(TypeA{2}, 1))
 8//3
@@ -2432,7 +2432,7 @@ The return value depends on the Lie algebra type:
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> congruency_class(fundamental_weight(TypeA{2}, 1))
 1
@@ -2523,7 +2523,7 @@ isomorphic to its dual ``\\mathrm{V}(λ)^*``, i.e. if ``λ = -w_0(λ)``.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> is_self_dual(fundamental_weight(TypeA{2}, 1))
 false
@@ -2555,7 +2555,7 @@ where ``δ = ∑_{α > 0} α^∨`` is twice the dual Weyl vector and
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> frobenius_schur_indicator(fundamental_weight(TypeA{2}, 1))
 0
@@ -2594,7 +2594,7 @@ embedded in the product weight space with zeros in the other factor slots.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> degree(adjoint_representation(TypeA{3}))
 15

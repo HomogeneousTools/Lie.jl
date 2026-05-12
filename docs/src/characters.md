@@ -8,7 +8,7 @@ highest weights.
 ## Constructing characters
 
 ```jldoctest chars
-julia> using Lie, StaticArrays
+julia> using Semisimple, StaticArrays
 
 julia> ω1 = fundamental_weight(TypeA{3}, 1);
 
@@ -95,7 +95,7 @@ addmul!
 
 ## Character data terminology
 
-Lie.jl uses three related but distinct character representations:
+Semisimple.jl uses three related but distinct character representations:
 
 | Name | Julia representation | Meaning |
 |---|---|---|
@@ -568,7 +568,7 @@ julia> length(r.terms)   # 2 irreducible components
 
 ## Representation invariants
 
-Lie.jl provides several classical invariants attached to irreducible
+Semisimple.jl provides several classical invariants attached to irreducible
 representations.
 
 ### Dynkin index
@@ -581,7 +581,7 @@ I(λ) = \frac{\dim \mathrm{V}(λ) \cdot (λ,\, λ + 2ρ)}{2\,\dim \mathfrak{g}}
 ```
 
 where the inner product is normalized so that long roots have squared
-length&nbsp;2. Equivalently, Lie.jl divides its internal bilinear form by
+length&nbsp;2. Equivalently, Semisimple.jl divides its internal bilinear form by
 ``(\theta,\theta)/2``. For the adjoint representation, ``I(θ) = h^∨`` (the
 dual Coxeter number).
 

@@ -50,7 +50,7 @@ caches (they need not sum to 1 — each cache is sized independently as
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> configure_caches!(budget = 512 * 1024^2)  # 512 MiB total
 ```
@@ -75,12 +75,12 @@ end
 """
     clear_caches!()
 
-Empty every internal cache in Lie.jl (both bounded Dict caches and
+Empty every internal cache in Semisimple.jl (both bounded Dict caches and
 LRU caches).
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
@@ -114,7 +114,7 @@ Return a snapshot of the current cache occupancy.  Each entry is a
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> info = cache_info();
 

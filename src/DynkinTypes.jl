@@ -15,7 +15,7 @@ Abstract supertype for finite Dynkin types (simple and semisimple).
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> TypeA{2} <: DynkinType
 true
@@ -30,7 +30,7 @@ Abstract supertype for simple (irreducible) finite Dynkin types.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> TypeG2 <: SimpleDynkinType
 true
@@ -49,7 +49,7 @@ Dynkin type ``\\mathrm{A}_N``: the root-system type of
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> rank(TypeA{3})
 3
@@ -73,7 +73,7 @@ Dynkin type ``\\mathrm{B}_N``: the root-system type of
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> rank(TypeB{3})
 3
@@ -97,7 +97,7 @@ Dynkin type ``\\mathrm{C}_N``: the root-system type of
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> rank(TypeC{3})
 3
@@ -121,7 +121,7 @@ Dynkin type ``\\mathrm{D}_N``: the root-system type of
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> rank(TypeD{4})
 4
@@ -145,7 +145,7 @@ Exceptional Dynkin type ``\\mathrm{E}_N`` for ``N \\in \\{6,7,8\\}``.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> n_positive_roots(TypeE{6})
 36
@@ -167,7 +167,7 @@ Exceptional Dynkin type ``\\mathrm{F}_4``.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> rank(TypeF4)
 4
@@ -182,7 +182,7 @@ Exceptional Dynkin type ``\\mathrm{G}_2``.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> rank(TypeG2)
 2
@@ -200,7 +200,7 @@ Product of simple Dynkin types, representing a semisimple Lie algebra.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> ProductDynkinType{Tuple{TypeA{3}, TypeD{5}, TypeE{6}}}()   # A3 × D5 × E6
 A3 × D5 × E6
@@ -277,7 +277,7 @@ This is a compile-time constant.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> rank(TypeA{3})
 3
@@ -311,7 +311,7 @@ Number of positive roots for a simple Dynkin type.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> n_positive_roots(TypeA{3})
 6
@@ -353,7 +353,7 @@ Note: for the adjoint representation dimension (same number), use
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> dimension(TypeA{3})  # sl_4(C) has dimension 15
 15
@@ -377,7 +377,7 @@ Number of simple factors in a product type.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> n_components(ProductDynkinType{Tuple{TypeA{2}, TypeB{2}}})
 2
@@ -398,7 +398,7 @@ Return the `i`-th simple Dynkin type in a product.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> PT = ProductDynkinType{Tuple{TypeA{2}, TypeB{2}}};
 
@@ -421,7 +421,7 @@ Return a tuple of ranks of the components.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> component_ranks(ProductDynkinType{Tuple{TypeA{2}, TypeB{3}}})
 (2, 3)
@@ -440,7 +440,7 @@ The i-th component occupies indices offset[i]+1 : offset[i]+rank(component_i).
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> component_offsets(ProductDynkinType{Tuple{TypeA{2}, TypeB{3}}})
 (0, 2)
@@ -484,7 +484,7 @@ See also: [`dynkin_diagram`](@ref).
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> occursin(Char(10), string(dynkin_diagram(TypeA{2})))
 true
@@ -512,7 +512,7 @@ the REPL; call `string` to recover the raw multi-line string.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> dynkin_diagram(TypeA{4})
 ○───○───○───○

@@ -247,7 +247,7 @@ Block-diagonal Cartan matrix for a product of simple types.
 
 # Examples
 ```jldoctest
-julia> using Lie, StaticArrays
+julia> using Semisimple, StaticArrays
 
 julia> cartan_matrix(TypeA{2}) == SMatrix{2,2}(2, -1, -1, 2)
 true
@@ -323,7 +323,7 @@ the Cartan matrix of `DT`. Entries are positive integers with gcd 1.
 
 # Examples
 ```jldoctest
-julia> using Lie, StaticArrays
+julia> using Semisimple, StaticArrays
 
 julia> cartan_symmetrizer(TypeB{3}) == SVector(2, 2, 1)
 true
@@ -411,7 +411,7 @@ positive-definite matrix defining the inner product on the root space.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> cartan_bilinear_form(TypeB{2})
 2×2 StaticArraysCore.SMatrix{2, 2, Int64, 4} with indices SOneTo(2)×SOneTo(2):
@@ -476,7 +476,7 @@ Return the inverse of the Cartan matrix over the rationals.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> cartan_matrix_inverse(TypeA{2})
 2×2 StaticArraysCore.SMatrix{2, 2, Rational{Int64}, 4} with indices SOneTo(2)×SOneTo(2):
@@ -510,7 +510,7 @@ that makes all entries integral.  This is a compile-time constant.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> first(omega_bilinear_form_scaled(TypeA{2}))
 3
@@ -555,7 +555,7 @@ This is a compile-time constant based on hardcoded values for simple types.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> cartan_determinant(TypeA{3})
 4

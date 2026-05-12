@@ -1,13 +1,13 @@
 # Root systems
 
-A root system is determined by its Dynkin type.  Lie.jl caches one immutable
+A root system is determined by its Dynkin type.  Semisimple.jl caches one immutable
 `RootSystem` singleton per type, so constructing the same type twice returns
 the same object.
 
 ## Creating a root system
 
 ```jldoctest roots
-julia> using Lie
+julia> using Semisimple
 
 julia> RS = RootSystem(TypeA{3})
 Root system of type A3, rank 3 with 6 positive roots

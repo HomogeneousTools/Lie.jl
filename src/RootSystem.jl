@@ -29,7 +29,7 @@ stored as an `SVector{R,Int}` of coordinates in the simple root basis.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> RootSpaceElem(TypeA{2}, [1, 1])
 α1 + α2
@@ -62,7 +62,7 @@ or of a weight lattice element (in the fundamental weight basis).
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> coefficients(RootSpaceElem(TypeA{2}, [1, 1])) == [1, 1]
 true
@@ -94,7 +94,7 @@ Sum of coefficients in the simple root expansion.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> height(RootSpaceElem(TypeA{2}, [1, 1]))
 2
@@ -157,7 +157,7 @@ Fields:
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> RootSystem(TypeA{2})
 Root system of type A2, rank 2 with 3 positive roots
@@ -179,7 +179,7 @@ using a compact runtime builder.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> RootSystem(TypeA{2}) === RootSystem(TypeA{2})
 true
@@ -461,7 +461,7 @@ Return the number of simple roots, equal to the rank of the root system.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> n_simple_roots(RootSystem(TypeA{2}))
 2
@@ -476,7 +476,7 @@ Return the number of positive roots.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> n_positive_roots(RootSystem(TypeA{2}))
 3
@@ -491,7 +491,7 @@ Return the total number of roots (positive and negative).
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> n_roots(RootSystem(TypeA{2}))
 6
@@ -506,7 +506,7 @@ Return the `i`-th simple root.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> simple_root(RootSystem(TypeA{2}), 1)
 α1
@@ -524,7 +524,7 @@ Return all simple roots.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> simple_roots(RootSystem(TypeA{2}))
 2-element Vector{RootSpaceElem{TypeA{2}, 2}}:
@@ -543,7 +543,7 @@ Return the `i`-th positive root.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> positive_root(RootSystem(TypeA{2}), 3)
 α1 + α2
@@ -560,7 +560,7 @@ Return all positive roots.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> length(positive_roots(RootSystem(TypeA{2})))
 3
@@ -577,7 +577,7 @@ Return the `i`-th negative root (negative of the `i`-th positive root).
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> negative_root(RootSystem(TypeA{2}), 1)
 -α1
@@ -594,7 +594,7 @@ Return all negative roots.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> length(negative_roots(RootSystem(TypeA{2})))
 3
@@ -611,7 +611,7 @@ Return all roots (positive followed by negative).
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> length(roots(RootSystem(TypeA{2})))
 6
@@ -627,7 +627,7 @@ n_pos+1..2*n_pos are negative roots.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> root(RootSystem(TypeA{2}), 4)
 -α1
@@ -653,7 +653,7 @@ Return the simple coroots.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> simple_coroots(RootSystem(TypeA{2})) == simple_roots(RootSystem(TypeA{2}))
 true
@@ -670,7 +670,7 @@ Return all positive coroots.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> length(positive_coroots(RootSystem(TypeB{2})))
 4
@@ -690,7 +690,7 @@ so the highest root is always the last positive root.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> highest_root(RootSystem(TypeA{2}))
 α1 + α2
@@ -712,7 +712,7 @@ The index is precomputed at compile time and stored in `RS.highest_coroot_idx`.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> highest_coroot(RootSystem(TypeA{2}))
 α1 + α2
@@ -737,7 +737,7 @@ The index equals `RS.highest_coroot_idx`, precomputed at compile time.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> RS = RootSystem(TypeB{2});
 
@@ -774,7 +774,7 @@ those degrees minus 1.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> coxeter_coefficients(TypeA{3})
 3-element StaticArraysCore.SVector{3, Int64} with indices SOneTo(3):
@@ -838,7 +838,7 @@ Coxeter coefficients. For B, C, F4, and G2 they differ.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> dual_coxeter_coefficients(TypeB{2})
 2-element StaticArraysCore.SVector{2, Int64} with indices SOneTo(2):
@@ -908,7 +908,7 @@ in the Weyl group.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> coxeter_number(TypeA{1})
 2
@@ -934,7 +934,7 @@ number of the Langlands dual root system.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> dual_coxeter_number(TypeA{1})
 2
@@ -964,7 +964,7 @@ polynomial ring.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> degrees_fundamental_invariants(TypeA{2})
 2-element StaticArraysCore.SVector{2, Int64} with indices SOneTo(2):
@@ -1040,7 +1040,7 @@ Check whether `v` is a root.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> RS = RootSystem(TypeA{2});
 
@@ -1061,7 +1061,7 @@ Check whether `v` is a positive root.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> RS = RootSystem(TypeA{2});
 

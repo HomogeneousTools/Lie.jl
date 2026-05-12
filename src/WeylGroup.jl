@@ -25,12 +25,12 @@ export right_coset_reps, left_coset_reps
 
 The Weyl group of a root system of Dynkin type `DT` with rank `R`.
 
-Lie.jl writes Weyl group actions on the right: `λ * x` denotes the usual action
+Semisimple.jl writes Weyl group actions on the right: `λ * x` denotes the usual action
 of the Weyl group element `x` on the weight or root `λ`.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> weyl_order(TypeA{2})
 6
@@ -47,7 +47,7 @@ Construct the Weyl group for the given Dynkin type.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> W = weyl_group(TypeA{2})
 Weyl group of type A2
@@ -68,7 +68,7 @@ Return the root system underlying the Weyl group `W`.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> root_system(weyl_group(TypeA{2}))
 Root system of type A2, rank 2 with 3 positive roots
@@ -92,7 +92,7 @@ reflection indices).
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> W = weyl_group(TypeA{2});
 
@@ -114,7 +114,7 @@ Return the reduced word of `x`.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> W = weyl_group(TypeA{2});
 
@@ -155,7 +155,7 @@ If `normalize=true`, reduces the word to short-lex normal form.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> W = weyl_group(TypeA{2});
 
@@ -182,7 +182,7 @@ Return the identity element.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> one(weyl_group(TypeA{2}))
 id
@@ -197,7 +197,7 @@ Return the `i`-th simple reflection.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> gen(weyl_group(TypeA{2}), 1)
 s1
@@ -215,7 +215,7 @@ Return all simple reflections.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> gens(weyl_group(TypeA{2}))
 2-element Vector{WeylGroupElem{TypeA{2}, 2}}:
@@ -377,7 +377,7 @@ The result is cached per Dynkin type.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> W = weyl_group(TypeA{2});
 
@@ -423,7 +423,7 @@ Return the right descent set of `w`, i.e. the indices `i` such that
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> W = weyl_group(TypeA{2});
 
@@ -449,7 +449,7 @@ Return the left descent set of `w`, i.e. the indices `i` such that
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> W = weyl_group(TypeA{2});
 
@@ -469,7 +469,7 @@ Return whether `x \\le y` in the (strong) Bruhat order.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> W = weyl_group(TypeA{2});
 
@@ -504,7 +504,7 @@ simple reflections in the right descent set.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> W = weyl_group(TypeA{2});
 
@@ -529,7 +529,7 @@ using ``O(|W/W_I| \\cdot R)`` weight reflections, independent of ``|W|``.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> length(right_coset_reps(weyl_group(TypeA{2}), [1]))
 3
@@ -581,7 +581,7 @@ Enumerate minimal left coset representatives for `W_I\\W`.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> length(left_coset_reps(weyl_group(TypeA{2}), [1]))
 3
@@ -600,7 +600,7 @@ Return the order of the Weyl group of type `DT`.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> weyl_order(TypeA{3})
 24
@@ -639,7 +639,7 @@ Compute the full Weyl orbit of the weight `w`.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> length(weyl_orbit(TypeA{2}, fundamental_weight(TypeA{2}, 1)))
 3
@@ -671,7 +671,7 @@ i.e. the sum of coefficients when `hw - μ` is written in the simple root basis.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> λ = fundamental_weight(TypeA{2}, 1) + fundamental_weight(TypeA{2}, 2);
 
@@ -819,7 +819,7 @@ a `BigInt` product of `Int`-valued inner products via in-place GMP arithmetic.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> degree(fundamental_weight(TypeA{3}, 1))
 4
@@ -916,7 +916,7 @@ This is a convenience wrapper: `degree(DT, v) == degree(WeightLatticeElem(DT, v)
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> degree(TypeA{2}, [1, 0])  # standard representation of A2
 3
@@ -962,7 +962,7 @@ dominant chamber.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> is_singular(fundamental_weight(TypeA{2}, 1))
 true
@@ -986,8 +986,8 @@ Apply the Borel–Weil–Bott theorem to the weight `λ`.
 !!! note "Package placement"
     This function is a preview implementation that properly belongs to
     `PartialFlagVarieties.jl`, an upcoming companion package. It is included here
-    for convenience but is **not part of the public API of `Lie.jl`** and is not
-    exported. Access it via `import Lie: borel_weil_bott`.
+    for convenience but is **not part of the public API of `Semisimple.jl`** and is not
+    exported. Access it via `import Semisimple: borel_weil_bott`.
 
 Compute `μ = λ + ρ` and find the unique Weyl group element `w` such that
 `w(μ)` is dominant. If `μ` is singular (lies on a Weyl chamber wall),
@@ -1000,7 +1000,7 @@ and all other cohomology groups vanish.
 
 # Examples
 ```jldoctest
-julia> using Lie; import Lie: borel_weil_bott
+julia> using Semisimple; import Semisimple: borel_weil_bott
 
 julia> borel_weil_bott(fundamental_weight(TypeA{2}, 1))
 (0, ω1)

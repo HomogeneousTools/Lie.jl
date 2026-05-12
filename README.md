@@ -1,9 +1,9 @@
-# Lie.jl
+# Semisimple.jl
 
-[![tests](https://github.com/HomogeneousTools/Lie.jl/actions/workflows/tests.yml/badge.svg)](https://github.com/HomogeneousTools/Lie.jl/actions/workflows/tests.yml)
-[![codecov](https://codecov.io/gh/HomogeneousTools/Lie.jl/graph/badge.svg)](https://codecov.io/gh/HomogeneousTools/Lie.jl)
-[![Docs](https://img.shields.io/badge/docs-homogeneous.tools/Lie.jl-blue)](https://homogeneous.tools/Lie.jl/)
-[![Release](https://img.shields.io/github/v/release/HomogeneousTools/Lie.jl?color=green)](https://github.com/HomogeneousTools/Lie.jl/releases)
+[![tests](https://github.com/HomogeneousTools/Semisimple.jl/actions/workflows/tests.yml/badge.svg)](https://github.com/HomogeneousTools/Semisimple.jl/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/gh/HomogeneousTools/Semisimple.jl/graph/badge.svg)](https://codecov.io/gh/HomogeneousTools/Semisimple.jl)
+[![Docs](https://img.shields.io/badge/docs-homogeneous.tools/Semisimple.jl-blue)](https://homogeneous.tools/Semisimple.jl/)
+[![Release](https://img.shields.io/github/v/release/HomogeneousTools/Semisimple.jl?color=green)](https://github.com/HomogeneousTools/Semisimple.jl/releases)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 A Julia package for computations with finite-dimensional complex semisimple
@@ -21,18 +21,18 @@ and highest-weight representation-theoretic operations.
 | **WeylGroup** | Reduced words, multiplication via reflection tables, orbits, Weyl dimension formula, Borel–Weil–Bott |
 | **Characters** | `WeylCharacter` (representation ring), Freudenthal formula, Brauer–Klimyk tensor products, Adams operators, symmetric/exterior powers |
 
-Lie.jl is a finite-type root-data and highest-weight package. It does not
+Semisimple.jl is a finite-type root-data and highest-weight package. It does not
 construct concrete Lie algebra elements, brackets, Chevalley bases, ideals,
 subalgebras, homomorphisms, arbitrary-field Lie algebras, or module
 homomorphisms.
 
 ## Relationship to OSCAR
 
-Lie.jl overlaps partly with OSCAR's [stable Lie Theory](https://docs.oscar-system.org/stable/LieTheory/intro/)
+Semisimple.jl overlaps partly with OSCAR's [stable Lie Theory](https://docs.oscar-system.org/stable/LieTheory/intro/)
 module, but the emphasis is different. OSCAR stable provides intentionally
 minimal combinatorial scaffolding: Cartan matrices, root systems, Weyl groups,
 and weight lattices, represented with OSCAR/AbstractAlgebra parent objects and
-integer matrices. Lie.jl focuses on finite-type complex semisimple root data
+integer matrices. Semisimple.jl focuses on finite-type complex semisimple root data
 with type-level Dynkin types, `StaticArrays`-based weights and roots, optimized
 Weyl orbit traversal, and highest-weight representation-ring computations.
 
@@ -41,14 +41,14 @@ module is broader on the algebraic side: it has concrete finite-dimensional Lie
 algebra objects, brackets, ideals, subalgebras, homomorphisms, modules, and
 module homomorphisms. That module is explicitly experimental, so its API carries
 stability caveats. Use OSCAR when you need integrated algebraic objects; use
-Lie.jl when you need lightweight, optimized highest-weight and character
+Semisimple.jl when you need lightweight, optimized highest-weight and character
 computations.
 
 ## Installation
 
 ```julia
 using Pkg
-Pkg.add(url="https://github.com/HomogeneousTools/Lie.jl")
+Pkg.add(url="https://github.com/HomogeneousTools/Semisimple.jl")
 ```
 
 Or for local development:
@@ -60,7 +60,7 @@ julia --project=.
 ## Quick start
 
 ```julia
-using Lie
+using Semisimple
 
 # Fundamental weights of A₃
 ω1 = fundamental_weight(TypeA{3}, 1)
@@ -93,7 +93,7 @@ julia --project=. -e 'using Pkg; Pkg.test()'
 ```
 
 Coverage for the default Julia 1 CI run is uploaded automatically to
-[Codecov](https://codecov.io/gh/HomogeneousTools/Lie.jl) by the `codecov` job in
+[Codecov](https://codecov.io/gh/HomogeneousTools/Semisimple.jl) by the `codecov` job in
 `.github/workflows/tests.yml`.
 
 ## Running doctests
@@ -101,7 +101,7 @@ Coverage for the default Julia 1 CI run is uploaded automatically to
 Doctests are embedded in docstrings throughout the source. Run them with:
 
 ```bash
-julia --project=. -e 'using Documenter, Lie; doctest(Lie)'
+julia --project=. -e 'using Documenter, Semisimple; doctest(Semisimple)'
 ```
 
 Or via the docs build:

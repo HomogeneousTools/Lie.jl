@@ -1,9 +1,9 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-#  Lie.jl — computations with semisimple Lie algebras
+#  Semisimple.jl — computations with semisimple Lie algebras
 # ═══════════════════════════════════════════════════════════════════════════════
 
 """
-    Lie
+    Semisimple
 
 Julia package for computations with semisimple Lie algebras over ℂ.
 
@@ -11,10 +11,10 @@ Provides root systems, Weyl groups, and weight-lattice arithmetic for all
 classical and exceptional Dynkin types (A, B, C, D, E₆, E₇, E₈, F₄, G₂)
 as well as their direct products.
 
-See the [online documentation](https://homogeneous.tools/Lie.jl/) for
+See the [online documentation](https://homogeneous.tools/Semisimple.jl/) for
 usage examples and mathematical background.
 """
-module Lie
+module Semisimple
 
 using LRUCache
 using PrecompileTools
@@ -70,11 +70,11 @@ include("CacheConfig.jl")
 """
     clear_all_caches!()
 
-Clear all internal caches used by Lie.jl.  Alias for `clear_caches!`.
+Clear all internal caches used by Semisimple.jl.  Alias for `clear_caches!`.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> clear_all_caches!()
 ```
@@ -100,7 +100,7 @@ The per-call `IOContext(:compact => true)` override always takes precedence.
 
 # Examples
 ```jldoctest compact
-julia> using Lie
+julia> using Semisimple
 
 julia> ω1 = fundamental_weight(TypeA{3}, 1);
 
@@ -225,7 +225,7 @@ function _print_banner()
 
   # Row 4:        ▙▌
   print("       ▙▌  ")
-  println(" │  Docs:    https://homogeneous.tools/Lie.jl")
+  println(" │  Docs:    https://homogeneous.tools/Semisimple.jl")
 
   print("            ")
   println("│  Version: ", version_str)

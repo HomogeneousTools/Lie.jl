@@ -45,7 +45,7 @@ warning.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> WeightLatticeElem(TypeA{3}, [1, 2])   # padded with one zero
 ω1 + 2ω2
@@ -155,7 +155,7 @@ Return the `i`-th fundamental weight ``\\omega_i``.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> fundamental_weight(TypeA{3}, 1)
 ω1
@@ -176,7 +176,7 @@ Return all fundamental weights.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> fundamental_weights(TypeA{2})
 2-element Vector{WeightLatticeElem{TypeA{2}, 2}}:
@@ -196,7 +196,7 @@ Return the Weyl vector
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> weyl_vector(TypeA{3})
 ω1 + ω2 + ω3
@@ -216,7 +216,7 @@ A weight is dominant iff all its coordinates (pairings with simple coroots) are 
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> is_dominant(fundamental_weight(TypeA{2}, 1))
 true
@@ -239,7 +239,7 @@ Since ``\\alpha_i = \\sum_j C_{ji} \\omega_j``, the weight coordinates of
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> WeightLatticeElem(RootSpaceElem(TypeA{2}, [1, 0]))
 2ω1 - ω2
@@ -263,7 +263,7 @@ since the inverse Cartan-matrix coordinates are then non-integral.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> RootSpaceElem(WeightLatticeElem(TypeA{2}, [2, -1]))
 α1
@@ -295,7 +295,7 @@ so the new weight has coordinates:
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> reflect(WeightLatticeElem(TypeA{2}, [2, 1]), 1)
 -2ω1 + 3ω2
@@ -320,7 +320,7 @@ The argument ``\\beta`` must be an actual root of the root system.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> reflect(fundamental_weight(TypeA{2}, 1), simple_root(RootSystem(TypeA{2}), 1))
 -ω1 + ω2
@@ -358,7 +358,7 @@ Return the unique dominant weight in the Weyl orbit of `w`.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> conjugate_dominant_weight(WeightLatticeElem(TypeA{2}, [-1, 1]))
 ω1
@@ -392,7 +392,7 @@ Return the dominant weight and the sequence of simple reflections applied.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> conjugate_dominant_weight_with_elem(WeightLatticeElem(TypeA{2}, [-1, 1]))
 (ω1, [1])
@@ -430,7 +430,7 @@ only tracks a counter instead of building the full word.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> conjugate_dominant_weight_with_length(WeightLatticeElem(TypeA{2}, [-1, 1]))
 (ω1, 1)
@@ -483,7 +483,7 @@ in the bilinear-form sense.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> dot(simple_root(RootSystem(TypeA{2}), 1), fundamental_weight(TypeA{2}, 1))
 1//1
@@ -511,7 +511,7 @@ to root coordinates and applies the bilinear form there.
 
 # Examples
 ```jldoctest
-julia> using Lie
+julia> using Semisimple
 
 julia> dot(fundamental_weight(TypeA{2}, 1), fundamental_weight(TypeA{2}, 1))
 2//3

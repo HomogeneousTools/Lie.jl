@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-#  Benchmarks for Lie.jl — with regression tracking
+#  Benchmarks for Semisimple.jl — with regression tracking
 #
 #  Usage:
 #    julia --project=. benchmark/bench.jl               # run + save results
@@ -12,11 +12,11 @@
 
 using BenchmarkTools
 using Printf
-using Lie
+using Semisimple
 using StaticArrays
 using Dates
 
-import Lie: borel_weil_bott
+import Semisimple: borel_weil_bott
 
 # ─── CLI ────────────────────────────────────────────────────────────────────
 
@@ -221,7 +221,7 @@ header("5. Cold: Freudenthal formula")
 
 function bench_freudenthal(::Type{DT}, coords) where {DT}
   R = rank(DT)
-  Lie.clear_all_caches!()
+  Semisimple.clear_all_caches!()
   hw = WeightLatticeElem(DT, SVector{R,Int}(Tuple(coords)))
   return freudenthal_formula(hw)
 end
@@ -275,7 +275,7 @@ header("6. Cold: Tensor product decomposition")
 
 function bench_tensor(::Type{DT}, c1, c2) where {DT}
   R = rank(DT)
-  Lie.clear_all_caches!()
+  Semisimple.clear_all_caches!()
   λ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(c1)))
   μ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(c2)))
   return tensor_product(λ, μ)
@@ -322,13 +322,13 @@ end
 
 function bench_bk(::Type{DT}, c1, c2) where {DT}
   R = rank(DT)
-  Lie.clear_all_caches!()
+  Semisimple.clear_all_caches!()
   λ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(c1)))
   μ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(c2)))
-  if Lie.degree(λ) > Lie.degree(μ)
-    Lie.brauer_klimyk(Lie.freudenthal_formula(μ), λ)
+  if Semisimple.degree(λ) > Semisimple.degree(μ)
+    Semisimple.brauer_klimyk(Semisimple.freudenthal_formula(μ), λ)
   else
-    Lie.brauer_klimyk(Lie.freudenthal_formula(λ), μ)
+    Semisimple.brauer_klimyk(Semisimple.freudenthal_formula(λ), μ)
   end
 end
 
@@ -371,14 +371,14 @@ header("8. Cold: Exterior and symmetric powers")
 
 function bench_exterior(::Type{DT}, coords, k) where {DT}
   R = rank(DT)
-  Lie.clear_all_caches!()
+  Semisimple.clear_all_caches!()
   λ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(coords)))
   return ⋀(k, λ)
 end
 
 function bench_symmetric(::Type{DT}, coords, k) where {DT}
   R = rank(DT)
-  Lie.clear_all_caches!()
+  Semisimple.clear_all_caches!()
   λ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(coords)))
   return Sym(k, λ)
 end
@@ -525,7 +525,7 @@ header("10. Cold: Plethysm")
 
 function bench_plethysm(::Type{DT}, coords, partition) where {DT}
   R = rank(DT)
-  Lie.clear_all_caches!()
+  Semisimple.clear_all_caches!()
   λ = WeightLatticeElem(DT, SVector{R,Int}(Tuple(coords)))
   return plethysm(partition, λ)
 end

@@ -1,10 +1,10 @@
 using Documenter
 using Documenter: RawHTMLHeadContent
-using Lie
+using Semisimple
 
-const SITE_NAME = "Lie.jl"
+const SITE_NAME = "Semisimple.jl"
 const AUTHORS = "Pieter Belmans"
-const PDF_NAME = "Lie.jl.pdf"
+const PDF_NAME = "Semisimple.jl.pdf"
 const HTML_BUILD = joinpath(@__DIR__, "build")
 const PLAUSIBLE_HEAD = RawHTMLHeadContent("""
 <script async src="https://plausible.io/js/pa-XnO99azZJG-BAZutMei1M.js"></script>
@@ -25,7 +25,7 @@ const PAGES = [
 const COMMON_DOCS_KWARGS = (
   sitename=SITE_NAME,
   authors=AUTHORS,
-  modules=[Lie],
+  modules=[Semisimple],
   pages=PAGES,
 )
 
@@ -35,7 +35,7 @@ function build_html_docs()
     build=HTML_BUILD,
     doctest=true,
     format=Documenter.HTML(;
-      canonical="https://homogeneous.tools/Lie.jl/",
+      canonical="https://homogeneous.tools/Semisimple.jl/",
       assets=[PLAUSIBLE_HEAD],
     ),
   )
@@ -67,7 +67,7 @@ build_html_docs()
 build_pdf_docs()
 
 deploydocs(;
-  repo="https://github.com/HomogeneousTools/Lie.jl.git",
+  repo="https://github.com/HomogeneousTools/Semisimple.jl.git",
   target="build",
   branch="gh-pages",
   devbranch="main",

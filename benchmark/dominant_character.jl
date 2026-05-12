@@ -1,7 +1,7 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-#  dominant_character benchmark: Lie.jl vs Oscar.jl
+#  dominant_character benchmark: Semisimple.jl vs Oscar.jl
 #
-#  Compares Lie.jl's `dominant_character` (Freudenthal + Moody-Patera grouping,
+#  Compares Semisimple.jl's `dominant_character` (Freudenthal + Moody-Patera grouping,
 #  SVector/static-dispatch, global cache) against Oscar.jl's implementation
 #  (same Moody-Patera algorithm but over heap-allocated WeightLatticeElems with
 #  matrix-group stabiliser orbits, no persistent cross-call cache).
@@ -11,25 +11,25 @@
 #    julia --project=. benchmark/dominant_character.jl --no-oscar
 #
 #  Oscar requirement:
-#    Oscar.jl is NOT in Lie.jl's Project.toml (heavyweight dependency).
+#    Oscar.jl is NOT in Semisimple.jl's Project.toml (heavyweight dependency).
 #    To benchmark Oscar either:
 #      (a) activate a separate environment that has Oscar installed, or
 #      (b) temporarily  pkg> add Oscar  in the current project.
 #    If Oscar cannot be loaded the Oscar columns are skipped gracefully.
 #
 #  Caching notes:
-#    Lie.jl    — cache cleared *inside* the timed call via clear_all_caches!()
+#    Semisimple.jl    — cache cleared *inside* the timed call via clear_all_caches!()
 #                This measures pure computation time with no persistent cross-call cache,
 #                directly comparable to Oscar.jl.
 #    Oscar     — no persistent cross-call cache; every call is "cold".
 #                The RootSystem object is pre-constructed once outside timing
 #                so its internal caches (positive_roots, weyl_group, …) are
-#                warm — analogous to Lie.jl's type specialisation / JIT.
+#                warm — analogous to Semisimple.jl's type specialisation / JIT.
 # ═══════════════════════════════════════════════════════════════════════════════
 
 using BenchmarkTools
 using Printf
-using Lie
+using Semisimple
 using StaticArrays
 using Statistics: median
 
@@ -47,7 +47,7 @@ else
     end
     true
   catch e
-    @warn "Oscar.jl not available — comparison will be Lie-only." exception = e
+    @warn "Oscar.jl not available — comparison will be Semisimple-only." exception = e
     false
   end
 end
@@ -85,11 +85,11 @@ function section_header(title)
   if OSCAR_AVAILABLE
     @printf(
       "  %-54s  %-21s  %-21s  %s\n",
-      "case", "Lie.jl (min)", "Oscar (min)", "speedup Oscar/Lie",
+      "case", "Semisimple.jl (min)", "Oscar (min)", "speedup Oscar/Semisimple",
     )
     println("  ", "-"^104)
   else
-    @printf("  %-54s  %-21s\n", "case", "Lie.jl (min)")
+    @printf("  %-54s  %-21s\n", "case", "Semisimple.jl (min)")
     println("  ", "-"^78)
   end
 end
@@ -98,7 +98,7 @@ end
 
 # Clear cache *inside* the function — the full clear cost is included in timing.
 function _bench_lie_cold(::Type{DT}, coords::NTuple{R,Int}) where {DT,R}
-  Lie.clear_all_caches!()
+  Semisimple.clear_all_caches!()
   dominant_character(WeightLatticeElem(DT, SVector{R,Int}(coords)))
 end
 
@@ -163,7 +163,7 @@ function run_case(
   n_dom = length(dom)
   rep_dim = degree(WeightLatticeElem(DT, SVector{R_n,Int}(coords_tup)))
 
-  # ── Lie cold ──────────────────────────────────────────────────────────────
+  # ── Semisimple cold ──────────────────────────────────────────────────────────────
   b_cold = @benchmark _bench_lie_cold($DT, $coords_tup) evals = 1 samples = samples_cold
 
   # ── Oscar ─────────────────────────────────────────────────────────────────
@@ -501,10 +501,10 @@ valid_both = filter(r -> !isnan(r.lie_cold_ns) && !isnan(r.oscar_ns), ALL_RESULT
 if OSCAR_AVAILABLE && !isempty(valid_both)
   ratios = [r.oscar_ns / r.lie_cold_ns for r in valid_both if r.lie_cold_ns > 0]
   println()
-  @printf("  Oscar vs Lie.jl cold — ratio (>1 means Lie faster):\n")
+  @printf("  Oscar vs Semisimple.jl cold — ratio (>1 means Semisimple faster):\n")
   @printf("    min = %.2fx,  median = %.1fx,  max = %.0fx\n",
     minimum(ratios), median(ratios), maximum(ratios))
   nfaster = count(>(1.0), ratios)
-  @printf("  Lie.jl faster cold on %d / %d cases\n", nfaster, length(ratios))
+  @printf("  Semisimple.jl faster cold on %d / %d cases\n", nfaster, length(ratios))
 end
 println()

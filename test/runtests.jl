@@ -1,7 +1,7 @@
 using Test
-using Lie
+using Semisimple
 using Aqua
-import Lie: borel_weil_bott  # no longer publicly exported; tested here via explicit import
+import Semisimple: borel_weil_bott  # no longer publicly exported; tested here via explicit import
 using StaticArrays
 using LinearAlgebra: det
 
@@ -84,10 +84,10 @@ end
     diag = dynkin_diagram(TypeA{2})
 
     @test TypeB(3) isa TypeB{3}
-    @test Lie.is_valid_dynkin_type(TypeF4)
-    @test Lie.is_valid_dynkin_type(TypeG2)
-    @test Lie._invalid_dynkin_type_message(TypeF4) == "TypeF4 is valid"
-    @test Lie._invalid_dynkin_type_message(TypeG2) == "TypeG2 is valid"
+    @test Semisimple.is_valid_dynkin_type(TypeF4)
+    @test Semisimple.is_valid_dynkin_type(TypeG2)
+    @test Semisimple._invalid_dynkin_type_message(TypeF4) == "TypeF4 is valid"
+    @test Semisimple._invalid_dynkin_type_message(TypeG2) == "TypeG2 is valid"
     @test Base.invokelatest(rank, TypeF4) == 4
     @test Base.invokelatest(rank, TypeG2) == 2
     @test Base.invokelatest(rank, dt) == 2
@@ -110,19 +110,19 @@ end
   @testset "Cartan runtime fallbacks" begin
     DT = TypeA{17}
     C = cartan_matrix(DT)
-    @test Lie._cartan_matrix_runtime(DT) == C
+    @test Semisimple._cartan_matrix_runtime(DT) == C
     @test Base.invokelatest(cartan_matrix, DT()) == C
 
     B = cartan_bilinear_form(DT)
-    @test Lie._cartan_bilinear_form_runtime(DT) == B
+    @test Semisimple._cartan_bilinear_form_runtime(DT) == B
     @test Base.invokelatest(cartan_bilinear_form, DT()) == B
 
     Cinv = cartan_matrix_inverse(DT)
-    @test Lie._cartan_matrix_inverse_runtime(DT) == Cinv
+    @test Semisimple._cartan_matrix_inverse_runtime(DT) == Cinv
     @test Base.invokelatest(cartan_matrix_inverse, DT()) == Cinv
 
     S, Bω = omega_bilinear_form_scaled(DT)
-    @test Lie._omega_bilinear_form_scaled_runtime(DT) == (S, Bω)
+    @test Semisimple._omega_bilinear_form_scaled_runtime(DT) == (S, Bω)
   end
 
   @testset "Root system wrappers" begin
@@ -131,7 +131,7 @@ end
     α1 = simple_root(RS, 1)
     α2 = simple_root(RS, 2)
 
-    @test Lie._make_root_system_runtime(TypeA{17}) == RootSystem(TypeA{17})
+    @test Semisimple._make_root_system_runtime(TypeA{17}) == RootSystem(TypeA{17})
     @test sprint(show, RS) == "Root system of type A2, rank 2 with 3 positive roots"
     @test RootSpaceElem(TypeA{2}, (1, 1)) == α1 + α2
     @test α1 - α2 == RootSpaceElem(TypeA{2}, [1, -1])
@@ -218,9 +218,9 @@ end
     @test Base.invokelatest(weyl_order, TypeE{6}) == BigInt(51840)
     @test Base.invokelatest(weyl_order, TypeF4) == BigInt(1152)
     @test weyl_order(PT) == 48
-    @test Lie._weyl_denominator(TypeA{2}) == BigInt(2)
-    @test length(Lie._weyl_dim_scaled_roots(TypeA{2})) == 3
-    @test Lie._degree_runtime(TypeA{17}, fundamental_weight(TypeA{17}, 1)) == 18
+    @test Semisimple._weyl_denominator(TypeA{2}) == BigInt(2)
+    @test length(Semisimple._weyl_dim_scaled_roots(TypeA{2})) == 3
+    @test Semisimple._degree_runtime(TypeA{17}, fundamental_weight(TypeA{17}, 1)) == 18
     @test degree(TypeA{2}, [1, 0]) == 3
     @test degree(TypeA{2}(), [1, 0]) == 3
     @test weyl_dimension(TypeA{2}, ω1) == 3
@@ -229,22 +229,22 @@ end
   end
 
   @testset "Weylloop constants" begin
-    @test Lie._weylloop_subtype(TypeE{6}) == :D
-    @test Lie._weylloop_subtype(TypeE{7}) == :A
-    @test Lie._weylloop_subtype(TypeE{8}) == :D
-    @test Lie._weylloop_subtype(TypeF4) == :B
-    @test Lie._weylloop_subtype(TypeG2) == :A
-    @test Lie._weylloop_eps_dim(TypeE{6}) == 6
-    @test Lie._weylloop_eps_dim(TypeE{7}) == 8
-    @test Lie._weylloop_eps_dim(TypeE{8}) == 8
-    @test Lie._weylloop_eps_dim(TypeF4) == 4
-    @test Lie._weylloop_eps_dim(TypeG2) == 3
-    @test Lie._weylloop_perm_size(TypeE{6}) == 5
-    @test Lie._weylloop_perm_size(TypeE{7}) == 8
-    @test Lie._weylloop_perm_size(TypeE{8}) == 8
-    @test Lie._weylloop_perm_size(TypeF4) == 4
-    @test Lie._weylloop_perm_size(TypeG2) == 3
-    @test length(Lie._build_coset_reps(TypeE{7})) == 72
+    @test Semisimple._weylloop_subtype(TypeE{6}) == :D
+    @test Semisimple._weylloop_subtype(TypeE{7}) == :A
+    @test Semisimple._weylloop_subtype(TypeE{8}) == :D
+    @test Semisimple._weylloop_subtype(TypeF4) == :B
+    @test Semisimple._weylloop_subtype(TypeG2) == :A
+    @test Semisimple._weylloop_eps_dim(TypeE{6}) == 6
+    @test Semisimple._weylloop_eps_dim(TypeE{7}) == 8
+    @test Semisimple._weylloop_eps_dim(TypeE{8}) == 8
+    @test Semisimple._weylloop_eps_dim(TypeF4) == 4
+    @test Semisimple._weylloop_eps_dim(TypeG2) == 3
+    @test Semisimple._weylloop_perm_size(TypeE{6}) == 5
+    @test Semisimple._weylloop_perm_size(TypeE{7}) == 8
+    @test Semisimple._weylloop_perm_size(TypeE{8}) == 8
+    @test Semisimple._weylloop_perm_size(TypeF4) == 4
+    @test Semisimple._weylloop_perm_size(TypeG2) == 3
+    @test length(Semisimple._build_coset_reps(TypeE{7})) == 72
   end
 end
 
@@ -847,11 +847,11 @@ end
   @testset "Right-multiplication insertion path" begin
     W = weyl_group(TypeA{2})
     x = W([2, 1])
-    b, pos, letter = Lie._explain_rmul(x, UInt8(2), root_system(W).refl, rank(TypeA{2}))
+    b, pos, letter = Semisimple._explain_rmul(x, UInt8(2), root_system(W).refl, rank(TypeA{2}))
     @test (b, pos, Int(letter)) == (true, 1, 1)
 
     y = deepcopy(x)
-    Lie.rmul!(y, UInt8(2))
+    Semisimple.rmul!(y, UInt8(2))
     @test word(y) == UInt8[1, 2, 1]
   end
 
@@ -988,23 +988,23 @@ end
 
 @testset "dot_reduce" begin
   zero_A2 = WeightLatticeElem(TypeA{2}, [0, 0])
-  @test Lie.dot_reduce(fundamental_weight(TypeA{2}, 1)) ==
+  @test Semisimple.dot_reduce(fundamental_weight(TypeA{2}, 1)) ==
     (1, fundamental_weight(TypeA{2}, 1))
-  @test Lie.dot_reduce(WeightLatticeElem(TypeA{2}, [-2, 1])) == (-1, zero_A2)
-  @test Lie.dot_reduce(WeightLatticeElem(TypeA{2}, [-1, 0])) == (0, zero_A2)
+  @test Semisimple.dot_reduce(WeightLatticeElem(TypeA{2}, [-2, 1])) == (-1, zero_A2)
+  @test Semisimple.dot_reduce(WeightLatticeElem(TypeA{2}, [-1, 0])) == (0, zero_A2)
 
   zero_B2 = WeightLatticeElem(TypeB{2}, [0, 0])
-  @test Lie.dot_reduce(fundamental_weight(TypeB{2}, 1)) ==
+  @test Semisimple.dot_reduce(fundamental_weight(TypeB{2}, 1)) ==
     (1, fundamental_weight(TypeB{2}, 1))
-  @test Lie.dot_reduce(WeightLatticeElem(TypeB{2}, [2, -2])) ==
+  @test Semisimple.dot_reduce(WeightLatticeElem(TypeB{2}, [2, -2])) ==
     (-1, fundamental_weight(TypeB{2}, 1))
-  @test Lie.dot_reduce(WeightLatticeElem(TypeB{2}, [0, -2])) == (0, zero_B2)
+  @test Semisimple.dot_reduce(WeightLatticeElem(TypeB{2}, [0, -2])) == (0, zero_B2)
 
   zero_G2 = WeightLatticeElem(TypeG2, [0, 0])
-  @test Lie.dot_reduce(fundamental_weight(TypeG2, 1)) == (1, fundamental_weight(TypeG2, 1))
-  @test Lie.dot_reduce(WeightLatticeElem(TypeG2, [-2, 2])) ==
+  @test Semisimple.dot_reduce(fundamental_weight(TypeG2, 1)) == (1, fundamental_weight(TypeG2, 1))
+  @test Semisimple.dot_reduce(WeightLatticeElem(TypeG2, [-2, 2])) ==
     (-1, fundamental_weight(TypeG2, 2))
-  @test Lie.dot_reduce(WeightLatticeElem(TypeG2, [0, -2])) == (0, zero_G2)
+  @test Semisimple.dot_reduce(WeightLatticeElem(TypeG2, [0, -2])) == (0, zero_G2)
 end
 
 @testset "Borel–Weil–Bott" begin
@@ -1373,10 +1373,10 @@ end
 
     # Helper: compute tensor product via Brauer–Klimyk only
     function bk_tensor(λ, μ)
-      if Lie.degree(λ) > Lie.degree(μ)
-        Lie.brauer_klimyk(Lie.freudenthal_formula(μ), λ)
+      if Semisimple.degree(λ) > Semisimple.degree(μ)
+        Semisimple.brauer_klimyk(Semisimple.freudenthal_formula(μ), λ)
       else
-        Lie.brauer_klimyk(Lie.freudenthal_formula(λ), μ)
+        Semisimple.brauer_klimyk(Semisimple.freudenthal_formula(λ), μ)
       end
     end
 
@@ -1444,8 +1444,8 @@ end
     for (λ, μ) in [(ω1, ω1), (ω1, ω2), (ω1 + ω2, ω1),
       (ω[1], ω[2]), (ω4[2], ω4[3])]
       result = lr_tensor_product(λ, μ)
-      dim_sum = sum(Lie.degree(k) * v for (k, v) in result.terms)
-      @test dim_sum == Lie.degree(λ) * Lie.degree(μ)
+      dim_sum = sum(Semisimple.degree(k) * v for (k, v) in result.terms)
+      @test dim_sum == Semisimple.degree(λ) * Semisimple.degree(μ)
     end
 
     # Commutativity: LR(λ, μ) == LR(μ, λ)
@@ -1454,13 +1454,13 @@ end
     @test lr_tensor_product(2ω1, ω2) == lr_tensor_product(ω2, 2ω1)
 
     # tensor_product dispatches to LR for TypeA
-    empty!(Lie._tensor_cache)
+    empty!(Semisimple._tensor_cache)
     tp_dispatch = tensor_product(ω1, ω2)
     @test tp_dispatch == lr_tensor_product(ω1, ω2)
 
     normalize_lr(d) = Dict(Tuple(k) => v for (k, v) in d)
-    @test normalize_lr(Lie._lr_coefficients([1], [1, 0], 3)) ==
-      normalize_lr(Lie._lr_coefficients([1, 0, 0], [1], 3))
+    @test normalize_lr(Semisimple._lr_coefficients([1], [1, 0], 3)) ==
+      normalize_lr(Semisimple._lr_coefficients([1, 0, 0], [1], 3))
   end
 
   # ─── Dual ────────────────────────────────────────────────────────
@@ -1771,7 +1771,7 @@ end
     @test plethysm(Int[], ω1_A3) ==
       WeylCharacter(WeightLatticeElem{TypeA{3},3}(zero(SVector{3,Int})))
     @test plethysm([2, 1, 0], ω1_A3) == plethysm([2, 1], ω1_A3)
-    @test Lie._mn_char_val([2, 1, 0], [2, 1, 0]) == Lie._mn_char_val([2, 1], [2, 1])
+    @test Semisimple._mn_char_val([2, 1, 0], [2, 1, 0]) == Semisimple._mn_char_val([2, 1], [2, 1])
   end
 
   # ─── ProductDynkinType characters ──────────────────────────────
@@ -2174,13 +2174,13 @@ end
   ]
   for DT in simple_types
     R = rank(DT)
-    ED = Lie._weylloop_eps_dim(DT)
+    ED = Semisimple._weylloop_eps_dim(DT)
     e = zeros(Int, ED)
     w2 = zeros(Int, R)
     for trial in 1:100
       w = [((trial * 7 + i * 13) % 11) - 5 for i in 1:R]
-      Lie._w2e!(DT, e, w)
-      Lie._e2w!(DT, w2, e)
+      Semisimple._w2e!(DT, e, w)
+      Semisimple._e2w!(DT, w2, e)
       @test w2 == w
     end
   end
@@ -2192,7 +2192,7 @@ end
 @testset "Aqua" begin
   # ambiguities=false: @generated functions can trigger false positives
   # stale_deps=false: Aqua flags itself as stale when run via include() rather than Pkg.test()
-  Aqua.test_all(Lie; ambiguities=false, stale_deps=false)
+  Aqua.test_all(Semisimple; ambiguities=false, stale_deps=false)
 end
 
 # ═══════════════════════════════════════════════════════════════════════

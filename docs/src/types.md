@@ -5,7 +5,7 @@
 Over ``\mathbb{C}``, every finite-dimensional semisimple Lie algebra is
 classified up to isomorphism by its **Dynkin type**, a combinatorial datum that
 encodes the root system.
-Lie.jl represents types at the Julia type level — `TypeA{3}`, `TypeB{4}`, etc. —
+Semisimple.jl represents types at the Julia type level — `TypeA{3}`, `TypeB{4}`, etc. —
 so that rank and root counts are compile-time constants, enabling
 zero-cost dispatch and `@generated` specialisation.
 
@@ -15,7 +15,7 @@ The classical families `TypeA{N}`, `TypeB{N}`, `TypeC{N}`, `TypeD{N}`,
 and the exceptional types `TypeE{6}`, `TypeE{7}`, `TypeE{8}`, `TypeF4`, `TypeG2`:
 
 ```jldoctest types
-julia> using Lie
+julia> using Semisimple
 
 julia> rank(TypeA{3})
 3
@@ -66,12 +66,12 @@ julia> dynkin_diagram(TypeG2)
 For types with branching (D and E), the diagram shows the fork:
 
 ```@example
-using Lie  # hide
+using Semisimple  # hide
 dynkin_diagram(TypeD{5})
 ```
 
 ```@example
-using Lie  # hide
+using Semisimple  # hide
 dynkin_diagram(TypeE{6})
 ```
 
@@ -102,7 +102,7 @@ julia> component_offsets(PT)
 ```
 
 ```@example
-using Lie  # hide
+using Semisimple  # hide
 PT = ProductDynkinType{Tuple{TypeA{2}, TypeB{2}}}
 dynkin_diagram(PT)
 ```
@@ -245,7 +245,7 @@ For simply-laced types (A, D, E), the index varies by type. For multiply-laced t
 the determinant encodes how the roots and weights are related:
 
 ```jldoctest types
-julia> using Lie
+julia> using Semisimple
 
 julia> cartan_determinant(TypeA{3})   # A3: det = 4 = n+1
 4

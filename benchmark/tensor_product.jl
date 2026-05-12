@@ -1,7 +1,7 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-#  tensor_product benchmark: Lie.jl vs Oscar.jl
+#  tensor_product benchmark: Semisimple.jl vs Oscar.jl
 #
-#  Compares Lie.jl's `tensor_product` (Brauer–Klimyk on Freudenthal character,
+#  Compares Semisimple.jl's `tensor_product` (Brauer–Klimyk on Freudenthal character,
 #  with LR shortcut for Type A) against Oscar.jl's `tensor_product_decomposition`
 #  (Klimyk's formula over heap-allocated WeightLatticeElems, no persistent
 #  cross-call cache).
@@ -14,25 +14,25 @@
 #    julia --project=. benchmark/tensor_product.jl --no-oscar
 #
 #  Oscar requirement:
-#    Oscar.jl is NOT in Lie.jl's Project.toml (heavyweight dependency).
+#    Oscar.jl is NOT in Semisimple.jl's Project.toml (heavyweight dependency).
 #    To benchmark Oscar either:
 #      (a) activate a separate environment that has Oscar installed, or
 #      (b) temporarily  pkg> add Oscar  in the current project.
 #    If Oscar cannot be loaded the Oscar columns are skipped gracefully.
 #
 #  Caching notes:
-#    Lie.jl    — cache cleared *inside* every timed call via clear_all_caches!()
+#    Semisimple.jl    — cache cleared *inside* every timed call via clear_all_caches!()
 #                (both tensor_product / lr_tensor_product / brauer_klimyk paths).
 #                This measures pure cold computation comparable to Oscar.
 #    Oscar     — no persistent cross-call cache; every call is "cold".
 #                The RootSystem object is pre-constructed once outside timing
 #                so its internal caches (positive_roots, weyl_group, …) are
-#                warm — analogous to Lie.jl's type specialisation / JIT.
+#                warm — analogous to Semisimple.jl's type specialisation / JIT.
 # ═══════════════════════════════════════════════════════════════════════════════
 
 using BenchmarkTools
 using Printf
-using Lie
+using Semisimple
 using StaticArrays
 using Statistics: median
 
@@ -50,7 +50,7 @@ else
     end
     true
   catch e
-    @warn "Oscar.jl not available — comparison will be Lie-only." exception = e
+    @warn "Oscar.jl not available — comparison will be Semisimple-only." exception = e
     false
   end
 end
@@ -90,11 +90,11 @@ oscar_cartan(::Type{TypeG2}) = (:G, 2)
 
 # ─── Benchmark kernel functions ───────────────────────────────────────────────
 
-# Cold Lie.jl: clear cache inside timing so every sample is a fresh computation.
+# Cold Semisimple.jl: clear cache inside timing so every sample is a fresh computation.
 function _bench_lie_tensor_cold(
   ::Type{DT}, c1::NTuple{R,Int}, c2::NTuple{R,Int}
 ) where {DT,R}
-  Lie.clear_all_caches!()
+  Semisimple.clear_all_caches!()
   λ = WeightLatticeElem(DT, SVector{R,Int}(c1))
   μ = WeightLatticeElem(DT, SVector{R,Int}(c2))
   tensor_product(λ, μ)
@@ -105,7 +105,7 @@ end
 function _bench_lie_lr_cold(
   ::Type{TypeA{N}}, c1::NTuple{N,Int}, c2::NTuple{N,Int}
 ) where {N}
-  Lie.clear_all_caches!()
+  Semisimple.clear_all_caches!()
   λ = WeightLatticeElem(TypeA{N}, SVector{N,Int}(c1))
   μ = WeightLatticeElem(TypeA{N}, SVector{N,Int}(c2))
   lr_tensor_product(λ, μ)
@@ -115,13 +115,13 @@ end
 function _bench_lie_bk_cold(
   ::Type{TypeA{N}}, c1::NTuple{N,Int}, c2::NTuple{N,Int}
 ) where {N}
-  Lie.clear_all_caches!()
+  Semisimple.clear_all_caches!()
   λ = WeightLatticeElem(TypeA{N}, SVector{N,Int}(c1))
   μ = WeightLatticeElem(TypeA{N}, SVector{N,Int}(c2))
-  if Lie.degree(λ) > Lie.degree(μ)
-    Lie.brauer_klimyk(Lie.freudenthal_formula(μ), λ)
+  if Semisimple.degree(λ) > Semisimple.degree(μ)
+    Semisimple.brauer_klimyk(Semisimple.freudenthal_formula(μ), λ)
   else
-    Lie.brauer_klimyk(Lie.freudenthal_formula(λ), μ)
+    Semisimple.brauer_klimyk(Semisimple.freudenthal_formula(λ), μ)
   end
 end
 
@@ -165,11 +165,11 @@ function section_header_tp(title)
   if OSCAR_AVAILABLE
     @printf(
       "  %-54s  %-21s  %-21s  %s\n",
-      "case", "Lie.jl (cold min)", "Oscar (min)", "speedup Oscar/Lie",
+      "case", "Semisimple.jl (cold min)", "Oscar (min)", "speedup Oscar/Semisimple",
     )
     println("  ", "-"^104)
   else
-    @printf("  %-54s  %-21s\n", "case", "Lie.jl (cold min)")
+    @printf("  %-54s  %-21s\n", "case", "Semisimple.jl (cold min)")
     println("  ", "-"^78)
   end
 end
@@ -182,14 +182,14 @@ function section_header_lrbk(title)
   if OSCAR_AVAILABLE
     @printf(
       "  %-46s  %-21s  %-21s  %-21s  %s\n",
-      "case", "Lie LR (cold min)", "Lie BK (cold min)", "Oscar (min)",
+      "case", "Semisimple LR (cold min)", "Semisimple BK (cold min)", "Oscar (min)",
       "LR/Oscar speedup",
     )
     println("  ", "-"^120)
   else
     @printf(
       "  %-46s  %-21s  %-21s  %s\n",
-      "case", "Lie LR (cold min)", "Lie BK (cold min)", "LR/BK speedup",
+      "case", "Semisimple LR (cold min)", "Semisimple BK (cold min)", "LR/BK speedup",
     )
     println("  ", "-"^94)
   end
@@ -201,7 +201,7 @@ end
     run_tensor_case(label, DT, c1, c2; samples, samples_oscar, skip_large_oscar)
 
 Benchmark `tensor_product(V(c1), V(c2))` for Dynkin type `DT`.
-Lie.jl is always benchmarked cold (cache cleared per sample).
+Semisimple.jl is always benchmarked cold (cache cleared per sample).
 """
 function run_tensor_case(
   label, ::Type{DT}, c1, c2;
@@ -446,12 +446,12 @@ if OSCAR_AVAILABLE
   if !isempty(valid_tp)
     ratios = [r.oscar_ns / r.lie_ns for r in valid_tp]
     println()
-    @printf("  §1 Oscar vs Lie.jl cold tensor_product — ratio (>1 = Lie faster):\n")
+    @printf("  §1 Oscar vs Semisimple.jl cold tensor_product — ratio (>1 = Semisimple faster):\n")
     @printf(
       "    min = %.2fx,  median = %.1fx,  max = %.0fx\n",
       minimum(ratios), median(ratios), maximum(ratios),
     )
-    @printf("  Lie.jl faster on %d / %d cases\n", count(>(1.0), ratios), length(ratios))
+    @printf("  Semisimple.jl faster on %d / %d cases\n", count(>(1.0), ratios), length(ratios))
   end
 
   valid_lr = filter(r -> !isnan(r.oscar_ns) && r.lr_ns > 0, LRBK_RESULTS)
@@ -460,12 +460,12 @@ if OSCAR_AVAILABLE
     ratios_lr = [r.oscar_ns / r.lr_ns for r in valid_lr]
     ratios_bk = [r.oscar_ns / r.bk_ns for r in valid_bk]
     println()
-    @printf("  §2 Oscar vs Lie.jl LR (cold) — ratio (>1 = LR faster):\n")
+    @printf("  §2 Oscar vs Semisimple.jl LR (cold) — ratio (>1 = LR faster):\n")
     @printf(
       "    min = %.2fx,  median = %.1fx,  max = %.0fx\n",
       minimum(ratios_lr), median(ratios_lr), maximum(ratios_lr),
     )
-    @printf("  §2 Oscar vs Lie.jl BK (cold) — ratio (>1 = BK faster):\n")
+    @printf("  §2 Oscar vs Semisimple.jl BK (cold) — ratio (>1 = BK faster):\n")
     @printf(
       "    min = %.2fx,  median = %.1fx,  max = %.0fx\n",
       minimum(ratios_bk), median(ratios_bk), maximum(ratios_bk),

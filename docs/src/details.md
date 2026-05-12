@@ -1,32 +1,32 @@
 # Implementation details
 
 This page covers performance considerations, caching mechanisms, precompilation,
-and other implementation details of Lie.jl.
+and other implementation details of Semisimple.jl.
 
 ## Caching
 
-Lie.jl uses several internal caches to avoid recomputing expensive results. Understanding
+Semisimple.jl uses several internal caches to avoid recomputing expensive results. Understanding
 these caches is important for benchmarking and memory management.
 
 ### Available caches
 
-Lie.jl maintains ten internal caches. Six are unbounded `Dict` caches for
+Semisimple.jl maintains ten internal caches. Six are unbounded `Dict` caches for
 small singletons and lookup tables; four are bounded `LRU` caches (from
 [LRUCache.jl](https://github.com/JuliaCollections/LRUCache.jl)) whose total
 memory budget is configurable at runtime via [`configure_caches!`](@ref).
 
 | Cache | Variable | Type | Purpose |
 |-------|----------|------|--------|
-| Root system | `Lie._root_system_cache` | `Dict` | Singleton `RootSystem` instances per Dynkin type |
-| Positive roots set | `Lie._positive_roots_set_cache` | `Dict` | Fast `is_positive_root` lookup sets |
-| Longest Weyl element | `Lie._longest_element_cache` | `Dict` | Cached longest element `w₀` per Dynkin type |
-| Coset representatives | `Lie._coset_reps_cache` | `Dict` | Weyl orbit coset reps for exceptional types |
-| Dominant character (type) | `Lie._dominant_character_type_cache` | `Dict` | Type-level Freudenthal intermediates |
-| Weyl dimension data | `Lie._weyl_dimension_data_cache` | `Dict` | Dimension formula denominator and scaled roots |
-| Dominant character | `Lie._dominant_character_cache` | `LRU` | Dominant weight multiplicities from Freudenthal's formula |
-| Tensor product | `Lie._tensor_cache` | `LRU` | Tensor product decompositions |
-| Symmetric power | `Lie._symmetric_power_cache` | `LRU` | Symmetric power decompositions |
-| Exterior power | `Lie._exterior_power_cache` | `LRU` | Exterior power decompositions |
+| Root system | `Semisimple._root_system_cache` | `Dict` | Singleton `RootSystem` instances per Dynkin type |
+| Positive roots set | `Semisimple._positive_roots_set_cache` | `Dict` | Fast `is_positive_root` lookup sets |
+| Longest Weyl element | `Semisimple._longest_element_cache` | `Dict` | Cached longest element `w₀` per Dynkin type |
+| Coset representatives | `Semisimple._coset_reps_cache` | `Dict` | Weyl orbit coset reps for exceptional types |
+| Dominant character (type) | `Semisimple._dominant_character_type_cache` | `Dict` | Type-level Freudenthal intermediates |
+| Weyl dimension data | `Semisimple._weyl_dimension_data_cache` | `Dict` | Dimension formula denominator and scaled roots |
+| Dominant character | `Semisimple._dominant_character_cache` | `LRU` | Dominant weight multiplicities from Freudenthal's formula |
+| Tensor product | `Semisimple._tensor_cache` | `LRU` | Tensor product decompositions |
+| Symmetric power | `Semisimple._symmetric_power_cache` | `LRU` | Symmetric power decompositions |
+| Exterior power | `Semisimple._exterior_power_cache` | `LRU` | Exterior power decompositions |
 
 The six `Dict` caches are unbounded and persist for the lifetime of the Julia
 session.  The four `LRU` caches have a configurable memory budget (default:
@@ -43,7 +43,7 @@ entries when the budget is exceeded.
 Use [`cache_info`](@ref) to get a snapshot of cache occupancy:
 
 ```julia
-using Lie
+using Semisimple
 
 # Snapshot before any work
 info = cache_info()
@@ -66,7 +66,7 @@ Use [`clear_caches!`](@ref) (or its alias [`clear_all_caches!`](@ref)) to
 empty every cache at once:
 
 ```julia
-using Lie
+using Semisimple
 
 # Do some computations
 ω₁ = fundamental_weight(TypeA{2}, 1)
@@ -94,7 +94,7 @@ Use [`configure_caches!`](@ref) to resize the LRU caches at runtime.  The
 arguments determine how it is divided:
 
 ```julia
-using Lie
+using Semisimple
 
 # Give caches 512 MiB total
 configure_caches!(budget = 512 * 1024^2)
@@ -135,8 +135,8 @@ This design is safe because:
 
 ## Precompilation
 
-Lie.jl precompiles many commonly-used methods to reduce first-call latency. When you
-load the package with `using Lie`, the precompilation work has already been done.
+Semisimple.jl precompiles many commonly-used methods to reduce first-call latency. When you
+load the package with `using Semisimple`, the precompilation work has already been done.
 
 ### What gets precompiled
 
@@ -172,7 +172,7 @@ which can take hundreds of milliseconds. With precompilation, these methods are 
 immediately:
 
 ```julia
-using Lie
+using Semisimple
 
 # First call is fast due to precompilation
 @time degree(fundamental_weight(TypeE{8}, 1))  # ~0.001s
@@ -193,7 +193,7 @@ These will experience first-call latency but will be fast on subsequent calls (a
 
 ### Compile-time vs. run-time
 
-Lie.jl leverages Julia's type system and `@generated` functions to move many computations
+Semisimple.jl leverages Julia's type system and `@generated` functions to move many computations
 to compile time:
 
 | Compile-Time (Type-Level) | Run-Time |
@@ -238,10 +238,10 @@ For reproducible performance measurements, see the benchmark scripts in
 
 ## Type stability
 
-Lie.jl is designed for **complete type stability**:
+Semisimple.jl is designed for **complete type stability**:
 
 ```julia
-using Lie
+using Semisimple
 
 ω₁ = fundamental_weight(TypeE{8}, 1)
 typeof(ω₁)  # WeightLatticeElem{TypeE{8}, 8} — concrete type
@@ -289,7 +289,7 @@ BigInt
     [`dominant_character`](@ref), [`tensor_product`](@ref),
     [`symmetric_power`](@ref), or [`exterior_power`](@ref) can race.
 
-    **Safe:** Using Lie.jl from a single thread (the default)
+    **Safe:** Using Semisimple.jl from a single thread (the default)
 
     **Safe:** Read-only operations from multiple threads after warming up caches
 
@@ -301,10 +301,10 @@ then perform read-only operations in parallel.
 
 ## Comparison with LiE
 
-Lie.jl reimplements many algorithms from the [LiE computer algebra system](http://wwwmathlabo.univ-poitiers.fr/~maavl/LiE/).
+Semisimple.jl reimplements many algorithms from the [LiE computer algebra system](http://wwwmathlabo.univ-poitiers.fr/~maavl/LiE/).
 Key differences:
 
-| Aspect | LiE (C) | Lie.jl (Julia) |
+| Aspect | LiE (C) | Semisimple.jl (Julia) |
 |--------|---------|----------------|
 | **Language** | C (CWEB literate programming) | Julia (pure Julia) |
 | **Type system** | Runtime `group` structs | Compile-time Dynkin type parameters |
@@ -313,12 +313,12 @@ Key differences:
 | **Hot performance** | Fast (compiled C) | Fast (JIT-compiled, with caching) |
 | **Cold performance** | Instant (no compilation) | Slow first call (JIT overhead) |
 
-For hot operations (cached, precompiled), Lie.jl matches or exceeds LiE's performance.
+For hot operations (cached, precompiled), Semisimple.jl matches or exceeds LiE's performance.
 For cold operations, LiE is faster due to no JIT compilation delay.
 
 ## Implementation philosophy
 
-Lie.jl follows these design principles:
+Semisimple.jl follows these design principles:
 
 1. **Type-level dispatch** — Use Julia's type system to specialize code for each Dynkin type
 2. **Compile-time constants** — Leverage `@generated` functions to embed mathematical data
@@ -358,51 +358,51 @@ documented here for contributors and advanced users.
 ### Root system internals
 
 ```@docs
-Lie._root_system_cache
-Lie._compute_positive_roots_and_reflections
-Lie._make_root_system_runtime
+Semisimple._root_system_cache
+Semisimple._compute_positive_roots_and_reflections
+Semisimple._make_root_system_runtime
 ```
 
 ### Weyl group internals
 
 ```@docs
-Lie._weyl_denominator
-Lie._weyl_dim_scaled_roots
-Lie._explain_rmul
-Lie.weylloop
-Lie._positive_roots_runtime
+Semisimple._weyl_denominator
+Semisimple._weyl_dim_scaled_roots
+Semisimple._explain_rmul
+Semisimple.weylloop
+Semisimple._positive_roots_runtime
 ```
 
 ### Cache internals
 
 ```@docs
-Lie._apply_cache_preferences!
+Semisimple._apply_cache_preferences!
 ```
 
 ### Character internals
 
 ```@docs
-Lie.dot_reduce
-Lie.brauer_klimyk
-Lie._brauer_klimyk_dominant
-Lie._vdecomp
-Lie._tensor_characters
+Semisimple.dot_reduce
+Semisimple.brauer_klimyk
+Semisimple._brauer_klimyk_dominant
+Semisimple._vdecomp
+Semisimple._tensor_characters
 ```
 
 ### Littlewood–Richardson internals (type A)
 
 ```@docs
-Lie._weight_to_partition
-Lie._partition_to_weight
-Lie._lr_coefficients
-Lie._n_tableaux
+Semisimple._weight_to_partition
+Semisimple._partition_to_weight
+Semisimple._lr_coefficients
+Semisimple._n_tableaux
 ```
 
 ### Plethysm internals (Murnaghan–Nakayama)
 
 ```@docs
-Lie._partitions
-Lie._classord
-Lie._mn_char_val
-Lie._mn_recurse!
+Semisimple._partitions
+Semisimple._classord
+Semisimple._mn_char_val
+Semisimple._mn_recurse!
 ```

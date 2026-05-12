@@ -10,7 +10,7 @@ Weights are constructed with `fundamental_weight` or directly
 from a coefficient vector using `WeightLatticeElem`:
 
 ```jldoctest weights
-julia> using Lie
+julia> using Semisimple
 
 julia> ω1 = fundamental_weight(TypeA{3}, 1)
 ω1
