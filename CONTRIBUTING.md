@@ -1,5 +1,13 @@
 # Contributing
 
+## Use of LLMs
+
+Parts of this package have been written with the assistance of large language
+models. LLM-generated code is not inherently trustworthy: it can be subtly
+wrong, miss edge cases, or introduce regressions. **Human review of every
+change is essential** — please read and understand all code before merging,
+regardless of how it was produced.
+
 ## Code formatting
 
 The project uses [JuliaFormatter.jl](https://github.com/domluna/JuliaFormatter.jl)

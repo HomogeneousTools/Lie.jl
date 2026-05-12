@@ -6,8 +6,9 @@
 [![Release](https://img.shields.io/github/v/release/HomogeneousTools/Semisimple.jl?color=green)](https://github.com/HomogeneousTools/Semisimple.jl/releases)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
-A Julia package for computations with finite-dimensional complex semisimple
-Lie algebras via their root data: root systems, Weyl groups, weight lattices,
+A Julia package for computations with representations of
+finite-dimensional complex semisimple Lie algebras
+via their root data: root systems, Weyl groups, weight lattices,
 and highest-weight representation-theoretic operations.
 
 ## Features
@@ -43,6 +44,14 @@ module homomorphisms. That module is explicitly experimental, so its API carries
 stability caveats. Use OSCAR when you need integrated algebraic objects; use
 Semisimple.jl when you need lightweight, optimized highest-weight and character
 computations.
+
+## Related software
+
+Semisimple.jl is inspired by (and partially ported from) [LiE](http://wwwmathlabo.univ-poitiers.fr/~maavl/LiE/),
+a computer algebra system for Lie group computations written in C, and by similar
+functionality available in [SageMath](https://sagemath.org) and [LieART](https://lieart.hepforge.org/)
+(the latter targeting [Mathematica](https://www.wolfram.com/mathematica/)).
+Note that Semisimple.jl is less feature-complete than any of these; porting more features is planned.
 
 ## Installation
 

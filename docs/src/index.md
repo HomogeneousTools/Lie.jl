@@ -10,40 +10,6 @@ root-data computations.
 <p><a href="Semisimple.jl.pdf">Download the PDF manual</a>.</p>
 ```
 
-Semisimple.jl is a finite-type root-data and highest-weight package. It does not
-construct concrete Lie algebra elements, brackets, Chevalley bases, ideals,
-subalgebras, homomorphisms, arbitrary-field Lie algebras, or module
-homomorphisms.
-
-Semisimple.jl is inspired by (and partially ported) from [LiE](http://wwwmathlabo.univ-poitiers.fr/~maavl/LiE/),
-a computer algebra system for Lie group computations written in C.
-Parts of the Semisimple.jl code have been written with the assistance of Claude Opus 4.6.
-
-Similar features are also available in [SageMath](https://sagemath.org),
-and a similar package is [LieART](https://lieart.hepforge.org/),
-which runs on the proprietary [Mathematica](https://www.wolfram.com/mathematica/) software.
-
-Note that Semisimple.jl is less feature-complete than any of the aforementioned packages.
-Porting more features is planned.
-
-## Relationship to OSCAR
-
-Semisimple.jl overlaps partly with OSCAR's [stable Lie Theory](https://docs.oscar-system.org/stable/LieTheory/intro/)
-module, but the emphasis is different. OSCAR stable provides intentionally
-minimal combinatorial scaffolding: Cartan matrices, root systems, Weyl groups,
-and weight lattices, represented with OSCAR/AbstractAlgebra parent objects and
-integer matrices. Semisimple.jl focuses on finite-type complex semisimple root data
-with type-level Dynkin types, `StaticArrays`-based weights and roots, optimized
-Weyl orbit traversal, and highest-weight representation-ring computations.
-
-OSCAR's [experimental Lie Algebras](https://docs.oscar-system.org/stable/Experimental/LieAlgebras/introduction/)
-module is broader on the algebraic side: it has concrete finite-dimensional Lie
-algebra objects, brackets, ideals, subalgebras, homomorphisms, modules, and
-module homomorphisms. That module is explicitly experimental, so its API carries
-stability caveats. Use OSCAR when you need integrated algebraic objects; use
-Semisimple.jl when you need lightweight, optimized highest-weight and character
-computations.
-
 ## Features
 
 - **Dynkin types** — Type-level classification (`TypeA{N}`, `TypeB{N}`, …, `TypeG2`, products) with text Dynkin diagrams
