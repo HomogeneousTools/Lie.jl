@@ -847,7 +847,9 @@ end
   @testset "Right-multiplication insertion path" begin
     W = weyl_group(TypeA{2})
     x = W([2, 1])
-    b, pos, letter = Semisimple._explain_rmul(x, UInt8(2), root_system(W).refl, rank(TypeA{2}))
+    b, pos, letter = Semisimple._explain_rmul(
+      x, UInt8(2), root_system(W).refl, rank(TypeA{2})
+    )
     @test (b, pos, Int(letter)) == (true, 1, 1)
 
     y = deepcopy(x)
@@ -1001,7 +1003,8 @@ end
   @test Semisimple.dot_reduce(WeightLatticeElem(TypeB{2}, [0, -2])) == (0, zero_B2)
 
   zero_G2 = WeightLatticeElem(TypeG2, [0, 0])
-  @test Semisimple.dot_reduce(fundamental_weight(TypeG2, 1)) == (1, fundamental_weight(TypeG2, 1))
+  @test Semisimple.dot_reduce(fundamental_weight(TypeG2, 1)) ==
+    (1, fundamental_weight(TypeG2, 1))
   @test Semisimple.dot_reduce(WeightLatticeElem(TypeG2, [-2, 2])) ==
     (-1, fundamental_weight(TypeG2, 2))
   @test Semisimple.dot_reduce(WeightLatticeElem(TypeG2, [0, -2])) == (0, zero_G2)
@@ -1771,7 +1774,8 @@ end
     @test plethysm(Int[], ω1_A3) ==
       WeylCharacter(WeightLatticeElem{TypeA{3},3}(zero(SVector{3,Int})))
     @test plethysm([2, 1, 0], ω1_A3) == plethysm([2, 1], ω1_A3)
-    @test Semisimple._mn_char_val([2, 1, 0], [2, 1, 0]) == Semisimple._mn_char_val([2, 1], [2, 1])
+    @test Semisimple._mn_char_val([2, 1, 0], [2, 1, 0]) ==
+      Semisimple._mn_char_val([2, 1], [2, 1])
   end
 
   # ─── ProductDynkinType characters ──────────────────────────────
