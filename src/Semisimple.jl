@@ -211,24 +211,11 @@ function _print_banner()
   version_str = v === nothing ? "dev" : string(v)
 
   println()
-  # Row 1: ▖ ▘     ▘▜
-  print("▖ ▘     ▘▜ ")
-  println(" │  semisimple Lie algebras: root systems,")
-
-  # Row 2: ▌ ▌█▌   ▌▐
-  print("▌ ▌█▌   ▌▐ ")
-  println(" │  Weyl groups, and representations")
-
-  # Row 3: ▙▖▌▙▖▗  ▌▐▖
-  print("▙▖▌▙▖▗  ▌▐▖")
-  println(" │")
-
-  # Row 4:        ▙▌
-  print("       ▙▌  ")
-  println(" │  Docs:    https://homogeneous.tools/Semisimple.jl")
-
-  print("            ")
-  println("│  Version: ", version_str)
+  println("▄▖     ▘  ▘     ▜      ▘▜ │ semisimple Lie algebras: root systems,")
+  println("▚ █▌▛▛▌▌▛▘▌▛▛▌▛▌▐ █▌   ▌▐ │ Weyl groups, weight lattices")
+  println("▄▌▙▖▌▌▌▌▄▌▌▌▌▌▙▌▐▖▙▖▗  ▌▐▖│ Docs:    https://homogeneous.tools/Semisimple.jl")
+  println("              ▌       ▙▌  │ Version: ", version_str)
+  println()
 end
 # COV_EXCL_STOP
 
