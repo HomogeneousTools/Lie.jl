@@ -1,4 +1,6 @@
-# Semisimple.jl
+```@raw html
+<h1><img src="assets/favicon.svg" alt="Semisimple.jl icon" width="32" valign="middle" /> Semisimple.jl</h1>
+```
 
 A Julia package for computations with finite-dimensional complex semisimple
 Lie algebras via their root data: root systems, Weyl groups, weight lattices,

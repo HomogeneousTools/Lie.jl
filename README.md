@@ -1,4 +1,4 @@
-# Semisimple.jl
+<h1><img src="docs/src/assets/favicon.svg" alt="Semisimple.jl icon" width="32" valign="middle"> Semisimple.jl</h1>
 
 [![tests](https://github.com/HomogeneousTools/Semisimple.jl/actions/workflows/tests.yml/badge.svg)](https://github.com/HomogeneousTools/Semisimple.jl/actions/workflows/tests.yml)
 [![codecov](https://codecov.io/gh/HomogeneousTools/Semisimple.jl/graph/badge.svg)](https://codecov.io/gh/HomogeneousTools/Semisimple.jl)
