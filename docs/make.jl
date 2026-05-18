@@ -1,11 +1,23 @@
 using Documenter
-using Documenter: RawHTMLHeadContent
+using Documenter: RawHTMLHeadContent, asset
 using Semisimple
+
+function env_bool(name::AbstractString, default::Bool)
+  value = get(ENV, name, nothing)
+  value === nothing && return default
+
+  normalized = lowercase(strip(value))
+  normalized in ("1", "true", "yes", "on") && return true
+  normalized in ("0", "false", "no", "off") && return false
+
+  error("Environment variable $(name) must be a boolean-like value, got $(repr(value)).")
+end
 
 const SITE_NAME = "Semisimple.jl"
 const AUTHORS = "Pieter Belmans"
 const PDF_NAME = "Semisimple.jl.pdf"
 const HTML_BUILD = joinpath(@__DIR__, "build")
+const BUILD_PDF_DOCS = env_bool("SEMISIMPLE_BUILD_PDF", get(ENV, "CI", "false") == "true")
 const PLAUSIBLE_HEAD = RawHTMLHeadContent("""
 <script async src="https://plausible.io/js/pa-XnO99azZJG-BAZutMei1M.js"></script>
 <script>
@@ -13,6 +25,7 @@ const PLAUSIBLE_HEAD = RawHTMLHeadContent("""
   plausible.init()
 </script>
 """)
+const FAVICON_ASSET = asset("assets/favicon.ico"; islocal=true)
 const PAGES = [
   "Home" => "index.md",
   "Dynkin types and Cartan matrices" => "types.md",
@@ -36,7 +49,7 @@ function build_html_docs()
     doctest=true,
     format=Documenter.HTML(;
       canonical="https://homogeneous.tools/Semisimple.jl/",
-      assets=[PLAUSIBLE_HEAD],
+      assets=[PLAUSIBLE_HEAD, FAVICON_ASSET],
     ),
   )
 end
