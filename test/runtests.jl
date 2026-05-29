@@ -1274,6 +1274,17 @@ end
     for (μ_vec, m) in dc_rho
       @test full_rho[μ_vec] == m
     end
+
+    # Regression: dominant_character(ρ) for E8 used to throw
+    # `DomainError("non-integer multiplicity")` because the Freudenthal inner
+    # sum overflowed Int64. The recursion now uses BigInt internally; intermediate
+    # multiplicities here genuinely exceed typemax(Int64).
+    ρ_e8 = weyl_vector(TypeE{8})
+    dc_e8_rho = dominant_character(ρ_e8)
+    @test eltype(values(dc_e8_rho)) === BigInt
+    @test dc_e8_rho[SVector(1, 1, 1, 1, 1, 1, 1, 1)] == 1  # highest weight, mult 1
+    @test dc_e8_rho[SVector(0, 1, 1, 1, 1, 0, 1, 1)] == big"19828749079454812"
+    @test maximum(values(dc_e8_rho)) > typemax(Int64)
   end
 
   # ─── Freudenthal formula: simply-laced ───────────────────────────
