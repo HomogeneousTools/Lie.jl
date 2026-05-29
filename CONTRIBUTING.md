@@ -11,22 +11,25 @@ regardless of how it was produced.
 ## Code formatting
 
 The project uses [JuliaFormatter.jl](https://github.com/domluna/JuliaFormatter.jl)
-with the **Blue** style (configured in `.JuliaFormatter.toml`).
+with the **Blue** style (configured in `.JuliaFormatter.toml`), pinned to
+**version 2.5.1** for now. The examples below invoke it through `jlfmt`, a small
+CLI wrapper that avoids paying Julia's startup cost on every run; install the
+matching version with:
+
+```bash
+julia -e 'using Pkg; Pkg.add(PackageSpec(name="JuliaFormatter", version="=2.5.1"))'
+```
 
 Format all source files in-place:
 
 ```bash
-julia --project=. -e 'using JuliaFormatter; format("src"); format("test")'
+jlfmt src test
 ```
 
 Check whether the code is already correctly formatted (exits non-zero if not):
 
 ```bash
-julia --project=. -e '
-  using JuliaFormatter
-  ok = format("src", overwrite=false) && format("test", overwrite=false)
-  exit(ok ? 0 : 1)
-'
+jlfmt --check src test
 ```
 
 A **git pre-commit hook** may be installed at `.git-hooks/pre-commit`. It runs
@@ -40,7 +43,7 @@ git config core.hooksPath .git-hooks
 If the hook fails, run the formatter, stage the result, and re-commit:
 
 ```bash
-julia --project=. -e 'using JuliaFormatter; format("src"); format("test")'
+jlfmt src test
 git add -u
 git commit ...
 ```

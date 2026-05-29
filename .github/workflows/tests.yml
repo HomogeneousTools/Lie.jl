@@ -77,7 +77,7 @@ jobs:
       - uses: julia-actions/cache@v2
       - name: Check formatting
         run: |
-          julia -e 'using Pkg; Pkg.add("JuliaFormatter")'
+          julia -e 'using Pkg; Pkg.add(PackageSpec(name="JuliaFormatter", version=v"2.5.1"))'
           julia -e '
             using JuliaFormatter
             ok = format("src", overwrite=false) && format("test", overwrite=false)

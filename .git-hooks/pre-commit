@@ -17,7 +17,7 @@ echo "── JuliaFormatter check ───────────────�
 julia -e '
   using Pkg
   # Install into the per-process environment so we do not pollute the project.
-  Pkg.add("JuliaFormatter"; io=devnull)
+  Pkg.add(PackageSpec(name="JuliaFormatter", version="2.5.1"); io=devnull)
   using JuliaFormatter
   ok = format("src", overwrite=false) && format("test", overwrite=false)
   if !ok
