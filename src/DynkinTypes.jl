@@ -241,11 +241,16 @@ function is_valid_dynkin_type(::Type{ProductDynkinType{Ts}}) where {Ts}
   all(T <: SimpleDynkinType && is_valid_dynkin_type(T) for T in Ts.parameters)
 end
 
-_invalid_dynkin_type_message(::Type{TypeA{N}}) where {N} = "TypeA{$N} requires N ≥ 1, got N=$N"
-_invalid_dynkin_type_message(::Type{TypeB{N}}) where {N} = "TypeB{$N} requires N ≥ 2, got N=$N"
-_invalid_dynkin_type_message(::Type{TypeC{N}}) where {N} = "TypeC{$N} requires N ≥ 2, got N=$N"
-_invalid_dynkin_type_message(::Type{TypeD{N}}) where {N} = "TypeD{$N} requires N ≥ 3, got N=$N"
-_invalid_dynkin_type_message(::Type{TypeE{N}}) where {N} = "TypeE{$N} requires N ∈ {6,7,8}, got N=$N"
+_invalid_dynkin_type_message(::Type{TypeA{N}}) where {N} =
+  "TypeA{$N} requires N ≥ 1, got N=$N"
+_invalid_dynkin_type_message(::Type{TypeB{N}}) where {N} =
+  "TypeB{$N} requires N ≥ 2, got N=$N"
+_invalid_dynkin_type_message(::Type{TypeC{N}}) where {N} =
+  "TypeC{$N} requires N ≥ 2, got N=$N"
+_invalid_dynkin_type_message(::Type{TypeD{N}}) where {N} =
+  "TypeD{$N} requires N ≥ 3, got N=$N"
+_invalid_dynkin_type_message(::Type{TypeE{N}}) where {N} =
+  "TypeE{$N} requires N ∈ {6,7,8}, got N=$N"
 _invalid_dynkin_type_message(::Type{TypeF4}) = "TypeF4 is valid"
 _invalid_dynkin_type_message(::Type{TypeG2}) = "TypeG2 is valid"
 

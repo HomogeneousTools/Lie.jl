@@ -88,20 +88,10 @@ end
 coefficients(w::WeightLatticeElem) = w.vec
 Base.getindex(w::WeightLatticeElem, i::Integer) = w.vec[i]
 
-Base.:+(a::WeightLatticeElem{DT,R}, b::WeightLatticeElem{DT,R}) where {DT,R} = WeightLatticeElem{
-  DT,R
-}(
-  a.vec + b.vec
-)
-Base.:-(a::WeightLatticeElem{DT,R}, b::WeightLatticeElem{DT,R}) where {DT,R} = WeightLatticeElem{
-  DT,R
-}(
-  a.vec - b.vec
-)
-Base.:-(a::WeightLatticeElem{DT,R}) where {DT,R} = WeightLatticeElem{DT,R}(-a.vec)
-Base.:*(n::Integer, a::WeightLatticeElem{DT,R}) where {DT,R} = WeightLatticeElem{DT,R}(
-  n * a.vec
-)
+Base.:+(a::T, b::T) where {T<:WeightLatticeElem} = T(a.vec + b.vec)
+Base.:-(a::T, b::T) where {T<:WeightLatticeElem} = T(a.vec - b.vec)
+Base.:-(a::T) where {T<:WeightLatticeElem} = T(-a.vec)
+Base.:*(n::Integer, a::T) where {T<:WeightLatticeElem} = T(n * a.vec)
 Base.:*(a::WeightLatticeElem, n::Integer) = n * a
 Base.:(==)(a::WeightLatticeElem{DT,R}, b::WeightLatticeElem{DT,R}) where {DT,R} =
   a.vec == b.vec
