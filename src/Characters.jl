@@ -500,13 +500,13 @@ to its full Weyl orbit.
 
 # Examples
 ```jldoctest
-julia> using Semisimple; using StaticArrays
+julia> using Semisimple
 
 julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
 julia> mults = freudenthal_formula(ω1);
 
-julia> mults[SVector(1, 0)]
+julia> mults[[1, 0]]
 1
 
 julia> sum(values(mults))  # = dim V(ω1) = 3
@@ -639,7 +639,7 @@ Results are cached per highest weight; clear with [`clear_all_caches!`](@ref).
 
 # Examples
 ```jldoctest
-julia> using Semisimple; using StaticArrays
+julia> using Semisimple
 
 julia> ω1 = fundamental_weight(TypeA{2}, 1);
 
@@ -648,14 +648,14 @@ julia> dc = dominant_character(ω1);
 julia> length(dc)   # V(ω1) of A2 has 1 dominant weight
 1
 
-julia> dc[SVector(1, 0)]   # multiplicity of ω1 itself
+julia> dc[[1, 0]]   # multiplicity of ω1 itself
 1
 
 julia> adj = ω1 + fundamental_weight(TypeA{2}, 2);
 
 julia> dc_adj = dominant_character(adj);
 
-julia> dc_adj[SVector(0, 0)]   # zero weight multiplicity in adjoint
+julia> dc_adj[[0, 0]]   # zero weight multiplicity in adjoint
 2
 ```
 """
@@ -1530,11 +1530,11 @@ Multiplicities are stored as `BigInt` (propagated from
 
 # Examples
 ```jldoctest
-julia> using Semisimple, StaticArrays
+julia> using Semisimple
 
 julia> m = adams_operator(fundamental_weight(TypeA{2}, 1), 2);
 
-julia> length(m), m[SVector(2, 0)]
+julia> length(m), m[[2, 0]]
 (3, 1)
 ```
 """

@@ -8,7 +8,7 @@ highest weights.
 ## Constructing characters
 
 ```jldoctest chars
-julia> using Semisimple, StaticArrays
+julia> using Semisimple
 
 julia> ω1 = fundamental_weight(TypeA{3}, 1);
 
@@ -100,8 +100,8 @@ Semisimple.jl uses three related but distinct character representations:
 | Name | Julia representation | Meaning |
 |---|---|---|
 | `WeylCharacter` | `Dict{WeightLatticeElem,Int}` in the `terms` field | irreducible decomposition in the representation ring |
-| Full weight character | `Dict{SVector{R,Int},Int}` from [`freudenthal_formula`](@ref) | multiplicity of every weight |
-| Dominant character | `Dict{SVector{R,Int},Int}` from [`dominant_character`](@ref) | multiplicity on dominant representatives of Weyl orbits |
+| Full weight character | `Dict{SVector{R,Int},BigInt}` from [`freudenthal_formula`](@ref) | multiplicity of every weight |
+| Dominant character | `Dict{SVector{R,Int},BigInt}` from [`dominant_character`](@ref) | multiplicity on dominant representatives of Weyl orbits |
 
 ## Character polynomials
 
@@ -146,7 +146,7 @@ reconstructing the full character from the dominant character is straightforward
 [`freudenthal_formula`](@ref) does internally.
 
 `dominant_character` computes this using Freudenthal's recursion formula and returns a
-`Dict{SVector{R,Int}, Int}` mapping dominant weight coordinates to multiplicities. This is the cached building block behind [`freudenthal_formula`](@ref), [`weight_multiplicity`](@ref), tensor products, Adams operators, and plethysms.
+`Dict{SVector{R,Int}, BigInt}` mapping dominant weight coordinates to multiplicities. This is the cached building block behind [`freudenthal_formula`](@ref), [`weight_multiplicity`](@ref), tensor products, Adams operators, and plethysms.
 
 This dominant character corresponds to the `domchar` output in LiE.
 
@@ -158,7 +158,7 @@ julia> dc = dominant_character(ω1_a2);
 julia> length(dc)   # only 1 dominant weight for V(ω1) of A2
 1
 
-julia> dc[SVector(1, 0)]  # the highest weight itself
+julia> dc[[1, 0]]  # the highest weight itself
 1
 ```
 
@@ -171,7 +171,7 @@ dominant_character
 
 Compute the full weight multiplicity dictionary of an irreducible
 representation ``\mathrm{V}(\lambda)``. Returns a
-`Dict{SVector{R,Int}, Int}` mapping weight coordinates (in the
+`Dict{SVector{R,Int}, BigInt}` mapping weight coordinates (in the
 fundamental weight basis) to their multiplicities:
 
 ```jldoctest chars
@@ -278,7 +278,7 @@ dual
 ## Adams operators
 
 The Adams operator ``\psi^k`` scales every weight of ``\mathrm{V}(\lambda)``
-by ``k``. The result is returned as a `Dict{SVector{R,Int}, Int}` mapping
+by ``k``. The result is returned as a `Dict{SVector{R,Int}, BigInt}` mapping
 weight coordinates to multiplicities (not decomposed into irreducibles).
 Use [`character_from_weights`](@ref) to convert it to a `WeylCharacter`:
 
@@ -507,6 +507,8 @@ Given a weight multiplicity dictionary (e.g. from an Adams operator),
 recover the Weyl character decomposition:
 
 ```jldoctest chars
+julia> using StaticArrays  # character_from_weights takes SVector-keyed input
+
 julia> m = Dict(SVector(1, 0, 0) => 1, SVector(-1, 1, 0) => 1,
                 SVector(0, -1, 1) => 1, SVector(0, 0, -1) => 1);
 

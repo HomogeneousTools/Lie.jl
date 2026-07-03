@@ -254,12 +254,12 @@ Block-diagonal Cartan matrix for a product of simple types.
 
 # Examples
 ```jldoctest
-julia> using Semisimple, StaticArrays
+julia> using Semisimple
 
-julia> cartan_matrix(TypeA{2}) == SMatrix{2,2}(2, -1, -1, 2)
+julia> cartan_matrix(TypeA{2}) == [2 -1; -1 2]
 true
 
-julia> cartan_matrix(TypeG2) == SMatrix{2,2}(2, -1, -3, 2)
+julia> cartan_matrix(TypeG2) == [2 -3; -1 2]
 true
 ```
 """
@@ -334,12 +334,12 @@ the Cartan matrix of `DT`. Entries are positive integers with gcd 1.
 
 # Examples
 ```jldoctest
-julia> using Semisimple, StaticArrays
+julia> using Semisimple
 
-julia> cartan_symmetrizer(TypeB{3}) == SVector(2, 2, 1)
+julia> cartan_symmetrizer(TypeB{3}) == [2, 2, 1]
 true
 
-julia> cartan_symmetrizer(TypeG2) == SVector(1, 3)
+julia> cartan_symmetrizer(TypeG2) == [1, 3]
 true
 ```
 """
