@@ -88,7 +88,7 @@ using Semisimple
 degree(ω1)   # 4
 
 # Tensor product decomposition: V(ω1) ⊗ V(ω1) = Sym²V ⊕ ⋀²V
-tensor_product(ω1, ω2)
+tensor_product(ω1, ω1)
 
 # Symmetric and exterior powers
 Sym(3, ω1)    # Sym³(standard rep)

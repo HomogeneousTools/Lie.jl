@@ -272,7 +272,7 @@ using Semisimple
 typeof(ω₁)  # WeightLatticeElem{TypeE{8}, 8} — concrete type
 
 ch = freudenthal_formula(ω₁)
-typeof(ch)  # Dict{SVector{8, Int64}, Int64} — concrete type
+typeof(ch)  # Dict{SVector{8, Int64}, BigInt} — concrete type
 
 result = tensor_product(ω₁, ω₁)
 typeof(result)  # WeylCharacter{TypeE{8}, 8} — concrete type
@@ -286,23 +286,29 @@ There are **no type instabilities** in hot paths.
 All computations use **exact integer arithmetic** — there are no floating-point operations:
 
 - Weights are `SVector{R, Int}` — exact integer vectors
-- Multiplicities are `Int` — exact integer counts
-- Dimensions are computed exactly (Weyl dimension formula uses `BigInt` for large products)
+- Irreducible multiplicities in a `WeylCharacter` are `Int`; weight
+  multiplicities from the Freudenthal recursion are `BigInt` (they can exceed
+  `typemax(Int64)` for large representations)
+- Dimensions are computed exactly (the Weyl dimension formula works in `BigInt`)
 - Inner products use scaled integer forms to avoid division
 
 This means:
 - **No numerical stability concerns** — safe for arbitrarily large representations
-- **Overflow protection** — dimension computations automatically promote to `BigInt` when needed
+- **No overflow** — dimensions and weight multiplicities are `BigInt` throughout
 
-Example:
-```julia
-julia> ω7 = fundamental_weight(TypeE{8}, 7);
+Example: the irreducible representation of E₈ with highest weight ρ has
+dimension ``2^{120}``, far beyond `typemax(Int64) ≈ 9.2 × 10^{18}`:
 
-julia> degree(ω7)  # 147,250 × 2⁶⁰ — too large for Int64
-170141183460469137866240
+```jldoctest
+julia> using Semisimple
 
-julia> typeof(degree(ω7))
-BigInt
+julia> ρ = weyl_vector(TypeE{8});
+
+julia> degree(ρ)
+1329227995784915872903807060280344576
+
+julia> degree(ρ) == big(2)^120
+true
 ```
 
 ## Thread safety
