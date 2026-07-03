@@ -2,8 +2,9 @@
 #  Root systems — root enumeration and root space elements
 #
 #  Roots are stored as SVector{R,Int} in the basis of simple roots.
-#  Small precompiled ranks use fully generated literals; larger ranks use a
-#  compact runtime builder to keep method bodies and compile-time pressure low.
+#  Root data is computed once per Dynkin type at runtime (and cached) by a
+#  value-level builder that is compiled only once, instead of being emitted
+#  as @generated literals per type — keeping precompilation cheap.
 # ═══════════════════════════════════════════════════════════════════════════════
 
 export RootSystem, RootSpaceElem
@@ -139,19 +140,18 @@ end
 # ═══════════════════════════════════════════════════════════════════════════════
 
 """
-    RootSystem{DT,R,N}
+    RootSystem{DT,R}
 
-A root system for the Dynkin type `DT` of rank `R` with `N` positive roots.
-For small ranks the data is emitted directly by a `@generated` constructor;
-for larger ranks it is built once at runtime and cached per Dynkin type.
+A root system for the Dynkin type `DT` of rank `R`. The data is built once
+at runtime and cached per Dynkin type.
 
 Fields:
-- `positive_roots_list`: `NTuple{N, SVector{R,Int}}` of positive roots,
-  ordered by non-decreasing height (`pos_roots[N]` is the highest root).
-- `positive_coroots_list`: `NTuple{N, SVector{R,Int}}` of positive coroots,
+- `positive_roots_list`: `Vector{SVector{R,Int}}` of positive roots,
+  ordered by non-decreasing height (`pos_roots[end]` is the highest root).
+- `positive_coroots_list`: `Vector{SVector{R,Int}}` of positive coroots,
   in the same order as the roots.
-- `refl`: `SMatrix{R,N,UInt}` reflection table — `refl[s, i]` = index of
-  `s_s(α_i)` among positive roots, or 0 if the result is negative.
+- `refl`: `Matrix{UInt}` reflection table of size `R × N` — `refl[s, i]` =
+  index of `s_s(α_i)` among positive roots, or 0 if the result is negative.
 - `highest_coroot_idx`: the index of the positive coroot with greatest height
   (= index of the highest short root in `positive_roots_list`).
 
@@ -163,19 +163,26 @@ julia> RootSystem(TypeA{2})
 Root system of type A2, rank 2 with 3 positive roots
 ```
 """
-struct RootSystem{DT<:DynkinType,R,N}
-  positive_roots_list::NTuple{N,SVector{R,Int}}
-  positive_coroots_list::NTuple{N,SVector{R,Int}}
-  refl::SMatrix{R,N,UInt}
+struct RootSystem{DT<:DynkinType,R}
+  positive_roots_list::Vector{SVector{R,Int}}
+  positive_coroots_list::Vector{SVector{R,Int}}
+  refl::Matrix{UInt}
   highest_coroot_idx::Int
 end
 
+function Base.:(==)(a::RootSystem{DT,R}, b::RootSystem{DT,R}) where {DT,R}
+  return a.positive_roots_list == b.positive_roots_list &&
+         a.positive_coroots_list == b.positive_coroots_list &&
+         a.refl == b.refl &&
+         a.highest_coroot_idx == b.highest_coroot_idx
+end
+
 """
-    RootSystem(::Type{DT}) -> RootSystem{DT,R,N}
+    RootSystem(::Type{DT}) -> RootSystem{DT,R}
 
 Return the root system for Dynkin type `DT`. A single instance is cached per
-Dynkin type, with small ranks using fully generated literals and larger ranks
-using a compact runtime builder.
+Dynkin type; the data is computed by a compact value-level builder shared by
+all types.
 
 # Examples
 ```jldoctest
@@ -190,118 +197,48 @@ const _root_system_lock = ReentrantLock()
 
 function RootSystem(::Type{DT}) where {DT<:DynkinType}
   check_dynkin_type(DT)
-  lock(_root_system_lock) do
-    get!(_root_system_cache, DT) do
-      R = rank(DT)
-      rs = _make_root_system(DT)
-      _positive_roots_set_cache[DT] = Set{SVector{R,Int}}(rs.positive_roots_list)
-      rs
-    end::RootSystem{DT,rank(DT),n_positive_roots(DT)}
+  R = rank(DT)
+  # Explicit lock/try instead of do-block closures: closures specialize per
+  # Dynkin type and add measurable precompilation cost for zero benefit here.
+  lock(_root_system_lock)
+  try
+    cached = _typedict_get(_root_system_cache, DT)
+    cached === nothing || return cached::RootSystem{DT,R}
+    rs = _make_root_system(DT)
+    _typedict_set!(
+      _positive_roots_set_cache, DT, Set{SVector{R,Int}}(rs.positive_roots_list)
+    )
+    _typedict_set!(_root_system_cache, DT, rs)
+    return rs::RootSystem{DT,R}
+  finally
+    unlock(_root_system_lock)
   end
 end
 
-"""
-    _make_root_system_runtime(::Type{DT}) -> RootSystem{DT,R,N}
+# Rank-level conversion of value-level root data into `SVector` storage.
+# Compiled once per rank R, shared by all Dynkin families of that rank.
+Base.@constprop :none _as_svectors(::Val{R}, vs::Vector{Vector{Int}}) where {R} =
+  [SVector{R,Int}(v...) for v in vs]
 
-Compact runtime builder for root systems. This is used directly for higher
-ranks and via a small generated wrapper for larger mid-rank types to avoid
-emitting enormous tuple literals into method bodies.
 """
-function _make_root_system_runtime(
-  ::Type{DT}, ::Val{R}, ::Val{N}
-) where {DT<:DynkinType,R,N}
-  C_mat = _cartan_matrix_data(DT)
-  pos_roots, pos_coroots, refl_mat = _compute_positive_roots_and_reflections_runtime(
-    C_mat, R
-  )
-  hcr_idx = _highest_coroot_index(pos_coroots)
-  roots_tuple = ntuple(i -> SVector{R,Int}(Tuple(pos_roots[i])), Val(N))
-  coroots_tuple = ntuple(i -> SVector{R,Int}(Tuple(pos_coroots[i])), Val(N))
-  refl_entries = Tuple(UInt(refl_mat[i, j]) for j in 1:N for i in 1:R)
-  refl = SMatrix{R,N,UInt,R * N}(refl_entries)
-  return RootSystem{DT,R,N}(roots_tuple, coroots_tuple, refl, hcr_idx)
-end
+    _make_root_system_runtime(::Type{DT}) -> RootSystem{DT,R}
 
+Compact runtime builder for root systems: value-level root enumeration
+(compiled once) plus a small per-rank conversion into `SVector` storage.
+"""
 function _make_root_system_runtime(::Type{DT}) where {DT<:DynkinType}
   check_dynkin_type(DT)
-  return _make_root_system_runtime(DT, Val(rank(DT)), Val(n_positive_roots(DT)))
+  R = rank(DT)
+  pos_roots, pos_coroots, refl = _compute_positive_roots_and_reflections_runtime(
+    _cartan_matrix_data(DT), R
+  )
+  hcr_idx = _highest_coroot_index(pos_coroots)
+  return RootSystem{DT,R}(
+    _as_svectors(Val(R), pos_roots), _as_svectors(Val(R), pos_coroots), refl, hcr_idx
+  )
 end
 
 # ─── Core computation of positive roots ─────────────────────────────────────
-
-"""
-Compute positive roots, coroots, and the reflection table from a Cartan matrix.
-
-This uses the standard algorithm: start with simple roots and iteratively apply
-simple reflections to discover new positive roots.
-
-Returns:
-- `pos_roots::Vector{SVector{R,Int}}` — positive roots in simple root coordinates
-- `pos_coroots::Vector{SVector{R,Int}}` — positive coroots
-- `refl::Matrix{UInt}` — reflection table
-"""
-function _compute_positive_roots_and_reflections(C::SMatrix{R,R,Int}, rk::Integer) where {R}
-  # Start with simple roots (standard basis vectors)
-  pos_roots = [SVector{R,Int}(ntuple(j -> Int(i == j), R)) for i in 1:rk]
-  pos_coroots = [SVector{R,Int}(ntuple(j -> Int(i == j), R)) for i in 1:rk]
-
-  # Build map from root vector to index
-  root_index = Dict{SVector{R,Int},Int}()
-  for i in 1:rk
-    root_index[pos_roots[i]] = i
-  end
-
-  # Reflection table: refl[s, i] gives the index of s_s(α_i) in pos_roots,
-  # or 0 if the result is a negative root
-  # We'll grow this as we discover new roots
-  refl_data = Dict{Tuple{Int,Int},UInt}()
-  for s in 1:rk
-    refl_data[(s, s)] = 0  # s_s(α_s) = -α_s  (negative)
-  end
-
-  i = 1
-  while i <= length(pos_roots)
-    for s in 1:rk
-      haskey(refl_data, (s, i)) && continue
-
-      root_i = pos_roots[i]
-      coroot_i = pos_coroots[i]
-
-      # Compute both pairings in one pass to avoid inner-loop generator allocations.
-      pairing = zero(Int)
-      copairing = zero(Int)
-      @inbounds for j in 1:rk
-        pairing += C[s, j] * root_i[j]
-        copairing += coroot_i[j] * C[j, s]
-      end
-      pairing * copairing < 4 ||
-        error("Non-finite Cartan data encountered while enumerating positive roots")
-
-      # Reflected root: s_s(root_i) = root_i - pairing * α_s
-      new_root = SVector{R,Int}(ntuple(j -> root_i[j] - pairing * (j == s ? 1 : 0), R))
-
-      # Reflected coroot: s_s(coroot_i) = coroot_i - copairing * α_s∨
-      new_coroot = SVector{R,Int}(
-        ntuple(j -> coroot_i[j] - copairing * (j == s ? 1 : 0), R)
-      )
-      all(>=(0), new_root) ||
-        error("Positive-root reflection unexpectedly left the positive cone")
-      idx = get(root_index, new_root, 0)
-      if idx == 0
-        # New positive root discovered
-        push!(pos_roots, new_root)
-        push!(pos_coroots, new_coroot)
-        idx = length(pos_roots)
-        root_index[new_root] = idx
-      end
-      refl_data[(s, i)] = UInt(idx)
-      refl_data[(s, idx)] = UInt(i)
-    end
-    i += 1
-  end
-
-  return _sort_positive_root_data(pos_roots, pos_coroots, refl_data, rk)
-end
 
 function _root_height(v)
   total = zero(Int)
@@ -411,37 +348,7 @@ function _compute_positive_roots_and_reflections_runtime(C::AbstractMatrix{Int},
   return _sort_positive_root_data(pos_roots, pos_coroots, refl_data, rk)
 end
 
-@generated function _make_root_system(::Type{DT}) where {DT<:DynkinType}
-  R = rank(DT)
-  N = n_positive_roots(DT)
-  if R > 9
-    return :(_make_root_system_runtime($DT, Val{$R}(), Val{$N}()))
-  end
-  C_data = _cartan_matrix_data(DT)
-  C = SMatrix{R,R,Int,R * R}(Tuple(C_data))
-  pos_roots, pos_coroots, refl_mat = _compute_positive_roots_and_reflections(C, R)
-
-  # The highest coroot is the positive coroot with greatest coroot-height
-  # (sum of simple coroot coordinates).  It corresponds to the highest short
-  # root, and both are at the same index.  Compute it now while we have all
-  # data available at compile time.
-  hcr_idx = _highest_coroot_index(pos_coroots)
-
-  # Flatten data into tuples for embedding in the generated expression
-  roots_tuple = Tuple(Tuple(v) for v in pos_roots)
-  coroots_tuple = Tuple(Tuple(v) for v in pos_coroots)
-  # refl_mat is Matrix{UInt} of size (R, N) — flatten column-major
-  refl_entries = Tuple(UInt(refl_mat[i, j]) for j in 1:N for i in 1:R)
-
-  return quote
-    RootSystem{$DT,$R,$N}(
-      $(roots_tuple),
-      $(coroots_tuple),
-      SMatrix{$R,$N,UInt,$(R * N)}($refl_entries),
-      $hcr_idx,
-    )
-  end
-end
+_make_root_system(::Type{DT}) where {DT<:DynkinType} = _make_root_system_runtime(DT)
 
 RootSystem(dt::DynkinType) = RootSystem(typeof(dt))
 
@@ -708,7 +615,8 @@ end
 Return the highest coroot ``\\theta^\\vee``: the positive coroot of greatest height.
 This is the coroot of the highest short root.
 
-The index is precomputed at compile time and stored in `RS.highest_coroot_idx`.
+The index is precomputed when the root system is built and stored in
+`RS.highest_coroot_idx`.
 
 # Examples
 ```jldoctest
@@ -733,7 +641,7 @@ greatest height among all short positive roots.
 For simply-laced types (A, D, E), every root has the same length, so this
 coincides with `highest_root`.
 
-The index equals `RS.highest_coroot_idx`, precomputed at compile time.
+The index equals `RS.highest_coroot_idx`, precomputed when the root system is built.
 
 # Examples
 ```jldoctest
@@ -1070,10 +978,12 @@ false
 ```
 """
 function is_positive_root(RS::RootSystem{DT,R}, v::RootSpaceElem{DT,R}) where {DT,R}
-  s = get!(_positive_roots_set_cache, DT) do
-    Set{SVector{R,Int}}(RS.positive_roots_list)
-  end::Set{SVector{R,Int}}
-  return v.vec in s
+  s = _typedict_get(_positive_roots_set_cache, DT)
+  if s === nothing
+    s = Set{SVector{R,Int}}(RS.positive_roots_list)
+    _typedict_set!(_positive_roots_set_cache, DT, s)
+  end
+  return v.vec in (s::Set{SVector{R,Int}})
 end
 
 # ─── Inner product on root space ─────────────────────────────────────────────

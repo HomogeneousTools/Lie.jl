@@ -388,28 +388,32 @@ julia> length(w0)
 ```
 """
 function longest_element(W::WeylGroup{DT,R}) where {DT,R}
-  lock(_longest_element_lock) do
-    get!(_longest_element_cache, DT) do
-      w0 = one(W)
-      wt = MVector{R,Int}(ntuple(j -> 1, R))
-      C = cartan_matrix(DT)
-      while true
-        found = false
-        for s in 1:R
-          if wt[s] > 0
-            rmul!(w0, UInt8(s))
-            pairing = wt[s]
-            for j in 1:R
-              wt[j] -= pairing * C[j, s]
-            end
-            found = true
-            break
+  lock(_longest_element_lock)
+  try
+    cached = _typedict_get(_longest_element_cache, DT)
+    cached === nothing || return cached::WeylGroupElem{DT,R}
+    w0 = one(W)
+    wt = MVector{R,Int}(ntuple(j -> 1, R))
+    C = cartan_matrix(DT)
+    while true
+      found = false
+      for s in 1:R
+        if wt[s] > 0
+          rmul!(w0, UInt8(s))
+          pairing = wt[s]
+          for j in 1:R
+            wt[j] -= pairing * C[j, s]
           end
+          found = true
+          break
         end
-        found || break
       end
-      w0
-    end::WeylGroupElem{DT,R}
+      found || break
+    end
+    _typedict_set!(_longest_element_cache, DT, w0)
+    return w0
+  finally
+    unlock(_longest_element_lock)
   end
 end
 
@@ -646,12 +650,14 @@ julia> length(weyl_orbit(TypeA{2}, fundamental_weight(TypeA{2}, 1)))
 ```
 """
 function weyl_orbit(::Type{DT}, w::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R}
-  # Use weylloop for efficient traversal (no hash set)
-  result = WeightLatticeElem{DT,R}[]
+  # Use weylloop for efficient traversal (no hash set).  The closure only
+  # captures rank-typed state, so the traversal it instantiates is shared by
+  # all Dynkin types of rank R.
+  vecs = SVector{R,Int}[]
   weylloop(DT, Vector{Int}(w.vec)) do tmp
-    push!(result, WeightLatticeElem{DT,R}(SVector{R,Int}(tmp)))
+    push!(vecs, SVector{R,Int}(tmp))
   end
-  return result
+  return [WeightLatticeElem{DT,R}(v) for v in vecs]
 end
 
 function weyl_orbit(w::WeightLatticeElem{DT,R}) where {DT,R}
@@ -679,22 +685,24 @@ julia> length(dominant_weights(λ))
 2
 ```
 """
-function dominant_weights(::Type{DT}, hw::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R}
-  is_dominant(hw) || throw(ArgumentError("Highest weight must be dominant"))
-  RS = RootSystem(DT)
-  C = cartan_matrix(DT)
-
+# Rank-level core of `dominant_weights`, compiled once per rank R and shared
+# by all families.  Returns the dominant weights as coordinate vectors, sorted
+# by decreasing level (the first entry is `λ` itself).
+Base.@constprop :none function _dominant_weights_kernel(
+  λ::SVector{R,Int}, C::SMatrix{R,R,Int}, Cinv::SMatrix{R,R,Rational{Int}},
+  pos_roots::Vector{SVector{R,Int}},
+) where {R}
   # Positive roots in weight coords: column j of C = weight coords of αⱼ
   # For root v = Σ vᵢ αᵢ: weight coord j = Σᵢ C[j,i] vᵢ = (Cv)ⱼ
-  n_pos = n_positive_roots(RS)
+  n_pos = length(pos_roots)
   pos_roots_w = Vector{SVector{R,Int}}(undef, n_pos)
   for k in 1:n_pos
-    α_root = RS.positive_roots_list[k]
+    α_root = pos_roots[k]
     pos_roots_w[k] = SVector{R,Int}(ntuple(j -> sum(C[j, i] * α_root[i] for i in 1:R), R))
   end
 
-  result = Set{SVector{R,Int}}([hw.vec])
-  todo = [hw.vec]
+  result = Set{SVector{R,Int}}([λ])
+  todo = [λ]
 
   while !isempty(todo)
     new_todo = SVector{R,Int}[]
@@ -713,14 +721,22 @@ function dominant_weights(::Type{DT}, hw::WeightLatticeElem{DT,R}) where {DT<:Dy
   # Compute level vector: transforms ω-coords to root height.
   # Level of μ below hw = dot(level_vec, hw - μ) / det(C)
   # For sorting we just use dot(level_vec, μ) (higher = closer to hw).
-  Cinv = cartan_matrix_inverse(DT)
   level_vec = SVector{R,Rational{Int}}(
     ntuple(j -> sum(Cinv[i, j] for i in 1:R), R)
   )
 
-  weights = [WeightLatticeElem{DT,R}(v) for v in result]
-  sort!(weights; by=w -> -sum(w.vec[i] * level_vec[i] for i in 1:R))
+  weights = collect(result)
+  sort!(weights; by=w -> -sum(w[i] * level_vec[i] for i in 1:R))
   return weights
+end
+
+function dominant_weights(::Type{DT}, hw::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R}
+  is_dominant(hw) || throw(ArgumentError("Highest weight must be dominant"))
+  RS = RootSystem(DT)
+  vecs = _dominant_weights_kernel(
+    hw.vec, cartan_matrix(DT), cartan_matrix_inverse(DT), RS.positive_roots_list
+  )
+  return [WeightLatticeElem{DT,R}(v) for v in vecs]
 end
 
 function dominant_weights(hw::WeightLatticeElem{DT,R}) where {DT,R}
@@ -732,7 +748,10 @@ end
 const _weyl_dimension_data_cache = Dict{Type,Any}()
 const _weyl_dimension_data_lock = ReentrantLock()
 
-function _weyl_dimension_data_from_roots(d, pos_roots, ::Val{R}) where {R}
+# Rank-level core, compiled once per rank R and shared by all families.
+Base.@constprop :none function _weyl_dimension_data_from_roots(
+  d::Vector{Int}, pos_roots::Vector{SVector{R,Int}}
+) where {R}
   denom = BigInt(1)
   scaled = Vector{SVector{R,Int}}(undef, length(pos_roots))
   for idx in eachindex(pos_roots)
@@ -745,42 +764,23 @@ function _weyl_dimension_data_from_roots(d, pos_roots, ::Val{R}) where {R}
     end
     Base.GMP.MPZ.mul_si!(denom, denom, ip)
   end
-  return denom, Tuple(scaled)
+  return denom, scaled
 end
 
-function _weyl_dimension_data_compiletime(::Type{DT}) where {DT<:DynkinType}
+function _weyl_dimension_data(::Type{DT}) where {DT<:DynkinType}
   R = rank(DT)
-  d = _cartan_symmetrizer_data(DT)
-  C = _cartan_matrix_data(DT)
-  C_sm = SMatrix{R,R,Int,R * R}(Tuple(C))
-  pos_roots, _, _ = _compute_positive_roots_and_reflections(C_sm, R)
-  denom, scaled = _weyl_dimension_data_from_roots(d, pos_roots, Val(R))
-  return denom, Tuple(Tuple(v) for v in scaled)
-end
-
-function _weyl_dimension_data_cached(
-  ::Type{DT}, ::Val{R}, ::Val{N}
-) where {DT<:DynkinType,R,N}
-  lock(_weyl_dimension_data_lock) do
-    get!(_weyl_dimension_data_cache, DT) do
-      d = _cartan_symmetrizer_data(DT)
-      C = _cartan_matrix_data(DT)
-      pos_roots = _positive_roots_runtime(C, R)
-      _weyl_dimension_data_from_roots(
-        d, pos_roots, Val(R)
-      )
-    end::Tuple{BigInt,NTuple{N,SVector{R,Int}}}
+  lock(_weyl_dimension_data_lock)
+  try
+    cached = _typedict_get(_weyl_dimension_data_cache, DT)
+    cached === nothing || return cached::Tuple{BigInt,Vector{SVector{R,Int}}}
+    d = _cartan_symmetrizer_data(DT)
+    RS = RootSystem(DT)
+    data = _weyl_dimension_data_from_roots(d, RS.positive_roots_list)
+    _typedict_set!(_weyl_dimension_data_cache, DT, data)
+    return data
+  finally
+    unlock(_weyl_dimension_data_lock)
   end
-end
-
-@generated function _weyl_dimension_data(::Type{DT}) where {DT<:DynkinType}
-  R = rank(DT)
-  N = n_positive_roots(DT)
-  if R > 9
-    return :(_weyl_dimension_data_cached($DT, Val{$R}(), Val{$N}()))
-  end
-  denom, scaled = _weyl_dimension_data_compiletime(DT)
-  return :(($denom, NTuple{$N,SVector{$R,Int}}($scaled)))
 end
 
 """
@@ -793,7 +793,7 @@ function _weyl_denominator(::Type{DT}) where {DT<:DynkinType}
 end
 
 """
-    _weyl_dim_scaled_roots(::Type{DT}) -> NTuple{N, SVector{R,Int}}
+    _weyl_dim_scaled_roots(::Type{DT}) -> Vector{SVector{R,Int}}
 
 Return the symmetrizer-scaled positive root vectors `d .* α` for Dynkin type `DT`.
 """
@@ -837,69 +837,49 @@ julia> [degree(fundamental_weight(TypeB{3}, i)) for i in 1:3]
   8
 ```
 """
+# Rank-level numerator kernel: ∏_{α>0} ⟨λ+ρ, α⟩, computed in-place with GMP
+# mul_si!.  Compiled once per rank R, shared by all families.
+Base.@constprop :none function _weyl_dim_numerator(
+  λρ::SVector{R,Int}, dα_all::Vector{SVector{R,Int}}
+) where {R}
+  numer = BigInt(1)
+  for dα in dα_all
+    ip = zero(Int)
+    @inbounds for i in 1:R
+      ip += λρ[i] * dα[i]
+    end
+    Base.GMP.MPZ.mul_si!(numer, numer, ip)
+  end
+  return numer
+end
+
+# Out-of-line, type-free error path: keeps the string-interpolation and show
+# machinery out of every per-Dynkin-type `degree` wrapper.
+@noinline function _throw_weyl_dim_error(
+  type_name::String, @nospecialize(hw_vec), numer::BigInt, denom::BigInt
+)
+  throw(
+    DomainError(
+      (numerator=numer, denominator=denom),
+      "Weyl dimension formula for type $type_name and highest weight $hw_vec gave the non-integer value $numer / $denom",
+    ),
+  )
+end
+
 function degree(::Type{DT}, hw::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R}
   is_dominant(hw) || throw(ArgumentError("Highest weight must be dominant"))
 
   denom, dα_all = _weyl_dimension_data(DT)
   λ_ρ = hw + weyl_vector(DT)
-
-  # Numerator: ∏_{α>0} ⟨λ+ρ, α⟩, computed in-place with GMP mul_si!
-  numer = BigInt(1)
-  for dα in dα_all
-    ip = zero(Int)
-    @inbounds for i in 1:R
-      ip += λ_ρ.vec[i] * dα[i]
-    end
-    Base.GMP.MPZ.mul_si!(numer, numer, ip)
-  end
+  numer = _weyl_dim_numerator(λ_ρ.vec, dα_all)
 
   result, rem = divrem(numer, denom)
-  iszero(rem) || throw(
-    DomainError(
-      (numerator=numer, denominator=denom),
-      "Weyl dimension formula for type $(_type_name(DT)) and highest weight $hw gave the non-integer value $numer / $denom",
-    ),
-  )
+  iszero(rem) || _throw_weyl_dim_error(_type_name(DT), hw.vec, numer, denom)
   return result
 end
 
 function _degree_runtime(::Type{DT}, hw::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R}
   return degree(DT, hw)
-end
-
-"""
-    _positive_roots_runtime(C, R) -> Vector{Vector{Int}}
-
-Compute positive roots using plain arrays (no StaticArrays).
-"""
-function _positive_roots_runtime(C::AbstractMatrix{Int}, R::Int)
-  # Simple roots = standard basis vectors
-  pos_roots = [zeros(Int, R) for _ in 1:R]
-  for i in 1:R
-    pos_roots[i][i] = 1
-  end
-  root_set = Set{Vector{Int}}(pos_roots)
-
-  i = 1
-  while i <= length(pos_roots)
-    α = pos_roots[i]
-    for s in 1:R
-      pairing = zero(Int)
-      @inbounds for j in 1:R
-        pairing += C[s, j] * α[j]
-      end
-      # s_s(α) = α - pairing * eₛ
-      new_root = copy(α)
-      new_root[s] -= pairing
-      if _is_nonnegative(new_root) && !(new_root in root_set)
-        push!(pos_roots, new_root)
-        push!(root_set, new_root)
-      end
-    end
-    i += 1
-  end
-  sort!(pos_roots; by=_root_height)
-  return pos_roots
 end
 
 function degree(hw::WeightLatticeElem{DT,R}) where {DT,R}
