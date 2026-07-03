@@ -921,10 +921,10 @@ function dot_reduce(λ::WeightLatticeElem{DT,R}) where {DT,R}
   return (ε, WeightLatticeElem{DT,R}(SVector{R,Int}(v)))
 end
 
-# Rank-level core of `dot_reduce`: folds `v` to the dominant chamber under the
-# dot action in place and returns the sign `ε` (or 0 when `λ + ρ` is singular).
-# Compiled once per rank R and shared by all Dynkin families of that rank.
-Base.@constprop :none function _dot_reduce_fold!(
+# Core of `dot_reduce`: folds `v` to the dominant chamber under the dot action
+# in place and returns the sign `ε` (or 0 when `λ + ρ` is singular).  `@inline`
+# so each caller const-folds its constant Cartan matrix into the loop.
+@inline function _dot_reduce_fold!(
   v::MVector{R,Int}, C::SMatrix{R,R,Int}
 ) where {R}
   ε = 1

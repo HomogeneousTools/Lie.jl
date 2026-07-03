@@ -357,11 +357,11 @@ julia> conjugate_dominant_weight(fundamental_weight(TypeA{3}, 1))
 ω1
 ```
 """
-# Rank-level core: fold `v` into the dominant chamber in place and return the
-# number of simple reflections applied.  Compiled once per rank R and shared
-# by all Dynkin families of that rank.  `@constprop :none` keeps inference
-# from re-specializing on each caller's compile-time-constant Cartan matrix.
-Base.@constprop :none function _fold_dominant!(
+# Core dominant-chamber fold: fold `v` into the dominant chamber in place and
+# return the number of simple reflections applied.  `@inline` so each caller
+# const-folds its compile-time-constant (sparse) Cartan matrix into the loop —
+# this is a hot path and the method is small enough to re-specialize cheaply.
+@inline function _fold_dominant!(
   v::MVector{R,Int}, C::SMatrix{R,R,Int}
 ) where {R}
   len = 0
@@ -400,9 +400,8 @@ julia> conjugate_dominant_weight_with_elem(WeightLatticeElem(TypeA{2}, [-1, 1]))
 (ω1, [1])
 ```
 """
-# Rank-level core of `conjugate_dominant_weight_with_elem`: like
-# `_fold_dominant!` but records the word of simple reflections applied.
-Base.@constprop :none function _fold_dominant_with_word!(
+# Like `_fold_dominant!` but records the word of simple reflections applied.
+function _fold_dominant_with_word!(
   v::MVector{R,Int}, C::SMatrix{R,R,Int}
 ) where {R}
   word = Int[]
