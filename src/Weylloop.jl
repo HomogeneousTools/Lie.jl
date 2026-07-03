@@ -13,9 +13,12 @@
 #  This eliminates the O(|orbit|) hash overhead that dominates large orbits
 #  (e.g. E₈ with 5 million orbit points).
 #
-#  All transforms and inner-loop functions dispatch on the Dynkin type,
-#  allowing the compiler to inline transforms and unroll small fixed-size
-#  loops (rank ≤ 8).  Workspace uses stack-allocated MVector where possible.
+#  Compilation layout: the per-type setup (`_weylloop_setup`) dispatches on the
+#  Dynkin type, but the large traversal (`_weylloop_suborbits!`) receives the
+#  family/subtype/permutation-size as runtime values and is therefore compiled
+#  once per rank and `action!` closure — not once per Dynkin type.  This keeps
+#  precompilation affordable while the per-point cost stays dominated by the
+#  `action!` callback.
 # ═══════════════════════════════════════════════════════════════════════════════
 
 # ─── ε-basis transforms per simple type ─────────────────────────────────────
@@ -240,6 +243,89 @@ _weylloop_subtype(::Type{TypeE{8}}) = :D
 _weylloop_subtype(::Type{TypeF4}) = :B
 _weylloop_subtype(::Type{TypeG2}) = :A
 
+# Small integer family tag used for the runtime ε→ω transform dispatch in the
+# orbit traversal.  This keeps the (large) traversal method free of the Dynkin
+# type, so it is compiled once per rank instead of once per Dynkin type.
+_weylloop_family(::Type{TypeA{N}}) where {N} = 1
+_weylloop_family(::Type{TypeB{N}}) where {N} = 2
+_weylloop_family(::Type{TypeC{N}}) where {N} = 3
+_weylloop_family(::Type{TypeD{N}}) where {N} = 4
+_weylloop_family(::Type{TypeE{6}}) = 5
+_weylloop_family(::Type{TypeE{7}}) = 6
+_weylloop_family(::Type{TypeE{8}}) = 7
+_weylloop_family(::Type{TypeF4}) = 8
+_weylloop_family(::Type{TypeG2}) = 9
+
+# Runtime-rank ε→ω transform: branches on the family tag.  The branch is
+# perfectly predictable inside an orbit traversal and its cost is dwarfed by
+# the `action!` callback; in exchange the traversal body becomes independent
+# of the Dynkin type.  The bodies mirror the typed `_e2w!` methods above.
+@inline function _e2w_runtime!(family::Int, w, e, N::Int)
+  @inbounds if family === 1      # A
+    for i in 1:N
+      w[i] = e[i] - e[i + 1]
+    end
+  elseif family === 2  # B
+    for i in 1:(N - 1)
+      w[i] = (e[i] - e[i + 1]) ÷ 2
+    end
+    w[N] = e[N]
+  elseif family === 3  # C
+    for i in 1:(N - 1)
+      w[i] = e[i] - e[i + 1]
+    end
+    w[N] = e[N]
+  elseif family === 4  # D
+    for i in 1:(N - 1)
+      w[i] = (e[i] - e[i + 1]) ÷ 2
+    end
+    w[N] = w[N - 1] + e[N]
+  elseif family === 5  # E6
+    s = e[6]
+    s += e[1]
+    w[6] = (e[1] - e[2]) ÷ 2
+    s += e[2]
+    w[5] = (e[2] - e[3]) ÷ 2
+    s += e[3]
+    w[4] = (e[3] - e[4]) ÷ 2
+    s += e[4]
+    w[3] = (e[4] - e[5]) ÷ 2
+    w[2] = w[3] + e[5]
+    w[1] = (e[5] - s) ÷ 4
+  elseif family === 6  # E7
+    w[1] = e[2] - e[3]
+    for i in 3:7
+      w[i] = e[i] - e[i + 1]
+    end
+    w[2] = (e[8] + e[7] + e[6] + e[5] - e[4] - e[3] - e[2] - e[1]) ÷ 2
+  elseif family === 7  # E8
+    s = e[1]
+    s += e[2]
+    w[8] = (e[2] - e[3]) ÷ 2
+    s += e[3]
+    w[7] = (e[3] - e[4]) ÷ 2
+    s += e[4]
+    w[6] = (e[4] - e[5]) ÷ 2
+    s += e[5]
+    w[5] = (e[5] - e[6]) ÷ 2
+    s += e[6]
+    w[4] = (e[6] - e[7]) ÷ 2
+    s += e[7]
+    w[3] = (e[7] - e[8]) ÷ 2
+    w[2] = w[3] + e[8]
+    w[1] = (e[8] - s) ÷ 4
+  elseif family === 8  # F4
+    w[3] = e[4]
+    w[2] = (e[3] - e[4]) ÷ 2
+    w[1] = (e[2] - e[3]) ÷ 2
+    w[4] = -(e[1] + e[2] + e[3] + e[4]) ÷ 2
+  else              # G2
+    w[2] = e[2] - e[3]
+    w[1] = e[3] - w[2] - e[1]
+  end
+  return nothing
+end
+
 _weylloop_eps_dim(::Type{TypeA{N}}) where {N} = N + 1
 _weylloop_eps_dim(::Type{TypeB{N}}) where {N} = N
 _weylloop_eps_dim(::Type{TypeC{N}}) where {N} = N
@@ -266,6 +352,32 @@ _weylloop_perm_size(::Type{TypeG2}) = 3
 # Returns true if a next permutation was found, false at the last
 # (fully decreasing) permutation.
 @inline function _nextperm!(w::AbstractVector{<:Integer}, ::Val{N}) where {N}
+  N <= 1 && return false
+  # Find last ascent: rightmost i where w[i] < w[i+1]
+  i = N - 1
+  @inbounds while i >= 1 && w[i] >= w[i + 1]
+    i -= 1
+  end
+  i < 1 && return false
+  # Find rightmost j > i with w[j] > w[i]
+  j = N
+  @inbounds while w[i] >= w[j]
+    j -= 1
+  end
+  # Swap w[i] and w[j]
+  @inbounds w[i], w[j] = w[j], w[i]
+  # Reverse suffix starting at i+1
+  lo, hi = i + 1, N
+  @inbounds while lo < hi
+    w[lo], w[hi] = w[hi], w[lo]
+    lo += 1
+    hi -= 1
+  end
+  return true
+end
+
+# Runtime-size variant of `_nextperm!` used by the rank-level traversal.
+@inline function _nextperm_runtime!(w::AbstractVector{<:Integer}, N::Int)
   N <= 1 && return false
   # Find last ascent: rightmost i where w[i] < w[i+1]
   i = N - 1
@@ -326,9 +438,9 @@ end
 
 # ─── Weyl group matrix from a reduced word ──────────────────────────────────
 
-function _weyl_matrix(::Type{DT}, word::Vector{<:Integer}) where {DT}
-  R = rank(DT)
-  C = cartan_matrix(DT)
+# Value-level: only needs the Cartan matrix data, compiled once.
+function _weyl_matrix_from(C::Matrix{Int}, word::Vector{<:Integer})
+  R = size(C, 1)
   M = Matrix{Int}(_I, R, R)
   @inbounds for k in word
     for i in 1:R
@@ -342,16 +454,25 @@ function _weyl_matrix(::Type{DT}, word::Vector{<:Integer}) where {DT}
   return M
 end
 
+function _weyl_matrix(::Type{DT}, word::Vector{<:Integer}) where {DT}
+  return _weyl_matrix_from(_cartan_matrix_data(DT), word)
+end
+
 # ─── Coset representative matrices (cached) ─────────────────────────────────
 
 const _coset_reps_cache = Dict{Type,Vector{Matrix{Int}}}()
 const _coset_reps_lock = ReentrantLock()
 
 function _coset_reps(::Type{DT}) where {DT}
-  lock(_coset_reps_lock) do
-    get!(_coset_reps_cache, DT) do
-      _build_coset_reps(DT)
-    end::Vector{Matrix{Int}}
+  lock(_coset_reps_lock)
+  try
+    cached = _typedict_get(_coset_reps_cache, DT)
+    cached === nothing || return cached::Vector{Matrix{Int}}
+    reps = _build_coset_reps(DT)
+    _typedict_set!(_coset_reps_cache, DT, reps)
+    return reps
+  finally
+    unlock(_coset_reps_lock)
   end
 end
 
@@ -458,32 +579,32 @@ permutation generation and Gray-code sign flips — with no hash set or BFS.
 For exceptional types, coset representatives W / W_classical are precomputed
 as matrices.
 
-All transforms dispatch on the Dynkin type, enabling the compiler to inline
-them and unroll fixed-size loops. The hot per-orbit workspace uses
-stack-allocated `MVector` from StaticArrays; the deduplicated suborbit
-representatives still live in a small heap vector because their count depends
-on the Dynkin type and the input weight.
+The traversal is specialized on the rank and the `action!` closure, while the
+ε→ω transform is selected by a runtime family tag — so all Dynkin types of
+the same rank share one compiled traversal.  The per-point output buffer is a
+stack-allocated `MVector`; the deduplicated suborbit representatives live in
+small heap vectors because their count depends on the Dynkin type and the
+input weight.
 
 `action!` receives a mutable workspace vector; it must NOT hold a reference
 to this vector across calls (copy if needed).
 """
-function weylloop(
-  action!::F, ::Type{DT}, v::AbstractVector{<:Integer}
-) where {F,DT<:SimpleDynkinType}
+# Per-type setup: tabulate normalised suborbit representatives.  This part is
+# independent of the `action!` closure, so it is compiled once per Dynkin type
+# rather than once per (closure, type) combination.
+function _weylloop_setup(::Type{DT}, v::AbstractVector{<:Integer}) where {DT}
   R = rank(DT)
   subtype = _weylloop_subtype(DT)
   ED = _weylloop_eps_dim(DT)
   PS = _weylloop_perm_size(DT)
 
-  # Stack-allocated workspace
-  tmp_w = MVector{R,Int}(undef)    # weight-coord scratch for _e2w!
   alt_w = MVector{R,Int}(undef)    # scratch for matrix multiply
 
   coset_reps = _coset_reps(DT)
 
   # Tabulate suborbit representatives:
   # For each coset rep, compute v * rep in weight coords, convert to ε, normalise.
-  suborbit_eps = Vector{MVector{ED,Int}}(undef, 0)
+  suborbit_eps = Vector{Vector{Int}}(undef, 0)
   for rep in coset_reps
     # Multiply v * rep (row-vector × matrix)
     @inbounds for j in 1:R
@@ -497,37 +618,59 @@ function weylloop(
     e_tmp = MVector{ED,Int}(undef)
     _w2e!(DT, e_tmp, alt_w)
     _normalform!(e_tmp, Val(PS), subtype)
-    push!(suborbit_eps, e_tmp)
+    push!(suborbit_eps, Vector{Int}(e_tmp))
   end
 
   # Remove duplicate suborbits (sort + unique)
   sort!(suborbit_eps)
   unique!(suborbit_eps)
-
-  # Traverse each suborbit
-  _weylloop_suborbits!(action!, DT, suborbit_eps, tmp_w, subtype, Val(PS))
+  return suborbit_eps
 end
 
-# Inner loop separated for type specialization.  The compiler sees DT, Val{PS},
-# and subtype as constants, so _e2w! and _nextperm! are fully inlined.
-@inline function _weylloop_suborbits!(
-  action!::F, ::Type{DT}, suborbit_eps, tmp_w, subtype::Symbol, ::Val{PS}
-) where {F,DT,PS}
-  inx = MVector{PS,Int}(undef)
+function weylloop(
+  action!::F, ::Type{DT}, v::AbstractVector{<:Integer}
+) where {F,DT<:SimpleDynkinType}
+  R = rank(DT)
+  suborbit_eps = _weylloop_setup(DT, v)
+  tmp_w = MVector{R,Int}(undef)    # weight-coord scratch for _e2w_runtime!
+
+  # Traverse each suborbit.  The traversal body depends on the Dynkin type
+  # only through small runtime parameters (family tag, subtype, permutation
+  # size), so it is compiled once per rank and `action!` closure shape — not
+  # once per Dynkin type.
+  _weylloop_suborbits!(
+    action!, tmp_w, suborbit_eps,
+    _weylloop_family(DT), _weylloop_subtype(DT), _weylloop_perm_size(DT),
+  )
+end
+
+# Inner loop separated for specialization on the `action!` closure and the
+# rank R (via the `tmp_w` workspace).  The family tag, subtype, and
+# permutation size are runtime values: the branches they control sit outside
+# the per-point hot path (or are perfectly predictable), and keeping them out
+# of the type domain means this large method is shared by all Dynkin types of
+# the same rank.  `@constprop :none` stops inference from re-specializing the
+# body for each caller's constant (family, subtype, PS) triple, which would
+# silently reintroduce the per-Dynkin-type compilation cost.
+Base.@constprop :none function _weylloop_suborbits!(
+  action!::F, tmp_w::MVector{R,Int}, suborbit_eps::Vector{Vector{Int}},
+  family::Int, subtype::Symbol, PS::Int,
+) where {F,R}
+  inx = Vector{Int}(undef, PS)
 
   for e_rep in suborbit_eps
-    w = MVector(e_rep)  # copy into mutable stack vector
+    w = copy(e_rep)  # mutable working copy
 
-    if subtype == :A
+    if subtype === :A
       # ── Type A: permutations only ──────────────────────────────────
       @inbounds while true
-        _e2w!(DT, tmp_w, w)
+        _e2w_runtime!(family, tmp_w, w, R)
         action!(tmp_w)
-        _nextperm!(w, Val(PS)) || break
+        _nextperm_runtime!(w, PS) || break
       end
     else
       # ── Types B/D: permutations + sign changes ────────────────────
-      @inbounds alternate = (subtype == :D && w[1] != 0)
+      @inbounds alternate = (subtype === :D && w[1] != 0)
 
       @inbounds while true  # permutation loop
         # Build index of nonzero entries
@@ -542,7 +685,7 @@ end
         # Sign-change inner loop (Gray code, following LiE exactly)
         signcount = UInt(0)
         while true
-          _e2w!(DT, tmp_w, w)
+          _e2w_runtime!(family, tmp_w, w, R)
           action!(tmp_w)
 
           # Generate next sign combination
@@ -574,7 +717,7 @@ end
         if minus
           w[1] = -w[1]
         end
-        has_next = _nextperm!(w, Val(PS))
+        has_next = _nextperm_runtime!(w, PS)
         if minus
           w[1] = -w[1]
         end
