@@ -313,22 +313,25 @@ true
 
 ## Thread safety
 
-!!! warning "Some caches are not thread-safe"
+!!! warning "Cache thread-safety guarantees are limited"
     The small `Dict` singleton/type-data caches are protected by locks where
-    they are populated through public APIs. The bounded `LRU` character caches
-    are not synchronized, so concurrent cache-populating calls such as
-    [`dominant_character`](@ref), [`tensor_product`](@ref),
-    [`symmetric_power`](@ref), or [`exterior_power`](@ref) can race.
+    they are populated, except that lookups do not take the lock — so a reader
+    racing a first-time writer is unsynchronized. The bounded `LRU` character
+    caches are internally locked by LRUCache.jl, so concurrent cache-populating
+    calls such as [`dominant_character`](@ref) or [`tensor_product`](@ref)
+    cannot corrupt them; at worst two threads compute the same uncached entry
+    twice. Cached dictionaries are returned by reference and must not be
+    mutated.
 
     **Safe:** Using Semisimple.jl from a single thread (the default)
 
     **Safe:** Read-only operations from multiple threads after warming up caches
 
-    **Unsafe:** Calling LRU-cache-populating representation operations from
-    multiple threads simultaneously
+    **Unsafe:** Calling [`clear_caches!`](@ref) or [`configure_caches!`](@ref)
+    while other threads are computing
 
-If you need parallel computation, populate caches in a single-threaded warm-up phase,
-then perform read-only operations in parallel.
+The recommended pattern for parallel computation remains: populate caches in a
+single-threaded warm-up phase, then perform read-only operations in parallel.
 
 ## Comparison with LiE
 
