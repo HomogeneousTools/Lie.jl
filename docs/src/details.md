@@ -140,14 +140,14 @@ load the package with `using Semisimple`, the precompilation work has already be
 
 ### What gets precompiled
 
-The package precompiles the following operations for all simple Dynkin types up to rank 9
+The package precompiles the following operations for all simple Dynkin types up to rank 10
 (plus the exceptional types):
 
 **Dynkin types precompiled:**
-- `TypeA{1}` through `TypeA{9}`
-- `TypeB{2}` through `TypeB{9}`
-- `TypeC{2}` through `TypeC{9}`
-- `TypeD{4}` through `TypeD{9}`
+- `TypeA{1}` through `TypeA{10}`
+- `TypeB{2}` through `TypeB{10}`
+- `TypeC{2}` through `TypeC{10}`
+- `TypeD{3}` through `TypeD{10}`
 - `TypeE{6}`, `TypeE{7}`, `TypeE{8}`
 - `TypeF4`
 - `TypeG2`
@@ -163,7 +163,28 @@ The package precompiles the following operations for all simple Dynkin types up 
 - Weyl group actions (`*` operator for roots and weights with Weyl elements)
 - `freudenthal_formula` (weight multiplicities)
 - `dot_reduce` (weight normalization)
-- `lr_tensor_product` (Littlewood–Richardson rule for Type A)
+- `tensor_product` (Brauer–Klimyk; Littlewood–Richardson rule for Type A)
+
+### Keeping precompilation affordable
+
+Covering 41 Dynkin types would be very expensive if every method were
+compiled separately per type.  Instead, the heavy numeric kernels (the
+Freudenthal recursion, the Weyl dimension formula, dominant-weight
+enumeration, dominant-chamber folds, and the Weyl-orbit traversal) are
+parametrized **by the rank only**, so for example A₇, B₇, C₇, D₇, and E₇ all
+share a single compiled kernel.  Only thin per-type wrappers remain, which
+keeps both precompilation time and the package-image size in check.
+
+To skip the precompile workload entirely (e.g. during development or in CI
+jobs that never call into the numeric routines), set the package preference:
+
+```julia
+using Preferences, Semisimple
+set_preferences!(Semisimple, "precompile_workload" => false)
+```
+
+The package then precompiles in a couple of seconds; all functionality
+remains available, with compilation happening lazily at first use.
 
 ### Why precompilation matters
 
@@ -184,28 +205,32 @@ using Semisimple
 
 Operations involving:
 - **Product Dynkin types** (e.g., `ProductDynkinType{Tuple{TypeA{2}, TypeB{3}}}`)
-- **Rank ≥ 10 simple types** (e.g., `TypeA{15}`)
-- **Specific high-dimensional computations** (e.g., `tensor_product(ω₇, ω₇)` for E₈)
+- **Rank ≥ 11 simple types** (e.g., `TypeA{15}`)
 
-These will experience first-call latency but will be fast on subsequent calls (after JIT compilation).
+These will experience first-call latency but will be fast on subsequent calls
+(after JIT compilation).  Because the numeric kernels are shared per rank,
+the first-call latency for an uncovered type is limited to its thin wrappers.
 
 ## Performance characteristics
 
 ### Compile-time vs. run-time
 
-Semisimple.jl leverages Julia's type system and `@generated` functions to move many computations
-to compile time:
+Semisimple.jl leverages Julia's type system and `@generated` functions to move
+selected computations to compile time, while larger derived data is computed
+once at runtime and cached per Dynkin type (keeping precompilation cheap):
 
-| Compile-Time (Type-Level) | Run-Time |
-|---------------------------|----------|
-| Dynkin type classification | Weight coordinate values |
-| Rank of Dynkin type | Weight lattice arithmetic |
-| Cartan matrix entries | Weyl orbit traversal |
-| Root system enumeration | Freudenthal recursion |
-| Weyl denominator product | Character multiplication |
+| Compile-Time (Type-Level) | Run-Time (cached per type) | Run-Time |
+|---------------------------|----------------------------|----------|
+| Dynkin type classification | Root system enumeration | Weight coordinate values |
+| Rank of Dynkin type | Weyl denominator product | Weight lattice arithmetic |
+| Cartan matrix entries | Reflection tables | Weyl orbit traversal |
+| Cartan symmetrizer, bilinear forms | Coset representatives | Freudenthal recursion |
+| | | Character multiplication |
 
 This means that `cartan_matrix(TypeE{8})` produces a compile-time constant `SMatrix`
-that is embedded directly into your compiled code — there's no matrix allocation at runtime.
+that is embedded directly into your compiled code — there's no matrix allocation at
+runtime. Root systems, by contrast, are built by a single shared routine on first
+use and memoized, so the construction cost (microseconds) is paid once per session.
 
 ### Memory usage
 
@@ -320,8 +345,11 @@ For cold operations, LiE is faster due to no JIT compilation delay.
 
 Semisimple.jl follows these design principles:
 
-1. **Type-level dispatch** — Use Julia's type system to specialize code for each Dynkin type
-2. **Compile-time constants** — Leverage `@generated` functions to embed mathematical data
+1. **Type-level dispatch at the API surface** — Use Julia's type system to specialize the
+   user-facing layer for each Dynkin type, while the heavy numeric kernels are shared per
+   rank so they are compiled only once for e.g. A₇/B₇/C₇/D₇/E₇
+2. **Compile-time constants where they pay** — `@generated` Cartan data; larger derived
+   data (root systems, Weyl dimension data) is computed once at runtime and memoized
 3. **Immutability** — All core types are immutable for thread safety and optimization
 4. **Caching** — Trade memory for speed by memoizing expensive computations
 5. **Minimal dependencies** — StaticArrays.jl, LRUCache.jl, PrecompileTools.jl, Preferences.jl, and LinearAlgebra (stdlib)

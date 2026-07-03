@@ -175,8 +175,8 @@ Because positive roots are sorted by height, `highest_root(RS)` is simply `posit
 number of positive roots — no search needed.
 
 The **highest short root** ``\theta_s`` is the short root of greatest height.  For simply-laced types
-(A, D, E) it coincides with ``\theta``.  Its index in the positive root list is precomputed at compile time
-and stored in `RS.highest_coroot_idx`.
+(A, D, E) it coincides with ``\theta``.  Its index in the positive root list is precomputed when the
+root system is built and stored in `RS.highest_coroot_idx`.
 
 The **highest coroot** (or **dominant coroot**) ``\theta^\vee`` is the positive coroot of greatest height.
 It equals the coroot of the highest short root, and is stored at the same precomputed index
