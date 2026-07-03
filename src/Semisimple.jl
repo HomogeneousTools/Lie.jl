@@ -41,6 +41,21 @@ _cache_maxsize(budget::Int, fraction::Float64) = max(1, round(Int, budget * frac
 # the IOContext.  Per-call override is still possible via IOContext(:compact).
 const _compact_display = Ref{Bool}(false)
 
+# ─── Per-Dynkin-type Dict caches: despecialized access ───────────────────────
+# Passing a Dynkin type as a `Dict{Type,Any}` key specializes `get`/`setindex!`
+# on the singleton `Type{...}` argument, compiling fresh Base machinery for
+# every Dynkin type.  These barriers keep that machinery compiled exactly once.
+@inline function _typedict_get(d::Dict{Type,V}, @nospecialize(k::Type)) where {V}
+  return get(d, k, nothing)
+end
+
+@inline function _typedict_set!(
+  d::Dict{Type,V}, @nospecialize(k::Type), @nospecialize(v)
+) where {V}
+  d[k] = v
+  return nothing
+end
+
 # ─── Type-level Dynkin types ────────────────────────────────────────────────
 include("DynkinTypes.jl")
 
