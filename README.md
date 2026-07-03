@@ -55,9 +55,11 @@ Note that Semisimple.jl is less feature-complete than any of these; porting more
 
 ## Installation
 
+Semisimple.jl is registered in the Julia General registry:
+
 ```julia
 using Pkg
-Pkg.add(url="https://github.com/HomogeneousTools/Semisimple.jl")
+Pkg.add("Semisimple")
 ```
 
 Or for local development:

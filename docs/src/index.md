@@ -24,9 +24,11 @@ root-data computations.
 
 ## Installation
 
+Semisimple.jl is registered in the Julia General registry:
+
 ```julia
 using Pkg
-Pkg.add(url="https://github.com/HomogeneousTools/Semisimple.jl")
+Pkg.add("Semisimple")
 ```
 
 ## Quick start
