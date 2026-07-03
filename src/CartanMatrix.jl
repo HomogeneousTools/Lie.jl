@@ -164,56 +164,63 @@ end
 
 # ─── Product types ───────────────────────────────────────────────────────────
 
-# Helper to get raw matrix data at code-generation time
-function _cartan_matrix_data(::Type{TypeA{N}}) where {N}
-  check_dynkin_type(TypeA{N})
-  C = zeros(Int, N, N)
-  for i in 1:N
+# Value-level Cartan matrix builders.
+#
+# These take the rank as an ordinary `Int`, so each builder is compiled exactly
+# once instead of once per `TypeX{N}` instantiation.  The `_cartan_matrix_data`
+# methods below are one-line forwarders that only carry the family dispatch.
+function _cartan_matrix_data_a(n::Int)
+  C = zeros(Int, n, n)
+  for i in 1:n
     C[i, i] = 2
   end
-  for i in 1:(N - 1)
+  for i in 1:(n - 1)
     C[i, i + 1] = -1
     C[i + 1, i] = -1
   end
   return C
 end
 
-function _cartan_matrix_data(::Type{TypeB{N}}) where {N}
-  check_dynkin_type(TypeB{N})
-  C = _cartan_matrix_data(TypeA{N})
-  C[N, N - 1] = -2
+function _cartan_matrix_data_b(n::Int)
+  C = _cartan_matrix_data_a(n)
+  C[n, n - 1] = -2
   return C
 end
 
-function _cartan_matrix_data(::Type{TypeC{N}}) where {N}
-  check_dynkin_type(TypeC{N})
-  C = _cartan_matrix_data(TypeA{N})
-  C[N - 1, N] = -2
+function _cartan_matrix_data_c(n::Int)
+  C = _cartan_matrix_data_a(n)
+  C[n - 1, n] = -2
   return C
 end
 
-function _cartan_matrix_data(::Type{TypeD{N}}) where {N}
-  check_dynkin_type(TypeD{N})
-  C = zeros(Int, N, N)
-  for i in 1:N
+function _cartan_matrix_data_d(n::Int)
+  C = zeros(Int, n, n)
+  for i in 1:n
     C[i, i] = 2
   end
-  for i in 1:(N - 3)
+  for i in 1:(n - 3)
     C[i, i + 1] = -1
     C[i + 1, i] = -1
   end
-  C[N - 2, N - 1] = -1
-  C[N - 1, N - 2] = -1
-  C[N - 2, N] = -1
-  C[N, N - 2] = -1
+  C[n - 2, n - 1] = -1
+  C[n - 1, n - 2] = -1
+  C[n - 2, n] = -1
+  C[n, n - 2] = -1
   return C
 end
 
-function _cartan_matrix_data(::Type{TypeE{N}}) where {N}
-  check_dynkin_type(TypeE{N})
-  C8 = _E8_cartan()
-  return C8[1:N, 1:N]
-end
+_cartan_matrix_data_e(n::Int) = _E8_cartan()[1:n, 1:n]
+
+_cartan_matrix_data(::Type{TypeA{N}}) where {N} =
+  (check_dynkin_type(TypeA{N}); _cartan_matrix_data_a(N))
+_cartan_matrix_data(::Type{TypeB{N}}) where {N} =
+  (check_dynkin_type(TypeB{N}); _cartan_matrix_data_b(N))
+_cartan_matrix_data(::Type{TypeC{N}}) where {N} =
+  (check_dynkin_type(TypeC{N}); _cartan_matrix_data_c(N))
+_cartan_matrix_data(::Type{TypeD{N}}) where {N} =
+  (check_dynkin_type(TypeD{N}); _cartan_matrix_data_d(N))
+_cartan_matrix_data(::Type{TypeE{N}}) where {N} =
+  (check_dynkin_type(TypeE{N}); _cartan_matrix_data_e(N))
 
 function _cartan_matrix_data(::Type{TypeF4})
   # Bourbaki: 1 - 2 >=> 3 - 4
@@ -279,9 +286,9 @@ cartan_matrix(dt::DynkinType) = cartan_matrix(typeof(dt))
 # ─── Cartan symmetrizer ─────────────────────────────────────────────────────
 # d_i such that d_i * C_{ij} = d_j * C_{ji}  (symmetrizes the Cartan matrix)
 
-function _cartan_symmetrizer_data(::Type{DT}) where {DT<:SimpleDynkinType}
-  C = _cartan_matrix_data(DT)
-  N = rank(DT)
+# Value-level core: computed from the Cartan matrix alone, compiled once.
+function _cartan_symmetrizer_from(C::Matrix{Int})
+  N = size(C, 1)
   d = ones(Rational{Int}, N)
   visited = falses(N)
   queue = [1]
@@ -304,6 +311,10 @@ function _cartan_symmetrizer_data(::Type{DT}) where {DT<:SimpleDynkinType}
   g = gcd(d_int...)
   d_int .= d_int .÷ g
   return d_int
+end
+
+function _cartan_symmetrizer_data(::Type{DT}) where {DT<:SimpleDynkinType}
+  return _cartan_symmetrizer_from(_cartan_matrix_data(DT))
 end
 
 function _cartan_symmetrizer_data(::Type{ProductDynkinType{Ts}}) where {Ts}
