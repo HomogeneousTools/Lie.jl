@@ -62,6 +62,13 @@ using Pkg
 Pkg.add("Semisimple")
 ```
 
+To see which version you have installed, and to update to the latest release:
+
+```julia
+Pkg.status("Semisimple")
+Pkg.update("Semisimple")
+```
+
 Or for local development:
 
 ```julia

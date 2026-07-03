@@ -31,6 +31,16 @@ using Pkg
 Pkg.add("Semisimple")
 ```
 
+To see which version you have installed, and to update to the latest release:
+
+```julia
+Pkg.status("Semisimple")
+Pkg.update("Semisimple")
+```
+
+The installed version is also available programmatically as
+`pkgversion(Semisimple)` (and is shown in the startup banner).
+
 ## Quick start
 
 ```jldoctest quickstart
