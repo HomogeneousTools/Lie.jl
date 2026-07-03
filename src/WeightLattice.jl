@@ -357,9 +357,14 @@ julia> conjugate_dominant_weight(fundamental_weight(TypeA{3}, 1))
 ω1
 ```
 """
-@inline function conjugate_dominant_weight(w::WeightLatticeElem{DT,R}) where {DT,R}
-  v = MVector{R,Int}(w.vec)
-  C = cartan_matrix(DT)
+# Rank-level core: fold `v` into the dominant chamber in place and return the
+# number of simple reflections applied.  Compiled once per rank R and shared
+# by all Dynkin families of that rank.  `@constprop :none` keeps inference
+# from re-specializing on each caller's compile-time-constant Cartan matrix.
+Base.@constprop :none function _fold_dominant!(
+  v::MVector{R,Int}, C::SMatrix{R,R,Int}
+) where {R}
+  len = 0
   s = 1
   @inbounds while s <= R
     if v[s] < 0
@@ -367,11 +372,18 @@ julia> conjugate_dominant_weight(fundamental_weight(TypeA{3}, 1))
       for j in 1:R
         v[j] -= pairing * C[j, s]
       end
+      len += 1
       s = 1
     else
       s += 1
     end
   end
+  return len
+end
+
+@inline function conjugate_dominant_weight(w::WeightLatticeElem{DT,R}) where {DT,R}
+  v = MVector{R,Int}(w.vec)
+  _fold_dominant!(v, cartan_matrix(DT))
   return WeightLatticeElem{DT,R}(SVector{R,Int}(v))
 end
 
@@ -388,9 +400,11 @@ julia> conjugate_dominant_weight_with_elem(WeightLatticeElem(TypeA{2}, [-1, 1]))
 (ω1, [1])
 ```
 """
-function conjugate_dominant_weight_with_elem(w::WeightLatticeElem{DT,R}) where {DT,R}
-  v = MVector{R,Int}(w.vec)
-  C = cartan_matrix(DT)
+# Rank-level core of `conjugate_dominant_weight_with_elem`: like
+# `_fold_dominant!` but records the word of simple reflections applied.
+Base.@constprop :none function _fold_dominant_with_word!(
+  v::MVector{R,Int}, C::SMatrix{R,R,Int}
+) where {R}
   word = Int[]
   s = 1
   while s <= R
@@ -405,6 +419,12 @@ function conjugate_dominant_weight_with_elem(w::WeightLatticeElem{DT,R}) where {
       s += 1
     end
   end
+  return word
+end
+
+function conjugate_dominant_weight_with_elem(w::WeightLatticeElem{DT,R}) where {DT,R}
+  v = MVector{R,Int}(w.vec)
+  word = _fold_dominant_with_word!(v, cartan_matrix(DT))
   return WeightLatticeElem{DT,R}(SVector{R,Int}(v)), word
 end
 
@@ -433,21 +453,7 @@ julia> conjugate_dominant_weight_with_length(fundamental_weight(TypeA{3}, 1))
   w::WeightLatticeElem{DT,R}
 ) where {DT,R}
   v = MVector{R,Int}(w.vec)
-  C = cartan_matrix(DT)
-  len = 0
-  s = 1
-  while s <= R
-    if v[s] < 0
-      pairing = v[s]
-      for j in 1:R
-        v[j] -= pairing * C[j, s]
-      end
-      len += 1
-      s = 1
-    else
-      s += 1
-    end
-  end
+  len = _fold_dominant!(v, cartan_matrix(DT))
   return WeightLatticeElem{DT,R}(SVector{R,Int}(v)), len
 end
 
