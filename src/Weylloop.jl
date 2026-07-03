@@ -565,30 +565,6 @@ end
 
 # ─── Weylloop — the main orbit traversal ────────────────────────────────────
 
-"""
-    weylloop(action!, ::Type{DT}, v::AbstractVector{<:Integer})
-
-Call `action!(w)` once for each weight `w` in the Weyl orbit of `v`,
-where `v` and `w` are in the fundamental weight (ω) basis.
-
-Uses LiE's ε-basis algorithm: converts to ε-coordinates where a classical
-subgroup acts by permutations (type A) or permutations + sign changes
-(types B/C/D), then enumerates orbits systematically via lexicographic
-permutation generation and Gray-code sign flips — with no hash set or BFS.
-
-For exceptional types, coset representatives W / W_classical are precomputed
-as matrices.
-
-The traversal is specialized on the rank and the `action!` closure, while the
-ε→ω transform is selected by a runtime family tag — so all Dynkin types of
-the same rank share one compiled traversal.  The per-point output buffer is a
-stack-allocated `MVector`; the deduplicated suborbit representatives live in
-small heap vectors because their count depends on the Dynkin type and the
-input weight.
-
-`action!` receives a mutable workspace vector; it must NOT hold a reference
-to this vector across calls (copy if needed).
-"""
 # Per-type setup: tabulate normalised suborbit representatives.  This part is
 # independent of the `action!` closure, so it is compiled once per Dynkin type
 # rather than once per (closure, type) combination.
@@ -627,6 +603,30 @@ function _weylloop_setup(::Type{DT}, v::AbstractVector{<:Integer}) where {DT}
   return suborbit_eps
 end
 
+"""
+    weylloop(action!, ::Type{DT}, v::AbstractVector{<:Integer})
+
+Call `action!(w)` once for each weight `w` in the Weyl orbit of `v`,
+where `v` and `w` are in the fundamental weight (ω) basis.
+
+Uses LiE's ε-basis algorithm: converts to ε-coordinates where a classical
+subgroup acts by permutations (type A) or permutations + sign changes
+(types B/C/D), then enumerates orbits systematically via lexicographic
+permutation generation and Gray-code sign flips — with no hash set or BFS.
+
+For exceptional types, coset representatives W / W_classical are precomputed
+as matrices.
+
+The traversal is specialized on the rank and the `action!` closure, while the
+ε→ω transform is selected by a runtime family tag — so all Dynkin types of
+the same rank share one compiled traversal.  The per-point output buffer is a
+stack-allocated `MVector`; the deduplicated suborbit representatives live in
+small heap vectors because their count depends on the Dynkin type and the
+input weight.
+
+`action!` receives a mutable workspace vector; it must NOT hold a reference
+to this vector across calls (copy if needed).
+"""
 function weylloop(
   action!::F, ::Type{DT}, v::AbstractVector{<:Integer}
 ) where {F,DT<:SimpleDynkinType}

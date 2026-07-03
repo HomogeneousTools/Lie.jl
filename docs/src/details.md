@@ -170,10 +170,10 @@ The package precompiles the following operations for all simple Dynkin types up 
 Covering 41 Dynkin types would be very expensive if every method were
 compiled separately per type.  Instead, the heavy numeric kernels (the
 Freudenthal recursion, the Weyl dimension formula, dominant-weight
-enumeration, dominant-chamber folds, and the Weyl-orbit traversal) are
-parametrized **by the rank only**, so for example A₇, B₇, C₇, D₇, and E₇ all
-share a single compiled kernel.  Only thin per-type wrappers remain, which
-keeps both precompilation time and the package-image size in check.
+enumeration, and the Weyl-orbit traversal) are parametrized **by the rank
+only**, so for example A₇, B₇, C₇, D₇, and E₇ all share a single compiled
+kernel.  Only thin per-type wrappers remain, which keeps both precompilation
+time and the package-image size in check.
 
 To skip the precompile workload entirely (e.g. during development or in CI
 jobs that never call into the numeric routines), set the package preference:
@@ -393,7 +393,6 @@ documented here for contributors and advanced users.
 
 ```@docs
 Semisimple._root_system_cache
-Semisimple._compute_positive_roots_and_reflections
 Semisimple._make_root_system_runtime
 ```
 
@@ -404,7 +403,6 @@ Semisimple._weyl_denominator
 Semisimple._weyl_dim_scaled_roots
 Semisimple._explain_rmul
 Semisimple.weylloop
-Semisimple._positive_roots_runtime
 ```
 
 ### Cache internals
@@ -419,6 +417,7 @@ Semisimple._apply_cache_preferences!
 Semisimple.dot_reduce
 Semisimple.brauer_klimyk
 Semisimple._brauer_klimyk_dominant
+Semisimple._expand_dominant_orbits
 Semisimple._vdecomp
 Semisimple._tensor_characters
 ```

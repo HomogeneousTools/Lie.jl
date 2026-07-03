@@ -341,22 +341,6 @@ end
 
 # ─── Conjugation to dominant chamber ────────────────────────────────────────
 
-"""
-    conjugate_dominant_weight(w::WeightLatticeElem{DT,R}) -> WeightLatticeElem{DT,R}
-
-Return the unique dominant weight in the Weyl orbit of `w`.
-
-# Examples
-```jldoctest
-julia> using Semisimple
-
-julia> conjugate_dominant_weight(WeightLatticeElem(TypeA{2}, [-1, 1]))
-ω1
-
-julia> conjugate_dominant_weight(fundamental_weight(TypeA{3}, 1))
-ω1
-```
-"""
 # Core dominant-chamber fold: fold `v` into the dominant chamber in place and
 # return the number of simple reflections applied.  `@inline` so each caller
 # const-folds its compile-time-constant (sparse) Cartan matrix into the loop —
@@ -381,25 +365,28 @@ julia> conjugate_dominant_weight(fundamental_weight(TypeA{3}, 1))
   return len
 end
 
+"""
+    conjugate_dominant_weight(w::WeightLatticeElem{DT,R}) -> WeightLatticeElem{DT,R}
+
+Return the unique dominant weight in the Weyl orbit of `w`.
+
+# Examples
+```jldoctest
+julia> using Semisimple
+
+julia> conjugate_dominant_weight(WeightLatticeElem(TypeA{2}, [-1, 1]))
+ω1
+
+julia> conjugate_dominant_weight(fundamental_weight(TypeA{3}, 1))
+ω1
+```
+"""
 @inline function conjugate_dominant_weight(w::WeightLatticeElem{DT,R}) where {DT,R}
   v = MVector{R,Int}(w.vec)
   _fold_dominant!(v, cartan_matrix(DT))
   return WeightLatticeElem{DT,R}(SVector{R,Int}(v))
 end
 
-"""
-    conjugate_dominant_weight_with_elem(w::WeightLatticeElem{DT,R}) -> (WeightLatticeElem, Vector{Int})
-
-Return the dominant weight and the sequence of simple reflections applied.
-
-# Examples
-```jldoctest
-julia> using Semisimple
-
-julia> conjugate_dominant_weight_with_elem(WeightLatticeElem(TypeA{2}, [-1, 1]))
-(ω1, [1])
-```
-"""
 # Like `_fold_dominant!` but records the word of simple reflections applied.
 function _fold_dominant_with_word!(
   v::MVector{R,Int}, C::SMatrix{R,R,Int}
@@ -421,6 +408,19 @@ function _fold_dominant_with_word!(
   return word
 end
 
+"""
+    conjugate_dominant_weight_with_elem(w::WeightLatticeElem{DT,R}) -> (WeightLatticeElem, Vector{Int})
+
+Return the dominant weight and the sequence of simple reflections applied.
+
+# Examples
+```jldoctest
+julia> using Semisimple
+
+julia> conjugate_dominant_weight_with_elem(WeightLatticeElem(TypeA{2}, [-1, 1]))
+(ω1, [1])
+```
+"""
 function conjugate_dominant_weight_with_elem(w::WeightLatticeElem{DT,R}) where {DT,R}
   v = MVector{R,Int}(w.vec)
   word = _fold_dominant_with_word!(v, cartan_matrix(DT))

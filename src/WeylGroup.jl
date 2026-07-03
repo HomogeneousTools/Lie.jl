@@ -666,25 +666,6 @@ end
 
 # ─── Dominant weights ────────────────────────────────────────────────────────
 
-"""
-    dominant_weights(::Type{DT}, hw::WeightLatticeElem{DT,R}) -> Vector{WeightLatticeElem{DT,R}}
-
-Compute the dominant weights occurring in the irreducible representation
-with highest weight `hw`, sorted by decreasing level below `hw`.
-
-The level of `μ` below `hw` is the root-lattice height of `hw - μ`,
-i.e. the sum of coefficients when `hw - μ` is written in the simple root basis.
-
-# Examples
-```jldoctest
-julia> using Semisimple
-
-julia> λ = fundamental_weight(TypeA{2}, 1) + fundamental_weight(TypeA{2}, 2);
-
-julia> length(dominant_weights(λ))
-2
-```
-"""
 # Rank-level core of `dominant_weights`, compiled once per rank R and shared
 # by all families.  Returns the dominant weights as coordinate vectors, sorted
 # by decreasing level (the first entry is `λ` itself).
@@ -730,6 +711,25 @@ Base.@constprop :none function _dominant_weights_kernel(
   return weights
 end
 
+"""
+    dominant_weights(::Type{DT}, hw::WeightLatticeElem{DT,R}) -> Vector{WeightLatticeElem{DT,R}}
+
+Compute the dominant weights occurring in the irreducible representation
+with highest weight `hw`, sorted by decreasing level below `hw`.
+
+The level of `μ` below `hw` is the root-lattice height of `hw - μ`,
+i.e. the sum of coefficients when `hw - μ` is written in the simple root basis.
+
+# Examples
+```jldoctest
+julia> using Semisimple
+
+julia> λ = fundamental_weight(TypeA{2}, 1) + fundamental_weight(TypeA{2}, 2);
+
+julia> length(dominant_weights(λ))
+2
+```
+"""
 function dominant_weights(::Type{DT}, hw::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R}
   is_dominant(hw) || throw(ArgumentError("Highest weight must be dominant"))
   RS = RootSystem(DT)
@@ -801,6 +801,35 @@ function _weyl_dim_scaled_roots(::Type{DT}) where {DT<:DynkinType}
   return last(_weyl_dimension_data(DT))
 end
 
+# Rank-level numerator kernel: ∏_{α>0} ⟨λ+ρ, α⟩, computed in-place with GMP
+# mul_si!.  Compiled once per rank R, shared by all families.
+Base.@constprop :none function _weyl_dim_numerator(
+  λρ::SVector{R,Int}, dα_all::Vector{SVector{R,Int}}
+) where {R}
+  numer = BigInt(1)
+  for dα in dα_all
+    ip = zero(Int)
+    @inbounds for i in 1:R
+      ip += λρ[i] * dα[i]
+    end
+    Base.GMP.MPZ.mul_si!(numer, numer, ip)
+  end
+  return numer
+end
+
+# Out-of-line, type-free error path: keeps the string-interpolation and show
+# machinery out of every per-Dynkin-type `degree` wrapper.
+@noinline function _throw_weyl_dim_error(
+  type_name::String, @nospecialize(hw_vec), numer::BigInt, denom::BigInt
+)
+  throw(
+    DomainError(
+      (numerator=numer, denominator=denom),
+      "Weyl dimension formula for type $type_name and highest weight $hw_vec gave the non-integer value $numer / $denom",
+    ),
+  )
+end
+
 """
     degree(::Type{DT}, hw::WeightLatticeElem{DT,R}) -> BigInt
     degree(hw::WeightLatticeElem{DT,R}) -> BigInt
@@ -837,35 +866,6 @@ julia> [degree(fundamental_weight(TypeB{3}, i)) for i in 1:3]
   8
 ```
 """
-# Rank-level numerator kernel: ∏_{α>0} ⟨λ+ρ, α⟩, computed in-place with GMP
-# mul_si!.  Compiled once per rank R, shared by all families.
-Base.@constprop :none function _weyl_dim_numerator(
-  λρ::SVector{R,Int}, dα_all::Vector{SVector{R,Int}}
-) where {R}
-  numer = BigInt(1)
-  for dα in dα_all
-    ip = zero(Int)
-    @inbounds for i in 1:R
-      ip += λρ[i] * dα[i]
-    end
-    Base.GMP.MPZ.mul_si!(numer, numer, ip)
-  end
-  return numer
-end
-
-# Out-of-line, type-free error path: keeps the string-interpolation and show
-# machinery out of every per-Dynkin-type `degree` wrapper.
-@noinline function _throw_weyl_dim_error(
-  type_name::String, @nospecialize(hw_vec), numer::BigInt, denom::BigInt
-)
-  throw(
-    DomainError(
-      (numerator=numer, denominator=denom),
-      "Weyl dimension formula for type $type_name and highest weight $hw_vec gave the non-integer value $numer / $denom",
-    ),
-  )
-end
-
 function degree(::Type{DT}, hw::WeightLatticeElem{DT,R}) where {DT<:DynkinType,R}
   is_dominant(hw) || throw(ArgumentError("Highest weight must be dominant"))
 
