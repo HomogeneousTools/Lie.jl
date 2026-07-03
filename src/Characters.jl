@@ -63,10 +63,13 @@ struct WeylCharacter{DT<:DynkinType,R}
   terms::Dict{WeightLatticeElem{DT,R},Int}
 end
 
-struct DominantCharacterTypeData{DT<:DynkinType,R,N}
-  α_w::NTuple{N,SVector{R,Int}}
-  α_dot_α::SVector{N,Int}
-  dα::NTuple{N,SVector{R,Int}}
+# Per-rank root data reused across `dominant_character` calls.  Only the rank
+# appears as a type parameter, so the Freudenthal kernel below is compiled
+# once per rank and shared by all Dynkin families of that rank.
+struct DominantCharacterTypeData{R}
+  α_w::Vector{SVector{R,Int}}
+  α_dot_α::Vector{Int}
+  dα::Vector{SVector{R,Int}}
   max_level::Int
   roots_by_level::Vector{Vector{Int}}
 end
@@ -521,10 +524,23 @@ julia> sum(values(mults))  # dim = 8
 ```
 """
 function freudenthal_formula(λ::WeightLatticeElem{DT,R}) where {DT,R}
-  dom_mults = dominant_character(λ)
+  return _expand_dominant_orbits(DT, dominant_character(λ), 1)
+end
 
-  # Expand dominant multiplicities to full weight system.
-  # Use weylloop directly to avoid materialising intermediate orbit vectors.
+"""
+    _expand_dominant_orbits(::Type{DT}, dom_mults, k) -> Dict{SVector{R,Int}, BigInt}
+
+Expand a dominant-only multiplicity dictionary to the full weight system,
+scaling every weight by `k` (`k = 1` for the plain character, `k > 1` for the
+`k`-th Adams operator).  Uses [`weylloop`](@ref) directly to avoid
+materialising intermediate orbit vectors.  Shared by
+[`freudenthal_formula`](@ref) and [`adams_operator`](@ref) so that only one
+orbit-expansion closure is compiled per Dynkin type.
+"""
+function _expand_dominant_orbits(
+  ::Type{DT}, dom_mults::Dict{SVector{R,Int},BigInt}, k::Integer
+) where {DT,R}
+  scale = Int(k)
   v_buf = Vector{Int}(undef, R)
   multiplicities = Dict{SVector{R,Int},BigInt}()
   for (μ_vec, m) in dom_mults
@@ -533,59 +549,67 @@ function freudenthal_formula(λ::WeightLatticeElem{DT,R}) where {DT,R}
       v_buf[i] = μ_vec[i]
     end
     weylloop(DT, v_buf) do tmp
-      multiplicities[SVector{R,Int}(tmp)] = m
+      multiplicities[SVector{R,Int}(ntuple(i -> scale * tmp[i], Val(R)))] = m
     end
   end
 
   return multiplicities
 end
 
-function _dominant_character_type_data(::Type{DT}) where {DT<:DynkinType}
-  lock(_dominant_character_type_lock) do
-    get!(
-      _dominant_character_type_cache, DT
-    ) do
-      R = rank(DT)
-      RS = RootSystem(DT)
-      C = cartan_matrix(DT)
-      B = cartan_bilinear_form(DT)
-      d = cartan_symmetrizer(DT)
-      n_pos = n_positive_roots(RS)
+# Rank-level builder for the per-type root data, compiled once per rank.
+Base.@constprop :none function _build_dominant_character_type_data(
+  pos_roots::Vector{SVector{R,Int}}, C::SMatrix{R,R,Int}, B::SMatrix{R,R,Int},
+  d::SVector{R,Int},
+) where {R}
+  n_pos = length(pos_roots)
 
-      # These arrays depend only on the root system type, not on the highest weight.
-      # Caching them avoids rebuilding the same root-coordinate transforms for every
-      # dominant_character call and benefits all downstream algorithms that rely on it.
-      α_w = ntuple(
-        k -> begin
-          α_root = RS.positive_roots_list[k]
-          SVector{R,Int}(ntuple(j -> sum(C[j, i] * α_root[i] for i in 1:R), R))
-        end, n_pos)
+  α_w = [
+    SVector{R,Int}(ntuple(j -> sum(C[j, i] * α_root[i] for i in 1:R), R)) for
+    α_root in pos_roots
+  ]
 
-      α_dot_α = SVector{n_pos,Int}(ntuple(k -> begin
-          v = RS.positive_roots_list[k]
-          s = 0
-          for j in 1:R, i in 1:R
-            s += v[i] * B[i, j] * v[j]
-          end
-          s
-        end, n_pos))
-
-      dα = ntuple(k -> begin
-          v = RS.positive_roots_list[k]
-          SVector{R,Int}(ntuple(i -> d[i] * v[i], R))
-        end, n_pos)
-
-      max_level = sum(RS.positive_roots_list[end])
-      rbl = [Int[] for _ in 1:max_level]
-      for k in 1:n_pos
-        lev = sum(RS.positive_roots_list[k])
-        push!(rbl[lev], k)
+  α_dot_α = [
+    begin
+      s = 0
+      for j in 1:R, i in 1:R
+        s += v[i] * B[i, j] * v[j]
       end
+      s
+    end for v in pos_roots
+  ]
 
-      DominantCharacterTypeData{DT,R,n_pos}(
-        α_w, α_dot_α, dα, max_level, rbl
-      )
-    end::DominantCharacterTypeData{DT,rank(DT),n_positive_roots(DT)}
+  dα = [SVector{R,Int}(ntuple(i -> d[i] * v[i], R)) for v in pos_roots]
+
+  max_level = sum(pos_roots[end])
+  rbl = [Int[] for _ in 1:max_level]
+  for k in 1:n_pos
+    lev = sum(pos_roots[k])
+    push!(rbl[lev], k)
+  end
+
+  return DominantCharacterTypeData{R}(α_w, α_dot_α, dα, max_level, rbl)
+end
+
+function _dominant_character_type_data(::Type{DT}) where {DT<:DynkinType}
+  R = rank(DT)
+  lock(_dominant_character_type_lock)
+  try
+    cached = _typedict_get(_dominant_character_type_cache, DT)
+    cached === nothing || return cached::DominantCharacterTypeData{R}
+    # These arrays depend only on the root system type, not on the highest weight.
+    # Caching them avoids rebuilding the same root-coordinate transforms for every
+    # dominant_character call and benefits all downstream algorithms that rely on it.
+    RS = RootSystem(DT)
+    data = _build_dominant_character_type_data(
+      RS.positive_roots_list,
+      cartan_matrix(DT),
+      cartan_bilinear_form(DT),
+      cartan_symmetrizer(DT),
+    )
+    _typedict_set!(_dominant_character_type_cache, DT, data)
+    return data
+  finally
+    unlock(_dominant_character_type_lock)
   end
 end
 
@@ -638,20 +662,55 @@ julia> dc_adj[SVector(0, 0)]   # zero weight multiplicity in adjoint
 function dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
   is_dominant(λ) || throw(ArgumentError("Weight must be dominant"))
 
-  # Check cache first
-  cache_key = (DT, λ)
+  # Check cache first (coordinate-vector key: see note on the cache accessors)
+  cache_key = (DT, λ.vec)
   cached = _get_dominant_cache(DT, cache_key)
   cached !== nothing && return cached
 
+  RS = RootSystem(DT)
+  S, B_omega_S = omega_bilinear_form_scaled(DT)
+  dom_result = _dominant_character_kernel(
+    λ.vec,
+    cartan_matrix(DT),
+    cartan_matrix_inverse(DT),
+    RS.positive_roots_list,
+    RS.refl,
+    _dominant_character_type_data(DT),
+    S,
+    B_omega_S,
+    _type_name(DT),
+  )
+
+  _set_dominant_cache!(cache_key, dom_result)
+  return dom_result
+end
+
+# Rank-level Freudenthal kernel: all arguments are typed by the rank R only,
+# so this (the most expensive method in the package to compile) is compiled
+# once per rank and shared by every Dynkin family of that rank.
+# `@constprop :none` keeps inference from re-specializing the body on each
+# caller's compile-time-constant Cartan data, which would reintroduce the
+# per-Dynkin-type compilation cost.
+Base.@constprop :none function _dominant_character_kernel(
+  λ_vec::SVector{R,Int},
+  C::SMatrix{R,R,Int},
+  Cinv::SMatrix{R,R,Rational{Int}},
+  pos_roots::Vector{SVector{R,Int}},
+  refl::Matrix{UInt},
+  type_data::DominantCharacterTypeData{R},
+  S::Int,
+  B_omega_S::SMatrix{R,R,Int},
+  type_name::String,
+) where {R}
   # ─── Phase 1: compute dominant weights below λ ─────────────────────
-  dom_weights = dominant_weights(DT, λ)
+  dom_weights = _dominant_weights_kernel(λ_vec, C, Cinv, pos_roots)
 
   # Build dominant-weight → index map for fast lookup
   n_dom = length(dom_weights)
   dom_index = Dict{SVector{R,Int},Int}()
   sizehint!(dom_index, n_dom)
   for i in 1:n_dom
-    dom_index[dom_weights[i].vec] = i
+    dom_index[dom_weights[i]] = i
   end
 
   # Dominant multiplicities array (indexed by dom_index).
@@ -662,20 +721,15 @@ function dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
   dom_mults[1] = BigInt(1)  # m(λ) = 1
 
   # ─── Precompute root data ──────────────────────────────────────────
-  RS = RootSystem(DT)
-  C = cartan_matrix(DT)
-  n_pos = n_positive_roots(RS)
-  type_data = _dominant_character_type_data(DT)
+  n_pos = length(pos_roots)
   α_w = type_data.α_w
   α_dot_α = type_data.α_dot_α
   dα = type_data.dα
 
-  ρ_vec = weyl_vector(DT).vec
+  ρ_vec = SVector{R,Int}(ntuple(_ -> 1, Val(R)))
 
   # ─── Precompute ‖μ+ρ‖² for each dominant weight ───────────────────
-  S, B_omega_S = omega_bilinear_form_scaled(DT)
-
-  λρ_vec = λ.vec + ρ_vec
+  λρ_vec = λ_vec + ρ_vec
   first_term_S = 0
   for j in 1:R, i in 1:R
     first_term_S += λρ_vec[i] * B_omega_S[i, j] * λρ_vec[j]
@@ -691,7 +745,7 @@ function dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
   # dom_weights is sorted by decreasing height, so index 1 = λ.
   # We process indices 2..n_dom (each weight is below λ).
   for idx in 2:n_dom
-    μ_vec = dom_weights[idx].vec
+    μ_vec = dom_weights[idx]
     Σ = BigInt(0)
 
     # ── gather_roots: merge W_μ-equivalent roots ──────────────────────
@@ -718,7 +772,7 @@ function dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
             root_mults[k] == 0 && continue
             e = -α_w[k][j]
             if e > 0
-              target = RS.refl[j, k]
+              target = refl[j, k]
               if target != 0
                 root_mults[target] += root_mults[k]
                 root_mults[k] = 0
@@ -787,7 +841,7 @@ function dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
       iszero(denom_S) && throw(
         DomainError(
           μ_vec,
-          "Freudenthal formula for type $(_type_name(DT)) and highest weight $λ has zero denominator at μ=$(WeightLatticeElem{DT,R}(μ_vec))",
+          "Freudenthal formula for type $type_name and highest weight $λ_vec has zero denominator at μ=$μ_vec",
         ),
       )
 
@@ -796,7 +850,7 @@ function dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
       iszero(rem) || throw(
         DomainError(
           (numerator=numerator, denominator=denom_S),
-          "Freudenthal formula for type $(_type_name(DT)) and highest weight $λ gave a non-integer multiplicity at μ=$(WeightLatticeElem{DT,R}(μ_vec)): $numerator / $denom_S",
+          "Freudenthal formula for type $type_name and highest weight $λ_vec gave a non-integer multiplicity at μ=$μ_vec: $numerator / $denom_S",
         ),
       )
       dom_mults[idx] = mult
@@ -808,10 +862,9 @@ function dominant_character(λ::WeightLatticeElem{DT,R}) where {DT,R}
   sizehint!(dom_result, n_dom)
   for idx in 1:n_dom
     iszero(dom_mults[idx]) && continue
-    dom_result[dom_weights[idx].vec] = dom_mults[idx]
+    dom_result[dom_weights[idx]] = dom_mults[idx]
   end
 
-  _set_dominant_cache!(cache_key, dom_result)
   return dom_result
 end
 
@@ -862,9 +915,19 @@ Return `(ε, μ)` where:
 This is the key ingredient in the Brauer–Klimyk algorithm.
 """
 function dot_reduce(λ::WeightLatticeElem{DT,R}) where {DT,R}
-  C = cartan_matrix(DT)
-  ε = 1
   v = MVector{R,Int}(λ.vec)
+  ε = _dot_reduce_fold!(v, cartan_matrix(DT))
+  ε == 0 && return (0, WeightLatticeElem{DT,R}(zero(SVector{R,Int})))
+  return (ε, WeightLatticeElem{DT,R}(SVector{R,Int}(v)))
+end
+
+# Rank-level core of `dot_reduce`: folds `v` to the dominant chamber under the
+# dot action in place and returns the sign `ε` (or 0 when `λ + ρ` is singular).
+# Compiled once per rank R and shared by all Dynkin families of that rank.
+Base.@constprop :none function _dot_reduce_fold!(
+  v::MVector{R,Int}, C::SMatrix{R,R,Int}
+) where {R}
+  ε = 1
 
   # Iteratively reflect until dominant.
   # The "dot action" s_i · λ = s_i(λ + ρ) − ρ
@@ -889,7 +952,7 @@ function dot_reduce(λ::WeightLatticeElem{DT,R}) where {DT,R}
 
       # (λ + ρ)_s = c + 1
       # If c + 1 == 0, i.e. c == -1, then λ+ρ is on the wall → singular
-      c == -1 && return (0, WeightLatticeElem{DT,R}(zero(SVector{R,Int})))
+      c == -1 && return 0
 
       # If c + 1 < 0 (i.e. c ≤ -2), reflect
       if c <= -2
@@ -906,7 +969,7 @@ function dot_reduce(λ::WeightLatticeElem{DT,R}) where {DT,R}
     done && break
   end
 
-  return (ε, WeightLatticeElem{DT,R}(SVector{R,Int}(v)))
+  return ε
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -980,9 +1043,14 @@ function _brauer_klimyk_dominant(
   # Accumulate in BigInt: dom_char may now carry BigInt multiplicities, and
   # the orbit-sum can also exceed Int range. Final per-irreducible totals are
   # narrowed to Int when wrapped in WeylCharacter below.
-  acc = Dict{WeightLatticeElem{DT,R},BigInt}()
+  #
+  # The accumulator is keyed by coordinate vectors (not WeightLatticeElem), so
+  # the orbit-traversal closure below captures only rank-typed state and the
+  # weylloop instantiation is shared by all Dynkin types of rank R.
+  acc = Dict{SVector{R,Int},BigInt}()
   dr = MVector{R,Int}(undef)      # workspace for dot_reduce
   v_buf = Vector{Int}(undef, R)   # reusable buffer for weylloop input
+  μ_vec = μ.vec
 
   for (λ_dom_vec, m) in dom_char
     iszero(m) && continue
@@ -992,7 +1060,7 @@ function _brauer_klimyk_dominant(
     weylloop(DT, v_buf) do orbit_wt
       # Inline dot_reduce(μ + orbit_wt)
       for j in 1:R
-        dr[j] = μ.vec[j] + orbit_wt[j]
+        dr[j] = μ_vec[j] + orbit_wt[j]
       end
 
       ε = 1
@@ -1019,7 +1087,7 @@ function _brauer_klimyk_dominant(
       end
 
       if ε != 0
-        ν = WeightLatticeElem{DT,R}(SVector{R,Int}(dr))
+        ν = SVector{R,Int}(dr)
         acc[ν] = get(acc, ν, BigInt(0)) + ε * m
       end
     end
@@ -1028,7 +1096,7 @@ function _brauer_klimyk_dominant(
   result = Dict{WeightLatticeElem{DT,R},Int}()
   for (k, v) in acc
     iszero(v) && continue
-    result[k] = Int(v)
+    result[WeightLatticeElem{DT,R}(k)] = Int(v)
   end
   return WeylCharacter{DT,R}(result)
 end
@@ -1348,7 +1416,7 @@ function tensor_product(λ::WeightLatticeElem{DT,R}, μ::WeightLatticeElem{DT,R}
 
   # Canonical key: lexicographically smaller weight first (avoids double lookup)
   a, b = λ.vec <= μ.vec ? (λ, μ) : (μ, λ)
-  key = (DT, a, b)
+  key = (DT, a.vec, b.vec)
   cached = _get_tensor_cache(DT, key)
   cached !== nothing && return cached
 
@@ -1379,7 +1447,7 @@ function tensor_product(
 
   # Canonical key: lexicographically smaller weight first
   a, b = λ.vec <= μ.vec ? (λ, μ) : (μ, λ)
-  key = (TypeA{N}, a, b)
+  key = (TypeA{N}, a.vec, b.vec)
   cached = _get_tensor_cache(TypeA{N}, key)
   cached !== nothing && return cached
 
@@ -1476,21 +1544,7 @@ function adams_operator(λ::WeightLatticeElem{DT,R}, k::Integer) where {DT,R}
 
   # Use dominant_character + direct orbit expansion (avoids building
   # the full unscaled weight dict).
-  dom_mults = dominant_character(λ)
-
-  v_buf = Vector{Int}(undef, R)
-  result = Dict{SVector{R,Int},BigInt}()
-  for (μ_vec, m) in dom_mults
-    iszero(m) && continue
-    for i in 1:R
-      v_buf[i] = μ_vec[i]
-    end
-    weylloop(DT, v_buf) do tmp
-      result[SVector{R,Int}(ntuple(i -> k * tmp[i], Val(R)))] = m
-    end
-  end
-
-  return result
+  return _expand_dominant_orbits(DT, dominant_character(λ), k)
 end
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1514,46 +1568,51 @@ end
 # Typed accessors for the LRU caches.  The LRU values are `Any`; centralising the
 # type assertion here ensures callers always get a concrete type without each call
 # site having to remember the assertion.
-@inline function _get_tensor_cache(::Type{DT}, key) where {DT<:DynkinType}
+#
+# `@nospecialize` on keys and values keeps the LRU machinery (hashing, lookup,
+# insertion, eviction closures) compiled once instead of once per Dynkin type;
+# the cache keys themselves are built from coordinate vectors rather than
+# `WeightLatticeElem`s for the same reason.
+@inline function _get_tensor_cache(::Type{DT}, @nospecialize(key)) where {DT<:DynkinType}
   cached = get(_tensor_cache, key, nothing)
   cached === nothing && return nothing
   cached::WeylCharacter{DT,rank(DT)}
 end
 
-@inline function _get_dominant_cache(::Type{DT}, key) where {DT<:DynkinType}
+@inline function _get_dominant_cache(::Type{DT}, @nospecialize(key)) where {DT<:DynkinType}
   cached = get(_dominant_character_cache, key, nothing)
   cached === nothing && return nothing
   cached::Dict{SVector{rank(DT),Int},BigInt}
 end
 
-@inline function _get_sym_power_cache(::Type{DT}, key) where {DT<:DynkinType}
+@inline function _get_sym_power_cache(::Type{DT}, @nospecialize(key)) where {DT<:DynkinType}
   cached = get(_symmetric_power_cache, key, nothing)
   cached === nothing && return nothing
   cached::WeylCharacter{DT,rank(DT)}
 end
 
-@inline function _get_ext_power_cache(::Type{DT}, key) where {DT<:DynkinType}
+@inline function _get_ext_power_cache(::Type{DT}, @nospecialize(key)) where {DT<:DynkinType}
   cached = get(_exterior_power_cache, key, nothing)
   cached === nothing && return nothing
   cached::WeylCharacter{DT,rank(DT)}
 end
 
-@inline function _set_tensor_cache!(key, value)
+function _set_tensor_cache!(@nospecialize(key), @nospecialize(value))
   _tensor_cache[key] = value
   return value
 end
 
-@inline function _set_dominant_cache!(key, value)
+function _set_dominant_cache!(@nospecialize(key), @nospecialize(value))
   _dominant_character_cache[key] = value
   return value
 end
 
-@inline function _set_sym_power_cache!(key, value)
+function _set_sym_power_cache!(@nospecialize(key), @nospecialize(value))
   _symmetric_power_cache[key] = value
   return value
 end
 
-@inline function _set_ext_power_cache!(key, value)
+function _set_ext_power_cache!(@nospecialize(key), @nospecialize(value))
   _exterior_power_cache[key] = value
   return value
 end
@@ -1589,7 +1648,7 @@ function symmetric_power(λ::WeightLatticeElem{DT,R}, k::Integer) where {DT,R}
   k == 0 && return WeylCharacter(WeightLatticeElem{DT,R}(zero(SVector{R,Int})))
   k == 1 && return WeylCharacter(λ)
 
-  cache_key = (DT, λ, k)
+  cache_key = (DT, λ.vec, k)
   cached = _get_sym_power_cache(DT, cache_key)
   cached !== nothing && return cached
 
@@ -1758,7 +1817,7 @@ function exterior_power(λ::WeightLatticeElem{DT,R}, k::Integer) where {DT,R}
   k == 1 && return WeylCharacter(λ)
   k > degree(λ) && return WeylCharacter(DT)
 
-  cache_key = (DT, λ, k)
+  cache_key = (DT, λ.vec, k)
   cached = _get_ext_power_cache(DT, cache_key)
   cached !== nothing && return cached
 
