@@ -2623,3 +2623,34 @@ end
     @test result == WeylCharacter(ω1) + WeylCharacter(ω2)
   end
 end
+
+@testset "parse_dynkin_type" begin
+  @test parse_dynkin_type("A3") === TypeA{3}
+  @test parse_dynkin_type("B4") === TypeB{4}
+  @test parse_dynkin_type("G2") === TypeG2
+  @test parse_dynkin_type("F4") === TypeF4
+  @test parse_dynkin_type("E6") === TypeE{6}
+  @test parse_dynkin_type("A2xB3") === ProductDynkinType{Tuple{TypeA{2},TypeB{3}}}
+  @test parse_dynkin_type("A2×B3") === ProductDynkinType{Tuple{TypeA{2},TypeB{3}}}
+  @test parse_dynkin_type(" A3 ") === TypeA{3}
+  @test parse_dynkin_type("a3") === TypeA{3}
+
+  @testset "malformed input" begin
+    @test_throws ArgumentError parse_dynkin_type("")
+    @test_throws ArgumentError parse_dynkin_type("   ")
+    @test_throws ArgumentError parse_dynkin_type("A")
+    @test_throws ArgumentError parse_dynkin_type("3A")
+    @test_throws ArgumentError parse_dynkin_type("Z9")
+    @test_throws ArgumentError parse_dynkin_type("xx")
+  end
+
+  @testset "rank bounds agree with the type system" begin
+    # the bounds are check_dynkin_type's, so the parser accepts exactly the
+    # labels naming a type this package is willing to work with
+    for label in ("A0", "B1", "C1", "D2", "E5", "E9", "F3", "G3")
+      @test_throws ArgumentError parse_dynkin_type(label)
+    end
+    @test parse_dynkin_type("A1") === TypeA{1}
+    @test parse_dynkin_type("D3") === TypeD{3}   # the same diagram as A3
+  end
+end

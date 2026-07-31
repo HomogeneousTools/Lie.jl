@@ -256,3 +256,11 @@ julia> cartan_determinant(TypeB{2})   # B2 multiply-laced
 julia> cartan_determinant(TypeG2)
 1
 ```
+
+## Parsing
+
+Read a Dynkin type from a string.
+
+```@docs
+parse_dynkin_type
+```

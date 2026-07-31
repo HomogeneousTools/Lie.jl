@@ -7,6 +7,7 @@ export TypeA, TypeB, TypeC, TypeD, TypeE, TypeF4, TypeG2
 export rank, n_positive_roots, dimension
 export n_components, component_type, component_ranks, component_offsets
 export dynkin_diagram, DynkinDiagram
+export parse_dynkin_type
 
 """
     DynkinType
@@ -270,6 +271,91 @@ end
 @inline function check_dynkin_type(::Type{DT}) where {DT<:DynkinType}
   is_valid_dynkin_type(DT) || throw(ArgumentError(_invalid_dynkin_type_message(DT)))
   return DT
+end
+
+# ─── Assembling a type from its simple factors ───────────────────────────────
+
+# A single (family, rank) pair, e.g. (:A, 3), as the type TypeA{3}.  The rank
+# bounds are check_dynkin_type's, the single source of truth, except for F and
+# G, whose rank is not carried by the type and so cannot be checked there.
+function _simple_dynkin_type(fam::Symbol, rk::Int)
+  DT = if fam === :A
+    TypeA{rk}
+  elseif fam === :B
+    TypeB{rk}
+  elseif fam === :C
+    TypeC{rk}
+  elseif fam === :D
+    TypeD{rk}
+  elseif fam === :E
+    TypeE{rk}
+  elseif fam === :F
+    rk == 4 || throw(ArgumentError("type F exists only in rank 4, got rank $rk"))
+    TypeF4
+  elseif fam === :G
+    rk == 2 || throw(ArgumentError("type G exists only in rank 2, got rank $rk"))
+    TypeG2
+  else
+    throw(ArgumentError("unknown Dynkin family $fam"))
+  end
+  return check_dynkin_type(DT)
+end
+
+# One factor is returned as is, several are wrapped in a ProductDynkinType.
+function _combine_dynkin_factors(factors::AbstractVector{<:DataType})
+  isempty(factors) && throw(ArgumentError("need at least one Dynkin factor"))
+  length(factors) == 1 && return first(factors)
+  return ProductDynkinType{Tuple{factors...}}
+end
+
+"""
+    parse_dynkin_type(s::AbstractString) -> Type{<:DynkinType}
+
+Parse a Dynkin type written as usual, such as `"A3"` or `"A2xB3"`.
+
+Factors are separated by `x` or `×`, and each factor is a letter (`A`–`G`) followed by a
+rank. The ranks accepted are exactly those naming a type this package will work with, so
+`"B1"` and `"D2"` are rejected rather than silently reinterpreted.
+
+# Examples
+```jldoctest
+julia> using Semisimple
+
+julia> parse_dynkin_type("A3")
+TypeA{3}
+
+julia> parse_dynkin_type("A2xB3")
+ProductDynkinType{Tuple{TypeA{2}, TypeB{3}}}
+
+julia> parse_dynkin_type("E6")
+TypeE{6}
+```
+"""
+function parse_dynkin_type(s::AbstractString)
+  stripped = strip(String(s))
+  isempty(stripped) && throw(ArgumentError("empty Dynkin type string"))
+
+  factors = DataType[]
+  for part in split(stripped, r"[x×]")
+    factor = strip(part)
+    isempty(factor) && continue
+
+    m = match(r"^([A-Ga-g])(\d+)$", factor)
+    m === nothing && throw(
+      ArgumentError(
+        "cannot parse the Dynkin type factor \"$factor\", " *
+        "expected something like \"A3\", \"B4\", \"E6\"",
+      ),
+    )
+
+    push!(
+      factors,
+      _simple_dynkin_type(Symbol(uppercase(m.captures[1])), parse(Int, m.captures[2])),
+    )
+  end
+
+  isempty(factors) && throw(ArgumentError("no Dynkin type factors found in \"$s\""))
+  return _combine_dynkin_factors(factors)
 end
 
 # ─── Rank ────────────────────────────────────────────────────────────────────
