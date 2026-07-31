@@ -2654,3 +2654,83 @@ end
     @test parse_dynkin_type("D3") === TypeD{3}   # the same diagram as A3
   end
 end
+@testset "Sub-diagrams" begin
+  @testset "sub_dynkin_type" begin
+    # removing an end node of a path shortens it, a gap splits the diagram
+    @test sub_dynkin_type(TypeA{5}, [2, 3, 4, 5]) === TypeA{4}
+    @test sub_dynkin_type(TypeA{5}, 1:5) === TypeA{5}
+    @test sub_dynkin_type(TypeA{5}, [1, 2, 4, 5]) ===
+      ProductDynkinType{Tuple{TypeA{2},TypeA{2}}}
+    @test sub_dynkin_type(TypeD{6}, [5, 6]) ===
+      ProductDynkinType{Tuple{TypeA{1},TypeA{1}}}
+    # the classical Levi factors of E8
+    @test sub_dynkin_type(TypeE{8}, [1, 2, 3, 4, 5, 6, 7]) === TypeE{7}
+    @test sub_dynkin_type(TypeE{8}, [2, 3, 4, 5, 6, 7, 8]) === TypeD{7}
+    @test sub_dynkin_type(TypeE{8}, [1, 3, 4, 5, 6, 7, 8]) === TypeA{7}
+    @test sub_dynkin_type(TypeE{6}, [1, 2, 3, 4, 5]) === TypeD{5}
+    # B and C are told apart by the direction of the double bond
+    @test sub_dynkin_type(TypeB{5}, [2, 3, 4, 5]) === TypeB{4}
+    @test sub_dynkin_type(TypeC{5}, [2, 3, 4, 5]) === TypeC{4}
+    @test sub_dynkin_type(TypeB{4}, [3, 4]) === TypeB{2}
+    @test sub_dynkin_type(TypeC{4}, [3, 4]) === TypeC{2}
+    # F4 keeps its double bond in the middle and loses it at the ends
+    @test sub_dynkin_type(TypeF4, 1:4) === TypeF4
+    @test sub_dynkin_type(TypeF4, [2, 3]) === TypeB{2}
+    @test sub_dynkin_type(TypeF4, [1, 2]) === TypeA{2}
+    @test sub_dynkin_type(TypeG2, [1, 2]) === TypeG2
+    @test sub_dynkin_type(TypeG2, [1]) === TypeA{1}
+    # a disconnected ambient diagram
+    @test sub_dynkin_type(ProductDynkinType{Tuple{TypeA{2},TypeB{3}}}, [1, 3, 4, 5]) ===
+      ProductDynkinType{Tuple{TypeA{1},TypeB{3}}}
+
+    # an instance may stand in for the type
+    @test sub_dynkin_type(TypeA{5}(), [2, 3, 4, 5]) === TypeA{4}
+    @test sub_dynkin_ordering(TypeD{4}(), [2, 3, 4]) == [3, 2, 4]
+
+    @test_throws ArgumentError sub_dynkin_type(TypeA{3}, Int[])
+    @test_throws ArgumentError sub_dynkin_type(TypeA{3}, [1, 1])
+    @test_throws ArgumentError sub_dynkin_type(TypeA{3}, [4])
+    @test_throws ArgumentError sub_dynkin_type(TypeA{3}, [0])
+  end
+
+  @testset "sub_dynkin_ordering" begin
+    # the ordering names the vertices in the sub-diagram's own Bourbaki order, so
+    # permuting the ambient Cartan matrix by it gives the sub-diagram's Cartan matrix
+    for (DT, vertices) in [
+      (TypeA{5}, [2, 3, 4, 5]),
+      (TypeA{5}, [1, 2, 4, 5]),
+      (TypeE{8}, [1, 2, 3, 4, 5, 6, 7]),
+      (TypeE{8}, [2, 3, 4, 5, 6, 7, 8]),
+      (TypeE{6}, [1, 2, 3, 4, 5]),
+      (TypeD{6}, 1:6),
+      (TypeD{5}, [2, 3, 4, 5]),
+      (TypeD{4}, [2, 3, 4]),
+      (TypeF4, 1:4),
+      (TypeB{5}, [2, 3, 4, 5]),
+      (TypeC{5}, [2, 3, 4, 5]),
+      (TypeG2, [1, 2]),
+      (TypeD{6}, [5, 6]),
+    ]
+      sub, ordering = sub_dynkin_type_with_ordering(DT, vertices)
+      @test sort(ordering) == sort(collect(vertices))
+      ambient = cartan_matrix(DT)
+      @test [ambient[a, b] for a in ordering, b in ordering] == cartan_matrix(sub)
+    end
+  end
+
+  @testset "the whole diagram is a sub-diagram of itself" begin
+    for DT in (TypeA{4}, TypeB{4}, TypeC{4}, TypeD{5}, TypeE{6}, TypeF4, TypeG2)
+      @test sub_dynkin_type(DT, 1:rank(DT)) === DT
+      @test sub_dynkin_ordering(DT, 1:rank(DT)) == collect(1:rank(DT))
+    end
+  end
+
+  @testset "_classify_cartan_matrix on matrices no sub-diagram produces" begin
+    # the classifier is reached only through sub_dynkin_type, so check the two
+    # inputs that cannot arise that way: a non-square matrix, and B/C told apart
+    # in isolation rather than as part of a bigger diagram
+    @test_throws ArgumentError Semisimple._classify_cartan_matrix([2 -1 0; -1 2 -1])
+    @test Semisimple._classify_cartan_matrix([2 -1; -2 2]) == ([(:B, 2)], [1, 2])
+    @test Semisimple._classify_cartan_matrix([2 -2; -1 2]) == ([(:C, 2)], [1, 2])
+  end
+end

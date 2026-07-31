@@ -6,6 +6,7 @@
 
 export cartan_matrix, cartan_symmetrizer, cartan_bilinear_form, cartan_matrix_inverse
 export omega_bilinear_form_scaled, cartan_determinant
+export sub_dynkin_type, sub_dynkin_ordering, sub_dynkin_type_with_ordering
 
 # ─── Type A ──────────────────────────────────────────────────────────────────
 # A_n: tridiagonal, 2 on diagonal, -1 on super/sub-diagonal
@@ -596,3 +597,274 @@ end
 function cartan_determinant(dt::DynkinType)
   return cartan_determinant(typeof(dt))
 end
+
+# ─── Identifying a Cartan matrix ─────────────────────────────────────────────
+#  The inverse direction of the above: recover a Dynkin type from a Cartan
+#  matrix.  Only the sub-diagram functions below need this, so the classifier
+#  itself stays private; its (family, rank) pairs are a third encoding of a
+#  Dynkin type and are not worth letting out of this file.  The algorithm
+#  follows OSCAR.jl's cartan_type_with_ordering
+#  (Oscar.jl/src/LieTheory/CartanMatrix.jl).
+
+# Classify a Cartan matrix as (family, rank) pairs, one per connected component,
+# together with a permutation putting the rows and columns in Bourbaki order.
+# Components are found by adjacency and then told apart by their graph
+# structure: path versus branching, and edge multiplicities.
+function _classify_cartan_matrix(C::AbstractMatrix{<:Integer})
+  rk = size(C, 1)
+  size(C, 1) == size(C, 2) || throw(
+    ArgumentError("Cartan matrix must be square, got $(size(C, 1))×$(size(C, 2))")
+  )
+
+  type = Tuple{Symbol,Int}[]
+  ord = sizehint!(Int[], rk)
+
+  # Build adjacency list
+  adj = [[j for j in 1:rk if i != j && C[i, j] != 0] for i in 1:rk]
+
+  done = falses(rk)
+
+  for v0 in 1:rk
+    done[v0] && continue
+
+    # ── Rank 1: isolated node ─────────────────────────────────────────
+    if isempty(adj[v0])
+      push!(type, (:A, 1))
+      push!(ord, v0)
+      done[v0] = true
+      continue
+    end
+
+    # ── Rank 2: pair of nodes ─────────────────────────────────────────
+    if length(adj[v0]) == 1 && length(adj[only(adj[v0])]) == 1
+      v1 = only(adj[v0])
+      bond = C[v0, v1] * C[v1, v0]
+      if bond == 1
+        push!(type, (:A, 2))
+        push!(ord, v0, v1)
+      elseif C[v0, v1] == -2
+        # v0 is the short-root side → C_2 convention
+        push!(type, (:C, 2))
+        push!(ord, v0, v1)
+      elseif C[v1, v0] == -2
+        push!(type, (:B, 2))
+        push!(ord, v0, v1)
+      elseif C[v0, v1] == -3
+        push!(type, (:G, 2))
+        push!(ord, v0, v1)
+      elseif C[v1, v0] == -3
+        push!(type, (:G, 2))
+        push!(ord, v1, v0)
+      else
+        error("Could not identify rank-2 Cartan matrix component")
+      end
+      done[v0] = true
+      done[v1] = true
+      continue
+    end
+
+    # ── Rank > 2: DFS to find the whole component ────────────────────
+    comp = [v0]
+    todo = [v0]
+    done[v0] = true
+    while !isempty(todo)
+      v = pop!(todo)
+      for w in adj[v]
+        if !done[w]
+          push!(comp, w)
+          push!(todo, w)
+          done[w] = true
+        end
+      end
+    end
+    sort!(comp)
+    len_comp = length(comp)
+
+    # Find degree-3 node (branching → D or E)
+    deg3 = findfirst(v -> length(adj[v]) == 3, comp)
+
+    if isnothing(deg3)
+      # ── Path graph: A, B, C, or F ─────────────────────────────────
+      # Find the start of the path (a leaf with simply-laced left neighbor)
+      start = 0
+      for v1 in filter(v -> length(adj[v]) == 1, comp)
+        v2 = only(adj[v1])
+        C[v1, v2] * C[v2, v1] == 1 || continue   # skip right end of B/C
+        if len_comp == 4
+          v3 = only(filter(!=(v1), adj[v2]))
+          C[v2, v3] == -1 || continue               # skip right end of F
+        end
+        start = v1
+        break
+      end
+      @assert start != 0 "Could not find start of path in component $comp"
+
+      # Trace the path
+      path = [start, only(adj[start])]
+      for _ in 1:(len_comp - 2)
+        push!(path, only(filter(!=(path[end - 1]), adj[path[end]])))
+      end
+
+      # Determine type from last edge
+      if len_comp == 4 && C[path[3], path[2]] == -2
+        push!(type, (:F, 4))
+      elseif C[path[end - 1], path[end]] == -2
+        push!(type, (:C, len_comp))
+      elseif C[path[end], path[end - 1]] == -2
+        push!(type, (:B, len_comp))
+      else
+        push!(type, (:A, len_comp))
+      end
+      append!(ord, path)
+    else
+      # ── Branching: D or E ──────────────────────────────────────────
+      v_deg3 = comp[deg3]
+
+      # Find the three paths from the branch node
+      paths = [[v_deg3, v_n] for v_n in adj[v_deg3]]
+      for path in paths
+        while length(adj[path[end]]) == 2
+          push!(path, only(filter(!=(path[end - 1]), adj[path[end]])))
+        end
+        popfirst!(path)  # remove the branch node itself
+      end
+      sort!(paths; by=length)
+
+      @assert sum(length, paths) + 1 == len_comp
+
+      if length(paths[2]) == 1
+        # ── D type: two short arms of length 1 ──────────────────────
+        push!(type, (:D, len_comp))
+        if len_comp == 4
+          push!(ord, only(paths[1]), v_deg3, only(paths[2]), only(paths[3]))
+        else
+          append!(ord, reverse!(paths[3]))
+          push!(ord, v_deg3, only(paths[1]), only(paths[2]))
+        end
+      elseif length(paths[2]) == 2
+        # ── E type: arms of length 1, 2, and 2/3/4 ─────────────────
+        push!(type, (:E, len_comp))
+        push!(ord, paths[2][2], only(paths[1]), paths[2][1], v_deg3)
+        append!(ord, paths[3])
+      else
+        error("Could not identify branching Cartan matrix of rank $len_comp")
+      end
+    end
+  end
+
+  return type, ord
+end
+
+# ─── Sub-diagrams ────────────────────────────────────────────────────────────
+
+"""
+    sub_dynkin_type_with_ordering(DT, vertices) -> Type{<:DynkinType}, Vector{Int}
+
+The Dynkin type of the sub-diagram of `DT` induced on `vertices`, together with `vertices`
+reordered so that the `i`-th entry is the vertex of `DT` playing the role of the `i`-th
+simple root of that type.
+
+`DT` is a [`DynkinType`](@ref), given either as a type or as an instance, and `vertices` are
+numbered à la Bourbaki.  Both return values are needed whenever data indexed by the
+sub-diagram has to be transported to or from the ambient diagram; use
+[`sub_dynkin_type`](@ref) or [`sub_dynkin_ordering`](@ref) when only one of the two is
+wanted.
+
+The sub-diagram induced on the unmarked simple roots of a parabolic subgroup
+``\\mathrm{P} \\subseteq \\mathrm{G}`` is the Dynkin diagram of the semisimple part
+``[\\mathrm{L}, \\mathrm{L}]`` of its Levi factor, which is the main use of this function.
+
+# Examples
+```jldoctest
+julia> using Semisimple
+
+julia> sub_dynkin_type_with_ordering(TypeA{5}, [2, 3, 4, 5])
+(TypeA{4}, [2, 3, 4, 5])
+```
+
+Type ``\\mathrm{A}`` needs no reordering, but ``\\mathrm{D}`` does: removing the first
+vertex of ``\\mathrm{D}_4`` leaves an ``\\mathrm{A}_3`` whose middle vertex is the former
+branch vertex.
+
+```jldoctest
+julia> using Semisimple
+
+julia> sub_dynkin_type_with_ordering(TypeD{4}, [2, 3, 4])
+(TypeA{3}, [3, 2, 4])
+```
+"""
+function sub_dynkin_type_with_ordering(::Type{DT}, vertices) where {DT<:DynkinType}
+  nodes = collect(Int, vertices)
+  isempty(nodes) && throw(ArgumentError("the vertex set needs to be non-empty"))
+  allunique(nodes) || throw(ArgumentError("repeated vertex in $vertices"))
+  all(node -> 1 <= node <= rank(DT), nodes) ||
+    throw(ArgumentError("vertex out of range for $(_type_name(DT))"))
+  described, ordering = _classify_cartan_matrix(cartan_matrix(DT)[nodes, nodes])
+  factors = DataType[_simple_dynkin_type(fam, rk) for (fam, rk) in described]
+  return _combine_dynkin_factors(factors), nodes[ordering]
+end
+
+sub_dynkin_type_with_ordering(dt::DynkinType, vertices) =
+  sub_dynkin_type_with_ordering(typeof(dt), vertices)
+
+"""
+    sub_dynkin_type(DT, vertices) -> Type{<:DynkinType}
+
+The Dynkin type of the sub-diagram of `DT` induced on `vertices`, numbered à la Bourbaki.
+
+Saves the caller from assembling the sub-Cartan matrix by hand.  See
+[`sub_dynkin_type_with_ordering`](@ref) for how the vertices of the sub-diagram sit inside
+the ambient one.
+
+# Examples
+```jldoctest
+julia> using Semisimple
+
+julia> sub_dynkin_type(TypeA{5}, [2, 3, 4, 5])
+TypeA{4}
+
+julia> sub_dynkin_type(TypeA{5}, [1, 2, 4, 5])
+ProductDynkinType{Tuple{TypeA{2}, TypeA{2}}}
+```
+
+The classical Levi factors of ``\\mathrm{E}_8``:
+
+```jldoctest
+julia> using Semisimple
+
+julia> sub_dynkin_type(TypeE{8}, [1, 2, 3, 4, 5, 6, 7])
+TypeE{7}
+
+julia> sub_dynkin_type(TypeE{8}, [2, 3, 4, 5, 6, 7, 8])
+TypeD{7}
+
+julia> sub_dynkin_type(TypeE{8}, [1, 3, 4, 5, 6, 7, 8])
+TypeA{7}
+```
+"""
+sub_dynkin_type(::Type{DT}, vertices) where {DT<:DynkinType} =
+  first(sub_dynkin_type_with_ordering(DT, vertices))
+
+sub_dynkin_type(dt::DynkinType, vertices) = sub_dynkin_type(typeof(dt), vertices)
+
+"""
+    sub_dynkin_ordering(DT, vertices) -> Vector{Int}
+
+`vertices` reordered so that the `i`-th entry is the vertex of `DT` playing the role of the
+`i`-th simple root of [`sub_dynkin_type`](@ref).
+
+# Examples
+```jldoctest
+julia> using Semisimple
+
+julia> sub_dynkin_ordering(TypeD{4}, [2, 3, 4])
+3-element Vector{Int64}:
+ 3
+ 2
+ 4
+```
+"""
+sub_dynkin_ordering(::Type{DT}, vertices) where {DT<:DynkinType} =
+  last(sub_dynkin_type_with_ordering(DT, vertices))
+
+sub_dynkin_ordering(dt::DynkinType, vertices) = sub_dynkin_ordering(typeof(dt), vertices)

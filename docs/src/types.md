@@ -257,10 +257,14 @@ julia> cartan_determinant(TypeG2)
 1
 ```
 
-## Parsing
+## Parsing and sub-diagrams
 
-Read a Dynkin type from a string.
+Read a Dynkin type from a string, and read off the type induced on a subset of the vertices.
+The latter identifies the semisimple part of the Levi factor of a parabolic subgroup.
 
 ```@docs
 parse_dynkin_type
+sub_dynkin_type
+sub_dynkin_ordering
+sub_dynkin_type_with_ordering
 ```
