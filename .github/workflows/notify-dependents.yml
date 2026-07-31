@@ -14,6 +14,6 @@ jobs:
         with:
           token: ${{ secrets.CROSS_REPO_PAT }}
           repository: HomogeneousTools/PartialFlagVarieties.jl
-          event-type: lie-jl-updated
+          event-type: semisimple-jl-updated
           client-payload: >-
             {"sha":"${{ github.sha }}","run_id":"${{ github.run_id }}"}
