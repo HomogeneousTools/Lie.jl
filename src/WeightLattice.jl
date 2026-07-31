@@ -29,6 +29,10 @@ The pairing with the i-th simple coroot is simply `w[i]`:
 ## Constructors
 
     WeightLatticeElem(::Type{DT}, v::AbstractVector{<:Integer})
+    WeightLatticeElem(::Type{DT})
+
+The one-argument form is the zero weight, saving the caller from spelling out a vector of
+`rank(DT)` zeros.
 
 When `v` has fewer entries than `rank(DT)`, the remaining coordinates are
 silently filled with zeros. When `v` has more entries than `rank(DT)`, a
@@ -57,6 +61,9 @@ julia> using Test
 
 julia> @test_logs (:warn, r"truncating to first 3 entries") WeightLatticeElem(TypeA{3}, [1, 2, 3, 4])
 ω1 + 2ω2 + 3ω3
+
+julia> WeightLatticeElem(TypeA{3})   # the zero weight
+0
 ```
 """
 struct WeightLatticeElem{DT<:DynkinType,R}
@@ -67,6 +74,9 @@ function WeightLatticeElem(::Type{DT}, v::SVector{R,Int}) where {DT<:DynkinType,
   R == rank(DT) || throw(ArgumentError("Vector length $R does not match rank $(rank(DT))"))
   return WeightLatticeElem{DT,R}(v)
 end
+
+WeightLatticeElem(::Type{DT}) where {DT<:DynkinType} =
+  WeightLatticeElem(DT, zero(SVector{rank(DT),Int}))
 
 function WeightLatticeElem(::Type{DT}, v::NTuple{R,Int}) where {DT<:DynkinType,R}
   return WeightLatticeElem(DT, SVector{R,Int}(v))
