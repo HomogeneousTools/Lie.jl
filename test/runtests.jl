@@ -2726,11 +2726,15 @@ end
   end
 
   @testset "_classify_cartan_matrix on matrices no sub-diagram produces" begin
-    # the classifier is reached only through sub_dynkin_type, so check the two
-    # inputs that cannot arise that way: a non-square matrix, and B/C told apart
-    # in isolation rather than as part of a bigger diagram
+    # the classifier is reached only through sub_dynkin_type, so check the inputs
+    # that cannot arise that way: a non-square matrix, B and C told apart in
+    # isolation rather than as part of a bigger diagram, and a rank-2 component
+    # whose bond runs the opposite way to the convention cartan_matrix uses
     @test_throws ArgumentError Semisimple._classify_cartan_matrix([2 -1 0; -1 2 -1])
     @test Semisimple._classify_cartan_matrix([2 -1; -2 2]) == ([(:B, 2)], [1, 2])
     @test Semisimple._classify_cartan_matrix([2 -2; -1 2]) == ([(:C, 2)], [1, 2])
+    # G2 either way round; the ordering always names the short-root vertex first
+    @test Semisimple._classify_cartan_matrix([2 -3; -1 2]) == ([(:G, 2)], [1, 2])
+    @test Semisimple._classify_cartan_matrix([2 -1; -3 2]) == ([(:G, 2)], [2, 1])
   end
 end
