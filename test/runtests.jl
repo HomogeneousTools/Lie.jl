@@ -1165,7 +1165,56 @@ end
     @test conjugate_dominant_weight(λ, 1:R) == conjugate_dominant_weight(λ)
     @test conjugate_dominant_weight_with_length(λ, Tuple(1:R)) ==
       conjugate_dominant_weight_with_length(λ)
+    @test borel_weil_bott(λ, 1:R) == borel_weil_bott(λ)
   end
+end
+
+@testset "Levi-restricted Borel–Weil–Bott" begin
+  # Agreement with the absolute statement inside the sub-root-system: the degree
+  # is the same, and the output weight restricts to the sub-diagram output.  Note
+  # ρ_G is the correct shift on both sides, since ρ_G - ρ_S is W_S-invariant.
+  @testset "$DT restricted to $S" for (DT, S) in
+                                      [(TypeA{3}, (1, 3)), (TypeA{4}, (2, 3, 4)),
+    (TypeB{3}, (1, 2)), (TypeC{3}, (2, 3)),
+    (TypeD{4}, (1, 3, 4)), (TypeF4, (1, 2))]
+    R = rank(DT)
+    LT, ord = sub_dynkin_type_with_ordering(DT, S)
+    ρ, ρ_S = weyl_vector(DT), weyl_vector(LT)
+
+    for seed in 1:8
+      λ = WeightLatticeElem(DT, Int[((seed * i) % 7) - 3 for i in 1:R])
+      result = borel_weil_bott(λ, S)
+
+      sub_λ =
+        WeightLatticeElem(
+          LT, Int[coefficients(λ)[ord[k]] + coefficients(ρ)[ord[k]] for k in 1:rank(LT)]
+        ) - ρ_S
+      sub_result = borel_weil_bott(sub_λ)
+
+      @test (result === nothing) == (sub_result === nothing)
+      result === nothing && continue
+      d, μ = result
+      sub_d, sub_μ = sub_result
+      @test d == sub_d
+      @test Int[coefficients(μ)[ord[k]] for k in 1:rank(LT)] == coefficients(sub_μ)
+      # The output is dominant for the subsystem, as the theorem promises.
+      @test all(coefficients(μ)[s] >= 0 for s in S)
+    end
+  end
+
+  # A weight that is regular for the whole group but singular for a subsystem,
+  # and one that is singular for the whole group but regular for a subsystem.
+  @test borel_weil_bott(WeightLatticeElem(TypeA{2}, [-2, 1])) ==
+    (1, WeightLatticeElem(TypeA{2}))
+  @test borel_weil_bott(WeightLatticeElem(TypeA{2}, [-2, 1]), (2,)) ==
+    (0, WeightLatticeElem(TypeA{2}, [-2, 1]))
+  @test borel_weil_bott(WeightLatticeElem(TypeA{2}, [0, -1])) === nothing
+  @test borel_weil_bott(WeightLatticeElem(TypeA{2}, [0, -1]), (1,)) ==
+    (0, WeightLatticeElem(TypeA{2}, [0, -1]))
+
+  # No nodes to reflect in: nothing can be singular and nothing moves.
+  @test borel_weil_bott(WeightLatticeElem(TypeA{2}, [-5, -5]), ()) ==
+    (0, WeightLatticeElem(TypeA{2}, [-5, -5]))
 end
 
 # ═══════════════════════════════════════════════════════════════════════

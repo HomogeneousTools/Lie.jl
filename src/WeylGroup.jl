@@ -959,7 +959,7 @@ end
 # ─── Borel–Weil–Bott ────────────────────────────────────────────────────────
 
 """
-    borel_weil_bott(λ::WeightLatticeElem{DT,R}) -> Union{Nothing, Tuple{Int, WeightLatticeElem{DT,R}}}
+    borel_weil_bott(λ::WeightLatticeElem{DT,R}, nodes=1:R) -> Union{Nothing, Tuple{Int, WeightLatticeElem{DT,R}}}
 
 Apply the Borel–Weil–Bott theorem to the weight `λ`.
 
@@ -978,6 +978,16 @@ all cohomology vanishes and we return `nothing`. Otherwise, return
 
 and all other cohomology groups vanish.
 
+Passing `nodes` restricts both the reflections and the singularity test to the
+root subsystem spanned by ``S`` = `nodes`, so `w` is sought in
+``\\mathrm{W}_S``.  This is the relative statement along a projection of flag
+varieties, the higher direct images of ``\\mathcal{L}_λ`` along
+``\\mathrm{G}/\\mathrm{B} \\to \\mathrm{G}/\\mathrm{P}_I`` with `nodes` the nodes
+unmarked in ``I``: taking `nodes` to be all of them recovers the absolute
+statement.  Note that ``ρ = ρ_{\\mathrm{G}}`` remains the right shift, because
+``ρ_{\\mathrm{G}} - ρ_S`` pairs to zero with every coroot in ``S`` and is
+therefore ``\\mathrm{W}_S``-invariant.
+
 # Examples
 ```jldoctest
 julia> using Semisimple; import Semisimple: borel_weil_bott
@@ -991,17 +1001,30 @@ julia> borel_weil_bott(WeightLatticeElem(TypeA{2}, [-2, 1]))
 julia> borel_weil_bott(-weyl_vector(TypeA{2})) === nothing
 true
 ```
+
+The same weight, but reflecting only in the second node: it is already dominant
+there, so it stays put in degree zero.
+
+```jldoctest
+julia> using Semisimple; import Semisimple: borel_weil_bott
+
+julia> borel_weil_bott(WeightLatticeElem(TypeA{2}, [-2, 1]), (2,))
+(0, -2ω1 + ω2)
+
+julia> borel_weil_bott(-weyl_vector(TypeA{2}), (2,)) === nothing   # singular for s2 too
+true
+```
 """
-function borel_weil_bott(λ::WeightLatticeElem{DT,R}) where {DT,R}
+function borel_weil_bott(λ::WeightLatticeElem{DT,R}, nodes=Base.OneTo(R)) where {DT,R}
   ρ = weyl_vector(DT)
   μ = λ + ρ
 
   # Move μ to the dominant chamber; the number of reflections is the degree
-  μ_dom, d = conjugate_dominant_weight_with_length(μ)
+  μ_dom, d = conjugate_dominant_weight_with_length(μ, nodes)
 
-  # If any coordinate of μ_dom is zero, λ + ρ lies on a Weyl chamber wall
+  # If any coordinate of μ_dom is zero, λ + ρ lies on a wall of the chamber
   # (including the case μ = 0 when λ = -ρ), so all cohomology vanishes.
-  any(==(0), μ_dom.vec) && return nothing
+  any(s -> μ_dom.vec[s] == 0, nodes) && return nothing
 
   return (d, μ_dom - ρ)
 end
