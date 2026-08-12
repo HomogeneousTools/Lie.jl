@@ -351,34 +351,51 @@ end
 
 # ─── Conjugation to dominant chamber ────────────────────────────────────────
 
+# Reject reflection nodes outside the diagram, so that a mistyped node is an
+# error rather than a silently skipped reflection.  `nothing` means every node.
+_check_nodes(::Nothing, ::Integer) = nothing
+
+function _check_nodes(nodes, R::Integer)
+  for s in nodes
+    1 <= s <= R ||
+      throw(ArgumentError("Reflection node $s is out of range for rank $R"))
+  end
+  return nodes
+end
+
 # Core dominant-chamber fold: fold `v` into the dominant chamber of the root
 # subsystem spanned by the simple roots `nodes`, in place, and return the number
-# of simple reflections applied.  `@inline` so each caller const-folds its
-# compile-time-constant (sparse) Cartan matrix into the loop — this is a hot path
-# and the method is small enough to re-specialize cheaply.
+# of simple reflections applied.  `nodes === nothing` means every node, and the
+# membership test then const-folds away, so the full fold stays exactly as fast
+# as it was before the subsystem case existed.  `@inline` so each caller
+# const-folds its compile-time-constant (sparse) Cartan matrix into the loop —
+# this is a hot path and the method is small enough to re-specialize cheaply.
+#
+# The scan runs over `1:R` and *tests* membership rather than iterating over
+# `nodes`: that keeps every index into `v` and `C` provably in range under
+# `@inbounds`, and accepts any container supporting `in`.
 @inline function _fold_dominant!(
-  v::MVector{R,Int}, C::SMatrix{R,R,Int}, nodes=Base.OneTo(R)
+  v::MVector{R,Int}, C::SMatrix{R,R,Int}, nodes=nothing
 ) where {R}
   len = 0
-  k = 1
-  @inbounds while k <= length(nodes)
-    s = nodes[k]
-    if v[s] < 0
+  s = 1
+  @inbounds while s <= R
+    if v[s] < 0 && (nodes === nothing || s in nodes)
       pairing = v[s]
       for j in 1:R
         v[j] -= pairing * C[j, s]
       end
       len += 1
-      k = 1
+      s = 1
     else
-      k += 1
+      s += 1
     end
   end
   return len
 end
 
 """
-    conjugate_dominant_weight(w::WeightLatticeElem{DT,R}, nodes=1:R) -> WeightLatticeElem{DT,R}
+    conjugate_dominant_weight(w::WeightLatticeElem{DT,R}, nodes=nothing) -> WeightLatticeElem{DT,R}
 
 Return the unique dominant weight in the Weyl orbit of `w`.
 
@@ -386,6 +403,10 @@ Passing `nodes` reflects only in those simple roots, giving the unique
 ``\\mathrm{W}_S``-orbit representative that is dominant for the root subsystem
 spanned by ``S`` = `nodes`, i.e. dominant for the corresponding Levi subgroup.
 The coordinates outside `nodes` are still moved along.
+
+`nodes` may be any container of node indices supporting `in`, such as a tuple,
+vector, range, or `Set`; `nothing` means every simple root.  A node outside
+`1:R` throws an `ArgumentError`.
 
 # Examples
 ```jldoctest
@@ -409,37 +430,36 @@ julia> conjugate_dominant_weight(WeightLatticeElem(TypeA{2}, [-1, -1]), (2,))
 ```
 """
 @inline function conjugate_dominant_weight(
-  w::WeightLatticeElem{DT,R}, nodes=Base.OneTo(R)
+  w::WeightLatticeElem{DT,R}, nodes=nothing
 ) where {DT,R}
   v = MVector{R,Int}(w.vec)
-  _fold_dominant!(v, cartan_matrix(DT), nodes)
+  _fold_dominant!(v, cartan_matrix(DT), _check_nodes(nodes, R))
   return WeightLatticeElem{DT,R}(SVector{R,Int}(v))
 end
 
 # Like `_fold_dominant!` but records the word of simple reflections applied.
 function _fold_dominant_with_word!(
-  v::MVector{R,Int}, C::SMatrix{R,R,Int}, nodes=Base.OneTo(R)
+  v::MVector{R,Int}, C::SMatrix{R,R,Int}, nodes=nothing
 ) where {R}
   word = Int[]
-  k = 1
-  while k <= length(nodes)
-    s = nodes[k]
-    if v[s] < 0
+  s = 1
+  while s <= R
+    if v[s] < 0 && (nodes === nothing || s in nodes)
       pairing = v[s]
       for j in 1:R
         v[j] -= pairing * C[j, s]
       end
       push!(word, s)
-      k = 1
+      s = 1
     else
-      k += 1
+      s += 1
     end
   end
   return word
 end
 
 """
-    conjugate_dominant_weight_with_elem(w::WeightLatticeElem{DT,R}, nodes=1:R) -> (WeightLatticeElem, Vector{Int})
+    conjugate_dominant_weight_with_elem(w::WeightLatticeElem{DT,R}, nodes=nothing) -> (WeightLatticeElem, Vector{Int})
 
 Return the dominant weight and the sequence of simple reflections applied.
 
@@ -459,15 +479,15 @@ julia> conjugate_dominant_weight_with_elem(WeightLatticeElem(TypeA{2}, [-1, 1]),
 ```
 """
 function conjugate_dominant_weight_with_elem(
-  w::WeightLatticeElem{DT,R}, nodes=Base.OneTo(R)
+  w::WeightLatticeElem{DT,R}, nodes=nothing
 ) where {DT,R}
   v = MVector{R,Int}(w.vec)
-  word = _fold_dominant_with_word!(v, cartan_matrix(DT), nodes)
+  word = _fold_dominant_with_word!(v, cartan_matrix(DT), _check_nodes(nodes, R))
   return WeightLatticeElem{DT,R}(SVector{R,Int}(v)), word
 end
 
 """
-    conjugate_dominant_weight_with_length(w::WeightLatticeElem{DT,R}, nodes=1:R) -> (WeightLatticeElem, Int)
+    conjugate_dominant_weight_with_length(w::WeightLatticeElem{DT,R}, nodes=nothing) -> (WeightLatticeElem, Int)
 
 Return the dominant weight in the Weyl orbit of `w` together with the number
 of simple reflections applied (i.e. the length of the Weyl group element
@@ -495,10 +515,10 @@ julia> conjugate_dominant_weight_with_length(WeightLatticeElem(TypeA{3}, [-1, 2,
 ```
 """
 @inline function conjugate_dominant_weight_with_length(
-  w::WeightLatticeElem{DT,R}, nodes=Base.OneTo(R)
+  w::WeightLatticeElem{DT,R}, nodes=nothing
 ) where {DT,R}
   v = MVector{R,Int}(w.vec)
-  len = _fold_dominant!(v, cartan_matrix(DT), nodes)
+  len = _fold_dominant!(v, cartan_matrix(DT), _check_nodes(nodes, R))
   return WeightLatticeElem{DT,R}(SVector{R,Int}(v)), len
 end
 

@@ -1169,6 +1169,35 @@ end
   end
 end
 
+@testset "Levi-restricted fold: node argument" begin
+  λ = WeightLatticeElem(TypeA{3}, [-1, 2, -1])
+
+  # Any container of node indices works, since membership is all that is asked
+  # of it.
+  expected = conjugate_dominant_weight(λ, (2, 3))
+  @test conjugate_dominant_weight(λ, [2, 3]) == expected
+  @test conjugate_dominant_weight(λ, 2:3) == expected
+  @test conjugate_dominant_weight(λ, Set([2, 3])) == expected
+  @test conjugate_dominant_weight(λ, (3, 2)) == expected
+  @test conjugate_dominant_weight(λ, (2, 3, 2)) == expected   # duplicates are harmless
+
+  # A node outside the diagram is a mistake, not a reflection to skip.  Note the
+  # test suite runs under --check-bounds=yes; this guard is what keeps an ordinary
+  # build from indexing past the end of the coordinate vector.
+  for nodes in [(0,), (4,), (17,), (1, 5), [-1]]
+    @test_throws ArgumentError conjugate_dominant_weight(λ, nodes)
+    @test_throws ArgumentError conjugate_dominant_weight_with_length(λ, nodes)
+    @test_throws ArgumentError conjugate_dominant_weight_with_elem(λ, nodes)
+    @test_throws ArgumentError borel_weil_bott(λ, nodes)
+    @test_throws ArgumentError is_singular(λ, nodes)
+  end
+
+  # No nodes at all: nothing moves.
+  @test conjugate_dominant_weight(λ, ()) == λ
+  @test conjugate_dominant_weight_with_length(λ, ()) == (λ, 0)
+  @test !is_singular(λ, ())
+end
+
 @testset "Levi-restricted Borel–Weil–Bott" begin
   # Agreement with the absolute statement inside the sub-root-system: the degree
   # is the same, and the output weight restricts to the sub-diagram output.  Note
