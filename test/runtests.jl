@@ -1111,6 +1111,64 @@ end
 end
 
 # ═══════════════════════════════════════════════════════════════════════
+#  Folding and Borel–Weil–Bott inside a root subsystem
+#
+#  Reflecting only in a subset S of the simple roots folds a weight into the
+#  dominant chamber of the Levi subgroup L_S.  The ground truth is the same
+#  computation performed inside the sub-root-system itself.
+# ═══════════════════════════════════════════════════════════════════════
+@testset "Levi-restricted fold" begin
+  CASES = [
+    (TypeA{3}, (1, 2, 3)), (TypeA{3}, (2, 3)), (TypeA{3}, (1, 3)), (TypeA{3}, (2,)),
+    (TypeA{4}, (1, 2, 4)), (TypeB{3}, (2, 3)), (TypeB{4}, (1, 3, 4)),
+    (TypeC{3}, (1, 2)), (TypeD{4}, (2, 3, 4)), (TypeD{5}, (1, 2, 4)),
+    (TypeG2, (2,)), (TypeF4, (2, 3, 4)), (TypeE{6}, (2, 4, 5)),
+  ]
+  COORDS = [-3, -1, 0, 1, 4]
+
+  @testset "$DT restricted to $S" for (DT, S) in CASES
+    R = rank(DT)
+    LT, ord = sub_dynkin_type_with_ordering(DT, S)
+
+    for seed in 1:6
+      λ = WeightLatticeElem(DT, Int[COORDS[1 + (seed * i) % length(COORDS)] for i in 1:R])
+      dom, len = conjugate_dominant_weight_with_length(λ, S)
+
+      # Dominant for the subsystem, and only for it.
+      @test all(coefficients(dom)[s] >= 0 for s in S)
+
+      # Ground truth: the same fold carried out inside the sub-root-system.
+      sub = WeightLatticeElem(LT, Int[coefficients(λ)[ord[k]] for k in 1:rank(LT)])
+      sub_dom, sub_len = conjugate_dominant_weight_with_length(sub)
+      @test Int[coefficients(dom)[ord[k]] for k in 1:rank(LT)] == coefficients(sub_dom)
+      @test len == sub_len
+
+      # The word from _with_elem has the same length and reproduces `dom`.
+      dom_e, word = conjugate_dominant_weight_with_elem(λ, S)
+      @test dom_e == dom
+      @test length(word) == len
+      @test issubset(word, S)
+      @test foldl(reflect, word; init=λ) == dom
+
+      # Folding is idempotent, and the coordinates outside S move only by roots
+      # of the subsystem, so a node not touched by S keeps its coordinate.
+      @test conjugate_dominant_weight(dom, S) == dom
+      for i in 1:R
+        if all(cartan_matrix(DT)[i, s] == 0 for s in S)
+          @test coefficients(dom)[i] == coefficients(λ)[i]
+        end
+      end
+    end
+
+    # Passing every node is the absolute statement.
+    λ = WeightLatticeElem(DT, Int[i % 3 == 0 ? -2 : 1 for i in 1:R])
+    @test conjugate_dominant_weight(λ, 1:R) == conjugate_dominant_weight(λ)
+    @test conjugate_dominant_weight_with_length(λ, Tuple(1:R)) ==
+      conjugate_dominant_weight_with_length(λ)
+  end
+end
+
+# ═══════════════════════════════════════════════════════════════════════
 #  StaticArrays: verify types are compile-time static
 # ═══════════════════════════════════════════════════════════════════════
 @testset "Static type system" begin
