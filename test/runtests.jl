@@ -1202,6 +1202,37 @@ end
     end
   end
 
+  # is_singular is the vanishing criterion, so it must agree with borel_weil_bott
+  # on exactly when nothing survives.
+  @testset "is_singular restricted: $DT / $S" for (DT, S) in
+                                                  [(TypeA{3}, (1, 3)), (TypeB{3}, (2, 3)),
+    (TypeC{3}, (1, 2)), (TypeD{4}, (2, 3, 4)),
+    (TypeG2, (1,))]
+    R = rank(DT)
+    ρ = weyl_vector(DT)
+    RS = RootSystem(DT)
+    sub_positive = [
+      α for α in positive_roots(RS) if
+      all(coefficients(α)[i] == 0 for i in 1:R if !(i in S))
+    ]
+
+    for seed in 1:10
+      λ = WeightLatticeElem(DT, Int[((seed * i) % 7) - 3 for i in 1:R])
+      # Ground truth: pair λ + ρ against every positive root of the subsystem.
+      expected = any(iszero(dot(α, λ + ρ)) for α in sub_positive)
+      @test is_singular(λ + ρ, S) == expected
+      @test (borel_weil_bott(λ, S) === nothing) == expected
+
+      # Singular for the subsystem implies singular for the whole system, since
+      # the offending root is a root of both.
+      @test !is_singular(λ + ρ, S) || is_singular(λ + ρ)
+    end
+
+    # Passing every node is the absolute statement.
+    λ = WeightLatticeElem(DT, Int[i % 2 == 0 ? 0 : 2 for i in 1:R])
+    @test is_singular(λ, 1:R) == is_singular(λ)
+  end
+
   # A weight that is regular for the whole group but singular for a subsystem,
   # and one that is singular for the whole group but regular for a subsystem.
   @test borel_weil_bott(WeightLatticeElem(TypeA{2}, [-2, 1])) ==

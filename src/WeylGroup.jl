@@ -930,7 +930,7 @@ weyl_dimension(dt::DynkinType, v) = degree(typeof(dt), v)
 # ─── Singularity ─────────────────────────────────────────────────────────────
 
 """
-    is_singular(w::WeightLatticeElem{DT,R}) -> Bool
+    is_singular(w::WeightLatticeElem{DT,R}, nodes=1:R) -> Bool
 
 Check whether the weight `w` is singular, i.e. lies on some wall of a Weyl
 chamber. Equivalently, `w` is singular iff `⟨α∨, w⟩ = 0` for some positive
@@ -939,6 +939,12 @@ root `α`.
 For a dominant weight this simplifies to checking whether any fundamental
 weight coordinate is zero. For a general weight, we first conjugate to the
 dominant chamber.
+
+Passing `nodes` restricts the question to the root subsystem spanned by
+``S`` = `nodes`, as in [`conjugate_dominant_weight`](@ref): the result is then
+whether ``⟨α^\\vee, w⟩ = 0`` for some positive root ``α`` of that subsystem.
+This is the vanishing criterion of the relative
+[`borel_weil_bott`](@ref).
 
 # Examples
 ```jldoctest
@@ -950,10 +956,23 @@ true
 julia> is_singular(weyl_vector(TypeA{2}))
 false
 ```
+
+For the subsystem spanned by the second node the only positive root is
+``α_2``, so singularity is decided by the pairing with ``α_2^\\vee`` alone:
+
+```jldoctest
+julia> using Semisimple
+
+julia> is_singular(fundamental_weight(TypeA{2}, 1), (2,))
+true
+
+julia> is_singular(fundamental_weight(TypeA{2}, 2), (2,))
+false
+```
 """
-function is_singular(w::WeightLatticeElem{DT,R}) where {DT,R}
-  dom = conjugate_dominant_weight(w)
-  return any(i -> dom.vec[i] == 0, 1:R)
+function is_singular(w::WeightLatticeElem{DT,R}, nodes=Base.OneTo(R)) where {DT,R}
+  dom = conjugate_dominant_weight(w, nodes)
+  return any(s -> dom.vec[s] == 0, nodes)
 end
 
 # ─── Borel–Weil–Bott ────────────────────────────────────────────────────────
