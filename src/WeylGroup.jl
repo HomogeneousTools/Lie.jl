@@ -930,7 +930,7 @@ weyl_dimension(dt::DynkinType, v) = degree(typeof(dt), v)
 # ─── Singularity ─────────────────────────────────────────────────────────────
 
 """
-    is_singular(w::WeightLatticeElem{DT,R}, nodes=nothing) -> Bool
+    is_singular(w::WeightLatticeElem{DT,R}, nodes=1:R) -> Bool
 
 Check whether the weight `w` is singular, i.e. lies on some wall of a Weyl
 chamber. Equivalently, `w` is singular iff `⟨α∨, w⟩ = 0` for some positive
@@ -970,15 +970,15 @@ julia> is_singular(fundamental_weight(TypeA{2}, 2), (2,))
 false
 ```
 """
-function is_singular(w::WeightLatticeElem{DT,R}, nodes=nothing) where {DT,R}
+function is_singular(w::WeightLatticeElem{DT,R}, nodes=1:R) where {DT,R}
   dom = conjugate_dominant_weight(w, nodes)
-  return any(s -> dom.vec[s] == 0, something(nodes, 1:R))
+  return any(s -> dom.vec[s] == 0, nodes)
 end
 
 # ─── Borel–Weil–Bott ────────────────────────────────────────────────────────
 
 """
-    _borel_weil_bott(λ::WeightLatticeElem{DT,R}, nodes=nothing) -> Union{Nothing, Tuple{Int, WeightLatticeElem{DT,R}}}
+    _borel_weil_bott(λ::WeightLatticeElem{DT,R}, nodes=1:R) -> Union{Nothing, Tuple{Int, WeightLatticeElem{DT,R}}}
 
 Apply the Borel–Weil–Bott theorem to the weight `λ`.
 
@@ -1036,7 +1036,7 @@ julia> _borel_weil_bott(-weyl_vector(TypeA{2}), (2,)) === nothing   # singular f
 true
 ```
 """
-function _borel_weil_bott(λ::WeightLatticeElem{DT,R}, nodes=nothing) where {DT,R}
+function _borel_weil_bott(λ::WeightLatticeElem{DT,R}, nodes=1:R) where {DT,R}
   ρ = weyl_vector(DT)
   μ = λ + ρ
 
@@ -1045,7 +1045,7 @@ function _borel_weil_bott(λ::WeightLatticeElem{DT,R}, nodes=nothing) where {DT,
 
   # If any coordinate of μ_dom is zero, λ + ρ lies on a wall of the chamber
   # (including the case μ = 0 when λ = -ρ), so all cohomology vanishes.
-  any(s -> μ_dom.vec[s] == 0, something(nodes, 1:R)) && return nothing
+  any(s -> μ_dom.vec[s] == 0, nodes) && return nothing
 
   return (d, μ_dom - ρ)
 end
