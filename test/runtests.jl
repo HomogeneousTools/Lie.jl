@@ -1,7 +1,7 @@
 using Test
 using Semisimple
 using Aqua
-import Semisimple: borel_weil_bott  # no longer publicly exported; tested here via explicit import
+import Semisimple: _borel_weil_bott  # no longer publicly exported; tested here via explicit import
 using StaticArrays
 using LinearAlgebra: det
 
@@ -1019,25 +1019,25 @@ end
     ρ = weyl_vector(TypeA{2})
 
     # ω1 is dominant: H⁰ = V(ω1), dim = 3
-    result = borel_weil_bott(ω1)
+    result = _borel_weil_bott(ω1)
     @test result !== nothing
     d, μ = result
     @test d == 0
     @test μ == ω1
 
     # ω2 is dominant: H⁰ = V(ω2), dim = 3
-    result = borel_weil_bott(ω2)
+    result = _borel_weil_bott(ω2)
     @test result !== nothing
     d, μ = result
     @test d == 0
     @test μ == ω2
 
     # λ = -ρ: λ + ρ = 0, singular → nothing
-    @test borel_weil_bott(-ρ) === nothing
+    @test _borel_weil_bott(-ρ) === nothing
 
     # λ = [-2, 1]: λ+ρ = [-1, 2], s1 gives [1, 1], d=1, μ = [0, 0]
     λ = WeightLatticeElem(TypeA{2}, [-2, 1])
-    result = borel_weil_bott(λ)
+    result = _borel_weil_bott(λ)
     @test result !== nothing
     d, μ = result
     @test d == 1
@@ -1045,21 +1045,21 @@ end
 
     # λ = [-3, 3]: λ+ρ = [-2, 4], s1 gives [2, 2], d=1, μ = [1, 1]
     λ = WeightLatticeElem(TypeA{2}, [-3, 3])
-    result = borel_weil_bott(λ)
+    result = _borel_weil_bott(λ)
     @test result !== nothing
     d, μ = result
     @test d == 1
     @test μ == WeightLatticeElem(TypeA{2}, [1, 1])  # adjoint rep
 
     # λ = [-3, 1]: λ+ρ = [-2, 2], conjugates to singular weight [2, 0]
-    @test borel_weil_bott(WeightLatticeElem(TypeA{2}, [-3, 1])) === nothing
+    @test _borel_weil_bott(WeightLatticeElem(TypeA{2}, [-3, 1])) === nothing
   end
 
   # ── A1 ──────────────────────────────────────────────────────────────
   @testset "A1" begin
     # nomega1 dominant: degree 0, result is nomega1
     for n in 0:5
-      result = borel_weil_bott(WeightLatticeElem(TypeA{1}, [n]))
+      result = _borel_weil_bott(WeightLatticeElem(TypeA{1}, [n]))
       @test result !== nothing
       d, μ = result
       @test d == 0
@@ -1067,10 +1067,10 @@ end
     end
 
     # λ = -1: λ+ρ = 0, singular
-    @test borel_weil_bott(WeightLatticeElem(TypeA{1}, [-1])) === nothing
+    @test _borel_weil_bott(WeightLatticeElem(TypeA{1}, [-1])) === nothing
 
     # λ = -3: λ+ρ = -2, s1 → 2, dominant, d=1, μ = 2-1 = 1
-    result = borel_weil_bott(WeightLatticeElem(TypeA{1}, [-3]))
+    result = _borel_weil_bott(WeightLatticeElem(TypeA{1}, [-3]))
     @test result !== nothing
     d, μ = result
     @test d == 1
@@ -1081,7 +1081,7 @@ end
   @testset "B2" begin
     # Dominant weight: degree 0
     ω1 = fundamental_weight(TypeB{2}, 1)
-    result = borel_weil_bott(ω1)
+    result = _borel_weil_bott(ω1)
     @test result !== nothing
     d, μ = result
     @test d == 0
@@ -1094,7 +1094,7 @@ end
       R = rank(DT)
       for i in 1:R
         ωi = fundamental_weight(DT, i)
-        result = borel_weil_bott(ωi)
+        result = _borel_weil_bott(ωi)
         @test result !== nothing
         d, μ = result
         @test d == 0
@@ -1106,7 +1106,7 @@ end
   @testset "E8" begin
     λ = WeightLatticeElem(TypeE{8}, [-5, 3, -2, -3, 5, -8, 2, 1])
     # λ+ρ conjugates to a singular weight, so all cohomology vanishes
-    @test borel_weil_bott(λ) === nothing
+    @test _borel_weil_bott(λ) === nothing
   end
 end
 
@@ -1165,7 +1165,7 @@ end
     @test conjugate_dominant_weight(λ, 1:R) == conjugate_dominant_weight(λ)
     @test conjugate_dominant_weight_with_length(λ, Tuple(1:R)) ==
       conjugate_dominant_weight_with_length(λ)
-    @test borel_weil_bott(λ, 1:R) == borel_weil_bott(λ)
+    @test _borel_weil_bott(λ, 1:R) == _borel_weil_bott(λ)
   end
 end
 
@@ -1188,7 +1188,7 @@ end
     @test_throws ArgumentError conjugate_dominant_weight(λ, nodes)
     @test_throws ArgumentError conjugate_dominant_weight_with_length(λ, nodes)
     @test_throws ArgumentError conjugate_dominant_weight_with_elem(λ, nodes)
-    @test_throws ArgumentError borel_weil_bott(λ, nodes)
+    @test_throws ArgumentError _borel_weil_bott(λ, nodes)
     @test_throws ArgumentError is_singular(λ, nodes)
   end
 
@@ -1212,13 +1212,13 @@ end
 
     for seed in 1:8
       λ = WeightLatticeElem(DT, Int[((seed * i) % 7) - 3 for i in 1:R])
-      result = borel_weil_bott(λ, S)
+      result = _borel_weil_bott(λ, S)
 
       sub_λ =
         WeightLatticeElem(
           LT, Int[coefficients(λ)[ord[k]] + coefficients(ρ)[ord[k]] for k in 1:rank(LT)]
         ) - ρ_S
-      sub_result = borel_weil_bott(sub_λ)
+      sub_result = _borel_weil_bott(sub_λ)
 
       @test (result === nothing) == (sub_result === nothing)
       result === nothing && continue
@@ -1231,7 +1231,7 @@ end
     end
   end
 
-  # is_singular is the vanishing criterion, so it must agree with borel_weil_bott
+  # is_singular is the vanishing criterion, so it must agree with _borel_weil_bott
   # on exactly when nothing survives.
   @testset "is_singular restricted: $DT / $S" for (DT, S) in
                                                   [(TypeA{3}, (1, 3)), (TypeB{3}, (2, 3)),
@@ -1250,7 +1250,7 @@ end
       # Ground truth: pair λ + ρ against every positive root of the subsystem.
       expected = any(iszero(dot(α, λ + ρ)) for α in sub_positive)
       @test is_singular(λ + ρ, S) == expected
-      @test (borel_weil_bott(λ, S) === nothing) == expected
+      @test (_borel_weil_bott(λ, S) === nothing) == expected
 
       # Singular for the subsystem implies singular for the whole system, since
       # the offending root is a root of both.
@@ -1264,16 +1264,16 @@ end
 
   # A weight that is regular for the whole group but singular for a subsystem,
   # and one that is singular for the whole group but regular for a subsystem.
-  @test borel_weil_bott(WeightLatticeElem(TypeA{2}, [-2, 1])) ==
+  @test _borel_weil_bott(WeightLatticeElem(TypeA{2}, [-2, 1])) ==
     (1, WeightLatticeElem(TypeA{2}))
-  @test borel_weil_bott(WeightLatticeElem(TypeA{2}, [-2, 1]), (2,)) ==
+  @test _borel_weil_bott(WeightLatticeElem(TypeA{2}, [-2, 1]), (2,)) ==
     (0, WeightLatticeElem(TypeA{2}, [-2, 1]))
-  @test borel_weil_bott(WeightLatticeElem(TypeA{2}, [0, -1])) === nothing
-  @test borel_weil_bott(WeightLatticeElem(TypeA{2}, [0, -1]), (1,)) ==
+  @test _borel_weil_bott(WeightLatticeElem(TypeA{2}, [0, -1])) === nothing
+  @test _borel_weil_bott(WeightLatticeElem(TypeA{2}, [0, -1]), (1,)) ==
     (0, WeightLatticeElem(TypeA{2}, [0, -1]))
 
   # No nodes to reflect in: nothing can be singular and nothing moves.
-  @test borel_weil_bott(WeightLatticeElem(TypeA{2}, [-5, -5]), ()) ==
+  @test _borel_weil_bott(WeightLatticeElem(TypeA{2}, [-5, -5]), ()) ==
     (0, WeightLatticeElem(TypeA{2}, [-5, -5]))
 end
 

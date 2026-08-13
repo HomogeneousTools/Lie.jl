@@ -198,28 +198,30 @@ Compute the cohomological degree and resulting representation for
 a weight on a flag variety:
 
 ```jldoctest weyl
-julia> import Semisimple: borel_weil_bott
+julia> import Semisimple: _borel_weil_bott
 
-julia> borel_weil_bott(ω1)   # dominant weight → degree 0
+julia> _borel_weil_bott(ω1)   # dominant weight → degree 0
 (0, ω1)
 
-julia> borel_weil_bott(WeightLatticeElem(TypeA{3}, [-3, 2, 1]))
+julia> _borel_weil_bott(WeightLatticeElem(TypeA{3}, [-3, 2, 1]))
 (1, ω1 + ω3)
 ```
 
-Singular weights give zero cohomology, and `borel_weil_bott` returns `nothing`:
+Singular weights give zero cohomology, and `_borel_weil_bott` returns `nothing`:
 
 ```jldoctest weyl
-julia> borel_weil_bott(-weyl_vector(TypeA{3})) === nothing
+julia> _borel_weil_bott(-weyl_vector(TypeA{3})) === nothing
 true
 ```
 
 !!! note
-    `borel_weil_bott` is not exported. It is rather a feature for `PartialFlagVarieties.jl`.
-    Use `import Semisimple: borel_weil_bott` to access it.
+    `_borel_weil_bott` is internal: the leading underscore marks it as neither
+    exported nor covered by semantic versioning. It is rather a feature for
+    `PartialFlagVarieties.jl`, which builds it out of the exported
+    `conjugate_dominant_weight_with_length`.
 
 ```@docs
-Semisimple.borel_weil_bott
+Semisimple._borel_weil_bott
 ```
 
 ### Singular weights
