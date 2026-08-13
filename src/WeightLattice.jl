@@ -353,6 +353,8 @@ end
 
 # Reject reflection nodes outside the diagram, so that a mistyped node is an
 # error rather than a silently skipped reflection.  `nothing` means every node.
+# Called from the fold kernels themselves rather than from their callers, so no
+# future entry point can reach a fold without passing through it.
 function _check_nodes(nodes, R::Integer)
   nodes === nothing && return nothing
   for s in nodes
@@ -376,6 +378,7 @@ end
 @inline function _fold_dominant!(
   v::MVector{R,Int}, C::SMatrix{R,R,Int}, nodes=nothing
 ) where {R}
+  _check_nodes(nodes, R)
   len = 0
   s = 1
   @inbounds while s <= R
@@ -403,9 +406,9 @@ Passing `nodes` reflects only in those simple roots, giving the unique
 spanned by ``S`` = `nodes`, i.e. dominant for the corresponding Levi subgroup.
 The coordinates outside `nodes` are still moved along.
 
-`nodes` may be any container of node indices supporting `in`, such as a tuple,
-vector, range, or `Set`; `nothing` means every simple root.  A node outside
-`1:R` throws an `ArgumentError`.
+`nodes` may be any iterable of node indices — a tuple, vector, range or `Set` —
+and `nothing` means every simple root.  A node outside `1:R` throws an
+`ArgumentError`.
 
 # Examples
 ```jldoctest
@@ -432,7 +435,7 @@ julia> conjugate_dominant_weight(WeightLatticeElem(TypeA{2}, [-1, -1]), (2,))
   w::WeightLatticeElem{DT,R}, nodes=nothing
 ) where {DT,R}
   v = MVector{R,Int}(w.vec)
-  _fold_dominant!(v, cartan_matrix(DT), _check_nodes(nodes, R))
+  _fold_dominant!(v, cartan_matrix(DT), nodes)
   return WeightLatticeElem{DT,R}(SVector{R,Int}(v))
 end
 
@@ -440,6 +443,7 @@ end
 function _fold_dominant_with_word!(
   v::MVector{R,Int}, C::SMatrix{R,R,Int}, nodes=nothing
 ) where {R}
+  _check_nodes(nodes, R)
   word = Int[]
   s = 1
   while s <= R
@@ -481,7 +485,7 @@ function conjugate_dominant_weight_with_elem(
   w::WeightLatticeElem{DT,R}, nodes=nothing
 ) where {DT,R}
   v = MVector{R,Int}(w.vec)
-  word = _fold_dominant_with_word!(v, cartan_matrix(DT), _check_nodes(nodes, R))
+  word = _fold_dominant_with_word!(v, cartan_matrix(DT), nodes)
   return WeightLatticeElem{DT,R}(SVector{R,Int}(v)), word
 end
 
@@ -517,7 +521,7 @@ julia> conjugate_dominant_weight_with_length(WeightLatticeElem(TypeA{3}, [-1, 2,
   w::WeightLatticeElem{DT,R}, nodes=nothing
 ) where {DT,R}
   v = MVector{R,Int}(w.vec)
-  len = _fold_dominant!(v, cartan_matrix(DT), _check_nodes(nodes, R))
+  len = _fold_dominant!(v, cartan_matrix(DT), nodes)
   return WeightLatticeElem{DT,R}(SVector{R,Int}(v)), len
 end
 
