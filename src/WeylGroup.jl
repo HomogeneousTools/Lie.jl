@@ -944,7 +944,7 @@ Passing `nodes` restricts the question to the root subsystem spanned by
 ``S`` = `nodes`, as in [`conjugate_dominant_weight`](@ref): the result is then
 whether ``⟨α^\\vee, w⟩ = 0`` for some positive root ``α`` of that subsystem.
 This is the vanishing criterion of the relative
-[`borel_weil_bott`](@ref).
+[`_borel_weil_bott`](@ref).
 
 # Examples
 ```jldoctest
@@ -978,15 +978,17 @@ end
 # ─── Borel–Weil–Bott ────────────────────────────────────────────────────────
 
 """
-    borel_weil_bott(λ::WeightLatticeElem{DT,R}, nodes=nothing) -> Union{Nothing, Tuple{Int, WeightLatticeElem{DT,R}}}
+    _borel_weil_bott(λ::WeightLatticeElem{DT,R}, nodes=nothing) -> Union{Nothing, Tuple{Int, WeightLatticeElem{DT,R}}}
 
 Apply the Borel–Weil–Bott theorem to the weight `λ`.
 
-!!! note "Package placement"
-    This function is a preview implementation that properly belongs to
-    `PartialFlagVarieties.jl`, an upcoming companion package. It is included here
-    for convenience but is **not part of the public API of `Semisimple.jl`** and is not
-    exported. Access it via `import Semisimple: borel_weil_bott`.
+!!! note "Internal"
+    The leading underscore marks this as internal: it is not exported, not part
+    of the public API of `Semisimple.jl`, and not covered by semantic
+    versioning. The theorem properly belongs to `PartialFlagVarieties.jl`, which
+    builds it out of the exported
+    [`conjugate_dominant_weight_with_length`](@ref); this implementation is kept
+    here only to exercise the restricted fold from the tests.
 
 Compute `μ = λ + ρ` and find the unique Weyl group element `w` such that
 `w(μ)` is dominant. If `μ` is singular (lies on a Weyl chamber wall),
@@ -1009,15 +1011,15 @@ therefore ``\\mathrm{W}_S``-invariant.
 
 # Examples
 ```jldoctest
-julia> using Semisimple; import Semisimple: borel_weil_bott
+julia> using Semisimple; import Semisimple: _borel_weil_bott
 
-julia> borel_weil_bott(fundamental_weight(TypeA{2}, 1))
+julia> _borel_weil_bott(fundamental_weight(TypeA{2}, 1))
 (0, ω1)
 
-julia> borel_weil_bott(WeightLatticeElem(TypeA{2}, [-2, 1]))
+julia> _borel_weil_bott(WeightLatticeElem(TypeA{2}, [-2, 1]))
 (1, 0)
 
-julia> borel_weil_bott(-weyl_vector(TypeA{2})) === nothing
+julia> _borel_weil_bott(-weyl_vector(TypeA{2})) === nothing
 true
 ```
 
@@ -1025,16 +1027,16 @@ The same weight, but reflecting only in the second node: it is already dominant
 there, so it stays put in degree zero.
 
 ```jldoctest
-julia> using Semisimple; import Semisimple: borel_weil_bott
+julia> using Semisimple; import Semisimple: _borel_weil_bott
 
-julia> borel_weil_bott(WeightLatticeElem(TypeA{2}, [-2, 1]), (2,))
+julia> _borel_weil_bott(WeightLatticeElem(TypeA{2}, [-2, 1]), (2,))
 (0, -2ω1 + ω2)
 
-julia> borel_weil_bott(-weyl_vector(TypeA{2}), (2,)) === nothing   # singular for s2 too
+julia> _borel_weil_bott(-weyl_vector(TypeA{2}), (2,)) === nothing   # singular for s2 too
 true
 ```
 """
-function borel_weil_bott(λ::WeightLatticeElem{DT,R}, nodes=nothing) where {DT,R}
+function _borel_weil_bott(λ::WeightLatticeElem{DT,R}, nodes=nothing) where {DT,R}
   ρ = weyl_vector(DT)
   μ = λ + ρ
 

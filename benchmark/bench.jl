@@ -16,7 +16,7 @@ using Semisimple
 using StaticArrays
 using Dates
 
-import Semisimple: borel_weil_bott
+import Semisimple: _borel_weil_bott
 
 # ─── CLI ────────────────────────────────────────────────────────────────────
 
@@ -456,7 +456,7 @@ function bench_bwb_box(::Type{DT}, bound) where {DT}
   count = 0
   for coords in Iterators.product(ntuple(_ -> (-bound):bound, R)...)
     λ = WeightLatticeElem(DT, SVector{R,Int}(coords))
-    borel_weil_bott(λ)
+    _borel_weil_bott(λ)
     count += 1
   end
   return count
@@ -484,7 +484,7 @@ end
 
 function bench_bwb_deep(::Type{DT}, weights) where {DT}
   for w in weights
-    borel_weil_bott(w)
+    _borel_weil_bott(w)
   end
 end
 
