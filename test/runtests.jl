@@ -1111,6 +1111,173 @@ end
 end
 
 # ═══════════════════════════════════════════════════════════════════════
+#  Folding and Borel–Weil–Bott inside a root subsystem
+#
+#  Reflecting only in a subset S of the simple roots folds a weight into the
+#  dominant chamber of the Levi subgroup L_S.  The ground truth is the same
+#  computation performed inside the sub-root-system itself.
+# ═══════════════════════════════════════════════════════════════════════
+@testset "Levi-restricted fold" begin
+  CASES = [
+    (TypeA{3}, (1, 2, 3)), (TypeA{3}, (2, 3)), (TypeA{3}, (1, 3)), (TypeA{3}, (2,)),
+    (TypeA{4}, (1, 2, 4)), (TypeB{3}, (2, 3)), (TypeB{4}, (1, 3, 4)),
+    (TypeC{3}, (1, 2)), (TypeD{4}, (2, 3, 4)), (TypeD{5}, (1, 2, 4)),
+    (TypeG2, (2,)), (TypeF4, (2, 3, 4)), (TypeE{6}, (2, 4, 5)),
+  ]
+  COORDS = [-3, -1, 0, 1, 4]
+
+  @testset "$DT restricted to $S" for (DT, S) in CASES
+    R = rank(DT)
+    LT, ord = sub_dynkin_type_with_ordering(DT, S)
+
+    for seed in 1:6
+      λ = WeightLatticeElem(DT, Int[COORDS[1 + (seed * i) % length(COORDS)] for i in 1:R])
+      dom, len = conjugate_dominant_weight_with_length(λ, S)
+
+      # Dominant for the subsystem, and only for it.
+      @test all(coefficients(dom)[s] >= 0 for s in S)
+
+      # Ground truth: the same fold carried out inside the sub-root-system.
+      sub = WeightLatticeElem(LT, Int[coefficients(λ)[ord[k]] for k in 1:rank(LT)])
+      sub_dom, sub_len = conjugate_dominant_weight_with_length(sub)
+      @test Int[coefficients(dom)[ord[k]] for k in 1:rank(LT)] == coefficients(sub_dom)
+      @test len == sub_len
+
+      # The word from _with_elem has the same length and reproduces `dom`.
+      dom_e, word = conjugate_dominant_weight_with_elem(λ, S)
+      @test dom_e == dom
+      @test length(word) == len
+      @test issubset(word, S)
+      @test foldl(reflect, word; init=λ) == dom
+
+      # Folding is idempotent, and the coordinates outside S move only by roots
+      # of the subsystem, so a node not touched by S keeps its coordinate.
+      @test conjugate_dominant_weight(dom, S) == dom
+      for i in 1:R
+        if all(cartan_matrix(DT)[i, s] == 0 for s in S)
+          @test coefficients(dom)[i] == coefficients(λ)[i]
+        end
+      end
+    end
+
+    # Passing every node is the absolute statement.
+    λ = WeightLatticeElem(DT, Int[i % 3 == 0 ? -2 : 1 for i in 1:R])
+    @test conjugate_dominant_weight(λ, 1:R) == conjugate_dominant_weight(λ)
+    @test conjugate_dominant_weight_with_length(λ, Tuple(1:R)) ==
+      conjugate_dominant_weight_with_length(λ)
+    @test borel_weil_bott(λ, 1:R) == borel_weil_bott(λ)
+  end
+end
+
+@testset "Levi-restricted fold: node argument" begin
+  λ = WeightLatticeElem(TypeA{3}, [-1, 2, -1])
+
+  # Any container of node indices works, since membership is all that is asked
+  # of it.
+  expected = conjugate_dominant_weight(λ, (2, 3))
+  @test conjugate_dominant_weight(λ, [2, 3]) == expected
+  @test conjugate_dominant_weight(λ, 2:3) == expected
+  @test conjugate_dominant_weight(λ, Set([2, 3])) == expected
+  @test conjugate_dominant_weight(λ, (3, 2)) == expected
+  @test conjugate_dominant_weight(λ, (2, 3, 2)) == expected   # duplicates are harmless
+
+  # A node outside the diagram is a mistake, not a reflection to skip.  Note the
+  # test suite runs under --check-bounds=yes; this guard is what keeps an ordinary
+  # build from indexing past the end of the coordinate vector.
+  for nodes in [(0,), (4,), (17,), (1, 5), [-1]]
+    @test_throws ArgumentError conjugate_dominant_weight(λ, nodes)
+    @test_throws ArgumentError conjugate_dominant_weight_with_length(λ, nodes)
+    @test_throws ArgumentError conjugate_dominant_weight_with_elem(λ, nodes)
+    @test_throws ArgumentError borel_weil_bott(λ, nodes)
+    @test_throws ArgumentError is_singular(λ, nodes)
+  end
+
+  # No nodes at all: nothing moves.
+  @test conjugate_dominant_weight(λ, ()) == λ
+  @test conjugate_dominant_weight_with_length(λ, ()) == (λ, 0)
+  @test !is_singular(λ, ())
+end
+
+@testset "Levi-restricted Borel–Weil–Bott" begin
+  # Agreement with the absolute statement inside the sub-root-system: the degree
+  # is the same, and the output weight restricts to the sub-diagram output.  Note
+  # ρ_G is the correct shift on both sides, since ρ_G - ρ_S is W_S-invariant.
+  @testset "$DT restricted to $S" for (DT, S) in
+                                      [(TypeA{3}, (1, 3)), (TypeA{4}, (2, 3, 4)),
+    (TypeB{3}, (1, 2)), (TypeC{3}, (2, 3)),
+    (TypeD{4}, (1, 3, 4)), (TypeF4, (1, 2))]
+    R = rank(DT)
+    LT, ord = sub_dynkin_type_with_ordering(DT, S)
+    ρ, ρ_S = weyl_vector(DT), weyl_vector(LT)
+
+    for seed in 1:8
+      λ = WeightLatticeElem(DT, Int[((seed * i) % 7) - 3 for i in 1:R])
+      result = borel_weil_bott(λ, S)
+
+      sub_λ =
+        WeightLatticeElem(
+          LT, Int[coefficients(λ)[ord[k]] + coefficients(ρ)[ord[k]] for k in 1:rank(LT)]
+        ) - ρ_S
+      sub_result = borel_weil_bott(sub_λ)
+
+      @test (result === nothing) == (sub_result === nothing)
+      result === nothing && continue
+      d, μ = result
+      sub_d, sub_μ = sub_result
+      @test d == sub_d
+      @test Int[coefficients(μ)[ord[k]] for k in 1:rank(LT)] == coefficients(sub_μ)
+      # The output is dominant for the subsystem, as the theorem promises.
+      @test all(coefficients(μ)[s] >= 0 for s in S)
+    end
+  end
+
+  # is_singular is the vanishing criterion, so it must agree with borel_weil_bott
+  # on exactly when nothing survives.
+  @testset "is_singular restricted: $DT / $S" for (DT, S) in
+                                                  [(TypeA{3}, (1, 3)), (TypeB{3}, (2, 3)),
+    (TypeC{3}, (1, 2)), (TypeD{4}, (2, 3, 4)),
+    (TypeG2, (1,))]
+    R = rank(DT)
+    ρ = weyl_vector(DT)
+    RS = RootSystem(DT)
+    sub_positive = [
+      α for α in positive_roots(RS) if
+      all(coefficients(α)[i] == 0 for i in 1:R if !(i in S))
+    ]
+
+    for seed in 1:10
+      λ = WeightLatticeElem(DT, Int[((seed * i) % 7) - 3 for i in 1:R])
+      # Ground truth: pair λ + ρ against every positive root of the subsystem.
+      expected = any(iszero(dot(α, λ + ρ)) for α in sub_positive)
+      @test is_singular(λ + ρ, S) == expected
+      @test (borel_weil_bott(λ, S) === nothing) == expected
+
+      # Singular for the subsystem implies singular for the whole system, since
+      # the offending root is a root of both.
+      @test !is_singular(λ + ρ, S) || is_singular(λ + ρ)
+    end
+
+    # Passing every node is the absolute statement.
+    λ = WeightLatticeElem(DT, Int[i % 2 == 0 ? 0 : 2 for i in 1:R])
+    @test is_singular(λ, 1:R) == is_singular(λ)
+  end
+
+  # A weight that is regular for the whole group but singular for a subsystem,
+  # and one that is singular for the whole group but regular for a subsystem.
+  @test borel_weil_bott(WeightLatticeElem(TypeA{2}, [-2, 1])) ==
+    (1, WeightLatticeElem(TypeA{2}))
+  @test borel_weil_bott(WeightLatticeElem(TypeA{2}, [-2, 1]), (2,)) ==
+    (0, WeightLatticeElem(TypeA{2}, [-2, 1]))
+  @test borel_weil_bott(WeightLatticeElem(TypeA{2}, [0, -1])) === nothing
+  @test borel_weil_bott(WeightLatticeElem(TypeA{2}, [0, -1]), (1,)) ==
+    (0, WeightLatticeElem(TypeA{2}, [0, -1]))
+
+  # No nodes to reflect in: nothing can be singular and nothing moves.
+  @test borel_weil_bott(WeightLatticeElem(TypeA{2}, [-5, -5]), ()) ==
+    (0, WeightLatticeElem(TypeA{2}, [-5, -5]))
+end
+
+# ═══════════════════════════════════════════════════════════════════════
 #  StaticArrays: verify types are compile-time static
 # ═══════════════════════════════════════════════════════════════════════
 @testset "Static type system" begin

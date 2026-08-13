@@ -930,7 +930,7 @@ weyl_dimension(dt::DynkinType, v) = degree(typeof(dt), v)
 # ─── Singularity ─────────────────────────────────────────────────────────────
 
 """
-    is_singular(w::WeightLatticeElem{DT,R}) -> Bool
+    is_singular(w::WeightLatticeElem{DT,R}, nodes=nothing) -> Bool
 
 Check whether the weight `w` is singular, i.e. lies on some wall of a Weyl
 chamber. Equivalently, `w` is singular iff `⟨α∨, w⟩ = 0` for some positive
@@ -939,6 +939,12 @@ root `α`.
 For a dominant weight this simplifies to checking whether any fundamental
 weight coordinate is zero. For a general weight, we first conjugate to the
 dominant chamber.
+
+Passing `nodes` restricts the question to the root subsystem spanned by
+``S`` = `nodes`, as in [`conjugate_dominant_weight`](@ref): the result is then
+whether ``⟨α^\\vee, w⟩ = 0`` for some positive root ``α`` of that subsystem.
+This is the vanishing criterion of the relative
+[`borel_weil_bott`](@ref).
 
 # Examples
 ```jldoctest
@@ -950,16 +956,29 @@ true
 julia> is_singular(weyl_vector(TypeA{2}))
 false
 ```
+
+For the subsystem spanned by the second node the only positive root is
+``α_2``, so singularity is decided by the pairing with ``α_2^\\vee`` alone:
+
+```jldoctest
+julia> using Semisimple
+
+julia> is_singular(fundamental_weight(TypeA{2}, 1), (2,))
+true
+
+julia> is_singular(fundamental_weight(TypeA{2}, 2), (2,))
+false
+```
 """
-function is_singular(w::WeightLatticeElem{DT,R}) where {DT,R}
-  dom = conjugate_dominant_weight(w)
-  return any(i -> dom.vec[i] == 0, 1:R)
+function is_singular(w::WeightLatticeElem{DT,R}, nodes=nothing) where {DT,R}
+  dom = conjugate_dominant_weight(w, nodes)
+  return any(s -> dom.vec[s] == 0, something(nodes, 1:R))
 end
 
 # ─── Borel–Weil–Bott ────────────────────────────────────────────────────────
 
 """
-    borel_weil_bott(λ::WeightLatticeElem{DT,R}) -> Union{Nothing, Tuple{Int, WeightLatticeElem{DT,R}}}
+    borel_weil_bott(λ::WeightLatticeElem{DT,R}, nodes=nothing) -> Union{Nothing, Tuple{Int, WeightLatticeElem{DT,R}}}
 
 Apply the Borel–Weil–Bott theorem to the weight `λ`.
 
@@ -978,6 +997,16 @@ all cohomology vanishes and we return `nothing`. Otherwise, return
 
 and all other cohomology groups vanish.
 
+Passing `nodes` restricts both the reflections and the singularity test to the
+root subsystem spanned by ``S`` = `nodes`, so `w` is sought in
+``\\mathrm{W}_S``.  This is the relative statement along a projection of flag
+varieties, the higher direct images of ``\\mathcal{L}_λ`` along
+``\\mathrm{G}/\\mathrm{B} \\to \\mathrm{G}/\\mathrm{P}_I`` with `nodes` the nodes
+unmarked in ``I``: taking `nodes` to be all of them recovers the absolute
+statement.  Note that ``ρ = ρ_{\\mathrm{G}}`` remains the right shift, because
+``ρ_{\\mathrm{G}} - ρ_S`` pairs to zero with every coroot in ``S`` and is
+therefore ``\\mathrm{W}_S``-invariant.
+
 # Examples
 ```jldoctest
 julia> using Semisimple; import Semisimple: borel_weil_bott
@@ -991,17 +1020,30 @@ julia> borel_weil_bott(WeightLatticeElem(TypeA{2}, [-2, 1]))
 julia> borel_weil_bott(-weyl_vector(TypeA{2})) === nothing
 true
 ```
+
+The same weight, but reflecting only in the second node: it is already dominant
+there, so it stays put in degree zero.
+
+```jldoctest
+julia> using Semisimple; import Semisimple: borel_weil_bott
+
+julia> borel_weil_bott(WeightLatticeElem(TypeA{2}, [-2, 1]), (2,))
+(0, -2ω1 + ω2)
+
+julia> borel_weil_bott(-weyl_vector(TypeA{2}), (2,)) === nothing   # singular for s2 too
+true
+```
 """
-function borel_weil_bott(λ::WeightLatticeElem{DT,R}) where {DT,R}
+function borel_weil_bott(λ::WeightLatticeElem{DT,R}, nodes=nothing) where {DT,R}
   ρ = weyl_vector(DT)
   μ = λ + ρ
 
   # Move μ to the dominant chamber; the number of reflections is the degree
-  μ_dom, d = conjugate_dominant_weight_with_length(μ)
+  μ_dom, d = conjugate_dominant_weight_with_length(μ, nodes)
 
-  # If any coordinate of μ_dom is zero, λ + ρ lies on a Weyl chamber wall
+  # If any coordinate of μ_dom is zero, λ + ρ lies on a wall of the chamber
   # (including the case μ = 0 when λ = -ρ), so all cohomology vanishes.
-  any(==(0), μ_dom.vec) && return nothing
+  any(s -> μ_dom.vec[s] == 0, something(nodes, 1:R)) && return nothing
 
   return (d, μ_dom - ρ)
 end
