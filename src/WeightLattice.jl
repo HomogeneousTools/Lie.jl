@@ -353,9 +353,8 @@ end
 
 # Reject reflection nodes outside the diagram, so that a mistyped node is an
 # error rather than a silently skipped reflection.  `nothing` means every node.
-_check_nodes(::Nothing, ::Integer) = nothing
-
 function _check_nodes(nodes, R::Integer)
+  nodes === nothing && return nothing
   for s in nodes
     1 <= s <= R ||
       throw(ArgumentError("Reflection node $s is out of range for rank $R"))
