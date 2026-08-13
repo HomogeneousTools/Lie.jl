@@ -1192,8 +1192,19 @@ end
     @test_throws ArgumentError is_singular(λ, nodes)
   end
 
-  # No nodes at all: nothing moves.
+  # A range is checked by its extremes rather than element by element, so it
+  # needs its own out-of-range cases.
+  @test_throws ArgumentError conjugate_dominant_weight(λ, 2:5)
+  @test_throws ArgumentError conjugate_dominant_weight(λ, 0:2)
+  @test_throws ArgumentError _borel_weil_bott(λ, 0:4)
+  @test conjugate_dominant_weight(λ, 1:3) == conjugate_dominant_weight(λ)
+  @test conjugate_dominant_weight(λ, Base.OneTo(3)) == conjugate_dominant_weight(λ)
+
+  # No nodes at all: nothing moves.  An empty range is vacuously in range, even
+  # when its endpoints are not.
   @test conjugate_dominant_weight(λ, ()) == λ
+  @test conjugate_dominant_weight(λ, 3:2) == λ
+  @test conjugate_dominant_weight(λ, 9:1) == λ
   @test conjugate_dominant_weight_with_length(λ, ()) == (λ, 0)
   @test !is_singular(λ, ())
 end
