@@ -222,6 +222,39 @@ dual_coxeter_number
 degrees_fundamental_invariants
 ```
 
+## Bourbaki tables
+
+`bourbaki_table` collects the root-system data appearing in Bourbaki's finite-type
+plates into one programmatic object. It uses intrinsic simple-root coordinates rather
+than a separate Euclidean realization for each Dynkin family.
+
+```jldoctest roots
+julia> table = bourbaki_table(TypeA{2});
+
+julia> table.exponents
+2-element Vector{Int64}:
+ 1
+ 2
+
+julia> table.root_lattice_quotient
+1-element Vector{Int64}:
+ 3
+
+julia> table.opposition_involution
+2-element StaticArraysCore.SVector{2, Int64} with indices SOneTo(2):
+ 2
+ 1
+```
+
+Display the table itself to see a Unicode plate rendered with PrettyTables.jl: the
+Dynkin diagram, all positive roots and coroots, fundamental weights, Coxeter and
+lattice invariants, Weyl-group data, and finite and affine Cartan matrices.
+
+```@docs
+BourbakiTable
+bourbaki_table
+```
+
 ## Examples
 
 ### A2
