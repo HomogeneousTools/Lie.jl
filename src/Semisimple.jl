@@ -19,6 +19,7 @@ module Semisimple
 using LRUCache
 using PrecompileTools
 using Preferences
+using PrettyTables: pretty_table, tf_unicode_rounded
 using StaticArrays
 using LinearAlgebra: I as _I
 
@@ -76,6 +77,9 @@ include("Weylloop.jl")
 
 # ─── Characters and representation ring ─────────────────────────────────────
 include("Characters.jl")
+
+# ─── Bourbaki tables ─────────────────────────────────────────────────────────
+include("BourbakiTable.jl")
 
 # ─── Cache configuration (Preferences + runtime API) ────────────────────────
 include("CacheConfig.jl")

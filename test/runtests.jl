@@ -249,6 +249,62 @@ end
 end
 
 # ═══════════════════════════════════════════════════════════════════════
+#  Bourbaki tables
+# ═══════════════════════════════════════════════════════════════════════
+@testset "Bourbaki tables" begin
+  table_A2 = bourbaki_table(TypeA{2})
+  @test table_A2 isa BourbakiTable{TypeA{2},2}
+  @test bourbaki_table(TypeA{2}()).cartan_matrix == table_A2.cartan_matrix
+  @test length(table_A2.positive_roots) == 3
+  @test length(table_A2.positive_coroots) == 3
+  @test coefficients(table_A2.highest_root) == [1, 1]
+  @test coefficients(table_A2.sum_positive_roots) == [2, 2]
+  @test table_A2.fundamental_weight_coefficients == [2//3 1//3; 1//3 2//3]
+  @test table_A2.coxeter_number == 3
+  @test table_A2.dual_coxeter_number == 3
+  @test table_A2.connection_index == 3
+  @test table_A2.root_lattice_quotient == [3]
+  @test table_A2.exponents == [1, 2]
+  @test table_A2.degrees_fundamental_invariants == [2, 3]
+  @test table_A2.weyl_order == 6
+  @test length(table_A2.longest_element) == 3
+  @test table_A2.opposition_involution == [2, 1]
+  @test table_A2.affine_cartan_matrix == [2 -1 -1; -1 2 -1; -1 -1 2]
+
+  table_B2 = bourbaki_table(TypeB{2})
+  @test coefficients(table_B2.highest_root) == [1, 2]
+  @test coefficients(table_B2.highest_short_root) == [1, 1]
+  @test table_B2.coxeter_coefficients == [1, 2]
+  @test table_B2.dual_coxeter_coefficients == [1, 1]
+  @test table_B2.root_lattice_quotient == [2]
+
+  table_D4 = bourbaki_table(TypeD{4})
+  @test table_D4.root_lattice_quotient == [2, 2]
+  @test table_D4.exponents == [1, 3, 3, 5]
+
+  table_E6 = bourbaki_table(TypeE{6})
+  @test table_E6.opposition_involution == [6, 2, 5, 4, 3, 1]
+
+  table_E8 = bourbaki_table(TypeE{8})
+  @test isempty(table_E8.root_lattice_quotient)
+  @test table_E8.opposition_involution == 1:8
+
+  rendered = sprint(show, MIME"text/plain"(), table_A2)
+  @test startswith(rendered, "╭─ BOURBAKI PLATE · A₂")
+  @test occursin("Φ⁺ · POSITIVE ROOTS", rendered)
+  @test occursin("FUNDAMENTAL WEIGHTS · SIMPLE-ROOT COORDINATES", rendered)
+  @test occursin("α₁", rendered)
+  @test occursin("ω₁", rendered)
+  @test occursin("ℤ/3ℤ", rendered)
+  @test occursin("AFFINE CARTAN MATRIX · NODES ₀…₂", rendered)
+  @test sprint(show, table_A2) == "BourbakiTable(A₂)"
+
+  PT = ProductDynkinType{Tuple{TypeA{1},TypeA{1}}}
+  @test_throws ArgumentError bourbaki_table(PT)
+  @test_throws ArgumentError bourbaki_table(PT())
+end
+
+# ═══════════════════════════════════════════════════════════════════════
 #  Dynkin diagram layouts
 # ═══════════════════════════════════════════════════════════════════════
 @testset "Dynkin diagrams" begin
